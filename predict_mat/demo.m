@@ -24,27 +24,29 @@ load_and_plot(dir, signature, plotDesc);
 %% Predicting I/O
 init_pred_configs;
 
-flushRateJob = struct('taskName', 'FlushRatePrediction', 'io_conf', train_config1.io_conf, 'workloadName', 'TPCC' ,  'plotX', 'byCounts', 'whichTransToPlot', 1);
-
     train_config1 = Dt12345_brk_100_0_121_conf;
     train_config1 = rmfield_safe(train_config1, 'groupingStrategy');
     test_config = Dt12345_brk_100_0_121_conf;
+		flushRateJob = struct('taskName', 'FlushRatePrediction', 'io_conf', train_config1.io_conf, 'workloadName', 'TPCC' ,  'plotX', 'byCounts', 'whichTransToPlot', 1);
     predictionConsole(flushRateJob, test_config, {train_config1});
 
     train_config1 = Dt12345_brk_600_0_1215_conf;
     train_config1 = rmfield_safe(train_config1, 'groupingStrategy');
     test_config = Dt12345_brk_100_0_121_conf;
+		flushRateJob = struct('taskName', 'FlushRatePrediction', 'io_conf', train_config1.io_conf, 'workloadName', 'TPCC' ,  'plotX', 'byCounts', 'whichTransToPlot', 1);
     predictionConsole(flushRateJob, test_config, {train_config1});
 
     %nb
     train_config1 = Dt12345_brk_100_0_121_conf;
     train_config1 = rmfield_safe(train_config1, 'groupingStrategy');
     test_config = Dt12345_brk_900_0_1498_conf;
+		flushRateJob = struct('taskName', 'FlushRatePrediction', 'io_conf', train_config1.io_conf, 'workloadName', 'TPCC' ,  'plotX', 'byCounts', 'whichTransToPlot', 1);
     predictionConsole(flushRateJob, test_config, {train_config1});
         
     train_config1 = Dt12345_brk_900_0_1498_conf;
     train_config1 = rmfield_safe(train_config1, 'groupingStrategy');
     test_config = Dt12345_brk_100_0_121_conf;
+		flushRateJob = struct('taskName', 'FlushRatePrediction', 'io_conf', train_config1.io_conf, 'workloadName', 'TPCC' ,  'plotX', 'byCounts', 'whichTransToPlot', 1);
     predictionConsole(flushRateJob, test_config, {train_config1});
 
 
