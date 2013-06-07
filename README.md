@@ -1,4 +1,4 @@
-INSTALL:
+A) INSTALLATION:
  You need to add the following directories to your MATLAB path:
 common_mat
 predict_data
@@ -6,7 +6,7 @@ predict_mat
 sc
 
 
-How to use DBSeer?
+B) How to use DBSeer
 
 You can use the rs-sysmon2 to collect data. For quick evaluation, you can use some of the example datasets that are provided under the example_data directory.
 
@@ -24,8 +24,9 @@ where you replace the INSTALL_DIRECTORY with the path in which you have a copy o
 
 Then, assuming you have added predict_mat to MATLAB path, you can simply run the following in MATLAB prompt:
 	
-  MATLAB>  demo
+	MATLAB> demo
 
+C) Contact info
 Please report all bugs or questions to Barzan Mozafari <barzan@csail.mit.edu>
 
 
