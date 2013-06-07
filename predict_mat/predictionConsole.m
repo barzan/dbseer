@@ -1,13 +1,14 @@
-function predictionConsole(taskDesc, test_config, train_configs)
+function predictionConsole2(taskDesc, test_config, train_configs)
 overallTime = tic;
-header_aligned;
+%header_aligned;
+%pgtpcc_header;
 %%%%%%%
 
 %init_pred_configs
 
 %% initialize the tasks!
 %all_tasks = {'CountsToCpu', 'CountsToIO', 'CountsToLatency', 'BlownCountsToCpu', 'BlownCountsToIO', 'CountsWaitTimeToLatency', ...
-%    'IdealFeaturesToLatency', 'RealFeaturesToLatency', 'FlushRatePrediction', 'MaxThroughputPrediction', 'LinearPrediction', ...
+%    'IdealFeaturesToLatency', 'RealFeaturesToLatency', 'FlushRatePrediction', 'MaxThrouputPrediction', 'LinearPrediction', ...
 %    'PhysicalReadPrediction', 'LockPrediction'};
 
 taskDesc.taskName
@@ -15,28 +16,40 @@ taskDesc.taskName
 tranTypes = test_config.tranTypes;
 tranLabels = tranTypes;
 
-[Mtest Ltest Ctest dMtest] = load3(test_config.dir, test_config.signature, test_config.startIdx, test_config.endIdx);
+mvTestUngrouped = load_modeling_variables(test_config.dir, test_config.signature);
+if isfield(test_config, 'groupingStrategy')
+    mvTestGrouped = load_modeling_variables(test_config.dir, test_config.signature, test_config.groupingStrategy);
+else
+    mvTestGrouped = mvTestUngrouped;
+end
+
 %dMtest is the diffed version of Mtest
 
     cmdLine = ['predictionConsole(' valueToString(taskDesc) ', ' valueToString(test_config) ',' valueToString(train_configs) ');'];
-   
-    tps = sum(Ctest(:,tranTypes),2);
+    tps = mvTestUngrouped.clientIndividualSubmittedTrans(:,tranTypes);
     testSummary = [test_config.signature ':' num2str(min(tps)) '-' num2str(max(tps))];
 
-M = [];
-L = [];
-C = [];
-dM = [];
 trainSummary = '{';
 howManyTrain = length(train_configs);
 for i=1:howManyTrain
     train_i_conf = train_configs{i};
-    [Mi Li Ci dMi] = load3(train_i_conf.dir, train_i_conf.signature, train_i_conf.startIdx, train_i_conf.endIdx);
-    M = [M; Mi];
-    L = [L; Li];
-    C = [C; Ci];
-    dM = [dM; dMi];
-    tps = sum(C(:,tranTypes),2);
+    mvTrain_i = load_modeling_variables(train_i_conf.dir, train_i_conf.signature);
+    
+    if isfield(train_i_conf, 'groupingStrategy')
+        grp_mvTrain_i = load_modeling_variables(train_i_conf.dir, train_i_conf.signature, train_i_conf.groupingStrategy);
+    else
+        grp_mvTrain_i = mvTrain_i;
+    end
+    
+    if i==1
+        mvTrainUngrouped = mvTrain_i;
+        mvTrainGrouped = grp_mvTrain_i;
+    else
+        mvTrainUngrouped = merge_structs(mvTrainUngrouped, mvTrain_i);
+        mvTrainGrouped = merge_structs(mvTrainGrouped, grp_mvTrain_i);
+    end
+    
+    tps = sum(mvTrainUngrouped.clientIndividualSubmittedTrans(:,tranTypes), 2);
     trainSummary = [trainSummary train_i_conf.signature ':' num2str(min(tps)) '-' num2str(max(tps))];
     if i<length(train_configs)
         trainSummary = [trainSummary ',' ];
@@ -45,103 +58,137 @@ end
 
 
 %% %%%%%%
-cpu_usr_indexes = [cpu1_usr cpu2_usr cpu3_usr cpu4_usr cpu5_usr cpu6_usr cpu7_usr cpu8_usr]; % cpu9_usr cpu10_usr cpu11_usr cpu12_usr cpu13_usr cpu14_usr cpu15_usr cpu16_usr];
-
+%cpu_usr_indexes = [cpu1_usr cpu2_usr cpu3_usr cpu4_usr cpu5_usr cpu6_usr cpu7_usr cpu8_usr]; % cpu9_usr cpu10_usr cpu11_usr cpu12_usr cpu13_usr cpu14_usr cpu15_usr cpu16_usr];
+%cpu_usr_indexes = header.metadata.cpu_usr;
 
 %% Before the grouping!
-UGtrainC = C(:,tranTypes);
-UGtrainP = CpuUserAvg(M);
-UGtrainIO = M(:,dsk_writ);
-UGtrainW = dM(:,Innodb_row_lock_time) / 1000; %to turn it into seconds
-UGtrainLocksBeingWaitedFor=M(:,Innodb_row_lock_current_waits);
-UGtrainNumOfWaitsDueToLocks=dM(:,Innodb_row_lock_waits);
-UGtrainL = L(:,tranTypes);
+UGtrainC = mvTrainUngrouped.clientIndividualSubmittedTrans(:,tranTypes);
+UGtrainP = mean(mvTrainUngrouped.cpu_usr,2);
+UGtrainIO = mvTrainUngrouped.osNumberOfSectorWrites;
+if isfield(mvTrainUngrouped, 'dbmsLockWaitTime')
+    UGtrainW = mvTrainUngrouped.dbmsLockWaitTime;
+    UGtrainLocksBeingWaitedFor=mvTrainUngrouped.dbmsCurrentLockWaits;
+    UGtrainNumOfWaitsDueToLocks=mvTrainUngrouped.dbmsLockWaits;
+else
+    clear 'UGtrainW';
+    clear 'UGtrainLocksBeingWaitedFor';
+    clear 'UGtrainNumOfWaitsDueToLocks';
+end
+
+UGtrainL = mvTrainUngrouped.clientTransLatency(:,tranTypes);
 UGtrainTPS = sum(UGtrainC,2);
-UGtrainRowsChanged = sum(dM(:,[Innodb_rows_deleted Innodb_rows_updated Innodb_rows_inserted]),2);
-UGtrainPagesFlushed = dM(:, Innodb_buffer_pool_pages_flushed);
+if isfield(mvTrainUngrouped, 'dbmsChangedRows')
+    UGtrainRowsChanged = mvTrainUngrouped.dbmsChangedRows;
+else
+    clear 'UGtrainRowsChanged';
+end
+UGtrainPagesFlushed = mvTrainUngrouped.dbmsFlushedPages;
     idx = find(UGtrainTPS>0);
     ratios = UGtrainC(idx,:) ./ repmat(UGtrainTPS(idx),1,size(UGtrainC,2));
 UGtrainMixture = mean(ratios);
 
-UGtestC = Ctest(:,tranTypes);
-UGtestP = CpuUserAvg(Mtest);
-UGtestIO = Mtest(:,dsk_writ);
-UGtestW = dMtest(:,Innodb_row_lock_time) / 1000; %to turn it into seconds
-UGtestLocksBeingWaitedFor=Mtest(:,Innodb_row_lock_current_waits);
-UGtestNumOfWaitsDueToLocks=dMtest(:,Innodb_row_lock_waits);
-UGtestL = Ltest(:,tranTypes);
+UGtestC = mvTestUngrouped.clientIndividualSubmittedTrans(:,tranTypes);
+UGtestP = mean(mvTestUngrouped.cpu_usr, 2);
+UGtestIO = mvTestUngrouped.osNumberOfSectorWrites;
+
+if isfield(mvTestUngrouped, 'dbmsLockWaitTime')
+    UGtestW = mvTestUngrouped.dbmsLockWaitTime;
+    UGtestLocksBeingWaitedFor=mvTestUngrouped.dbmsCurrentLockWaits;
+    UGtestNumOfWaitsDueToLocks=mvTestUngrouped.dbmsLockWaits;
+else
+    clear 'UGtestW';
+    clear 'UGtestLocksBeingWaitedFor';
+    clear 'UGtestNumOfWaitsDueToLocks';
+end
+UGtestL = mvTestUngrouped.clientTransLatency(:,tranTypes);
 UGtestTPS = sum(UGtestC,2);
-UGtestRowsChanged = sum(dMtest(:,[Innodb_rows_deleted Innodb_rows_updated Innodb_rows_inserted]),2);
-UGtestPagesFlushed = dMtest(:, Innodb_buffer_pool_pages_flushed);
+if isfield(mvTestUngrouped, 'dbmsChangedRows')
+    UGtestRowsChanged = mvTestUngrouped.dbmsChangedRows;
+else
+    clear 'UGtestRowsChanged';
+end
+UGtestPagesFlushed = mvTestUngrouped.dbmsFlushedPages;
     idx = find(UGtestTPS>0);
     ratios = UGtestC(idx,:) ./ repmat(UGtestTPS(idx),1,size(UGtestC,2));
 UGtestMixture = mean(ratios);
 
-if strcmp(taskDesc.taskName,'MaxThroughputPrediction')
+if strcmp(taskDesc.taskName,'MaxThrouputPrediction')
     [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(UGtestTPS);
     [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(UGtrainTPS);
-end
-
-%% whether to group the data
-[Mtest Ltest Ctest dMtest] = applyGroupingPolicy(test_config, Mtest, Ltest, Ctest, dMtest);
-
-M = [];
-L = [];
-C = [];
-dM = [];
-for i=1:howManyTrain
-    train_i_conf = train_configs{i};
-    [Mi Li Ci dMi] = load3(train_i_conf.dir, train_i_conf.signature, train_i_conf.startIdx, train_i_conf.endIdx);
-    [Mi Li Ci dMi] = applyGroupingPolicy(train_i_conf, Mi, Li, Ci, dMi);
-    M = [M; Mi];
-    L = [L; Li];
-    C = [C; Ci];
-    dM = [dM; dMi];
 end
 
 
 %% %%%%%%%%%% Auxiliary variables
 
-trainC = C(:,tranTypes);
-trainP = CpuUserAvg(M);
-trainIO = M(:,dsk_writ);
-trainW = dM(:,Innodb_row_lock_time) / 1000; %to turn it into seconds
-trainLocksBeingWaitedFor=M(:,Innodb_row_lock_current_waits);
-traintNumOfWaitsDueToLocks=dM(:,Innodb_row_lock_waits);
-trainL = L(:,tranTypes);
+trainC = mvTrainGrouped.clientIndividualSubmittedTrans(:,tranTypes);
+trainP = mean(mvTrainGrouped.cpu_usr,2);
+trainIO = mvTrainGrouped.osNumberOfSectorWrites;
+if isfield(mvTrainGrouped, 'dbmsLockWaitTime')
+    trainW = mvTrainGrouped.dbmsLockWaitTime;
+    trainLocksBeingWaitedFor=mvTrainGrouped.dbmsCurrentLockWaits;
+    trainNumOfWaitsDueToLocks=mvTrainGrouped.dbmsLockWaits;
+else
+    clear 'trainW';
+    clear 'trainLocksBeingWaitedFor';
+    clear 'trainNumOfWaitsDueToLocks';
+end
+
+trainL = mvTrainGrouped.clientTransLatency(:,tranTypes);
 trainTPS = sum(trainC,2);
-trainRowsChanged = sum(dM(:,[Innodb_rows_deleted Innodb_rows_updated Innodb_rows_inserted]),2);
-trainPagesFlushed = dM(:, Innodb_buffer_pool_pages_flushed);
+if isfield(mvTrainGrouped, 'dbmsChangedRows')
+    trainRowsChanged = mvTrainGrouped.dbmsChangedRows;
+else
+    clear 'trainRowsChanged';
+end
+trainPagesFlushed = mvTrainGrouped.dbmsFlushedPages;
     idx = find(trainTPS>0);
     ratios = trainC(idx,:) ./ repmat(trainTPS(idx),1,size(trainC,2));
 trainMixture = mean(ratios);
-trainLogicalReads = dM(:, Innodb_buffer_pool_read_requests);
-trainPhysicalReads = dM(:, Innodb_buffer_pool_reads);
-trainPhysicalReadsMB = dM(:, Innodb_data_read) / 1024 / 1024; 
-trainNetworkSendKB=(M(:,net0_send)+M(:,net1_send)) ./1024;
-trainNetworkRecvKB=(M(:,net0_recv)+M(:,net1_recv))./1024;
-trainLogIOw=dM(:,Innodb_os_log_written)./1024./1024; %MB
+trainLogicalReads = mvTrainGrouped.dbmsReadRequests;
+trainPhysicalReads = mvTrainGrouped.dbmsReads;
+if isfield(mvTrainGrouped, 'dbmsNumberOfDataReads')
+    trainPhysicalReadsMB = mvTrainGrouped.dbmsNumberOfDataReads / 1024 / 1024; 
+else
+    clear 'trainPhysicalReadsMB';
+end
+trainNetworkSendKB=mvTrainGrouped.osNetworkSendKB;
+trainNetworkRecvKB=mvTrainGrouped.osNetworkRecvKB;
+trainLogIOw=mvTrainGrouped.dbmsLogWritesMB; %MB
 
 
-testC = Ctest(:,tranTypes);
-testP = CpuUserAvg(Mtest);
-testIO = Mtest(:,dsk_writ);
-testW = dMtest(:,Innodb_row_lock_time) / 1000; %to turn it into seconds
-testLocksBeingWaitedFor=Mtest(:,Innodb_row_lock_current_waits);
-testNumOfWaitsDueToLocks=dMtest(:,Innodb_row_lock_waits);
-testL = Ltest(:,tranTypes);
+testC = mvTestGrouped.clientIndividualSubmittedTrans(:,tranTypes);
+testP = mean(mvTestGrouped.cpu_usr, 2);
+testIO = mvTestGrouped.osNumberOfSectorWrites;
+if isfield(mvTestGrouped, 'dbmsLockWaitTime')
+    testW = mvTestGrouped.dbmsLockWaitTime;
+    testLocksBeingWaitedFor=mvTestGrouped.dbmsCurrentLockWaits;
+    testNumOfWaitsDueToLocks=mvTestGrouped.dbmsLockWaits;
+else
+    clear 'testW';
+    clear 'testLocksBeingWaitedFor';
+    clear 'testNumOfWaitsDueToLocks';
+end
+testL = mvTestGrouped.clientTransLatency(:,tranTypes);
 testTPS = sum(testC,2);
-testRowsChanged = sum(dMtest(:,[Innodb_rows_deleted Innodb_rows_updated Innodb_rows_inserted]),2);
-testPagesFlushed = dMtest(:, Innodb_buffer_pool_pages_flushed);
+if isfield(mvTestGrouped, 'dbmsChangedRows')
+    testRowsChanged = mvTestGrouped.dbmsChangedRows;
+else
+    clear 'testRowsChanged';
+end
+testPagesFlushed = mvTestGrouped.dbmsFlushedPages;
     idx = find(testTPS>0);
     ratios = testC(idx,:) ./ repmat(testTPS(idx),1,size(testC,2));
 testMixture = mean(ratios);
-testLogicalReads = dMtest(:, Innodb_buffer_pool_read_requests);
-testPhysicalReads = dMtest(:, Innodb_buffer_pool_reads);
-testPhysicalReadsMB = dMtest(:, Innodb_data_read) / 1024 / 1024; 
-testNetworkSendKB=(Mtest(:,net0_send)+Mtest(:,net1_send)) ./1024;
-testNetworkRecvKB=(Mtest(:,net0_recv)+Mtest(:,net1_recv))./1024;    
-testLogIOw=dMtest(:,Innodb_os_log_written)./1024./1024; %MB
+testLogicalReads = mvTestGrouped.dbmsReadRequests;
+testPhysicalReads = mvTestGrouped.dbmsReads;
+if isfield(mvTestGrouped, 'dbmsNumberOfDataReads')
+    testPhysicalReadsMB = mvTestGrouped.dbmsNumberOfDataReads / 1024 / 1024; 
+else
+    clear 'testPhysicalReadsMB';
+end
+testNetworkSendKB=mvTestGrouped.osNetworkSendKB;
+testNetworkRecvKB=mvTestGrouped.osNetworkRecvKB;
+testLogIOw=mvTestGrouped.dbmsLogWritesMB; %MB
 
 
 %% %%%%%%%%%% Linear modeling
@@ -152,17 +199,28 @@ modelIO = barzanLinSolve(trainIO, trainC)
 
 modelL = barzanLinSolve(trainL, trainC)
 
-modelLw = barzanLinSolve(trainL, [trainC trainW])
+if exist('trainW','var')
+    modelLw = barzanLinSolve(trainL, [trainC trainW])
+    modelRowsChanged = barzanLinSolve(trainRowsChanged, trainC)
+else
+    clear 'modelLw';
+    clear 'modelRowsChanged';
+end
     
-modelRowsChanged = barzanLinSolve(trainRowsChanged, trainC)
 
 modelFlushRate = barzanLinSolve(trainPagesFlushed, trainC);
 
 predictionsP  = barzanLinInvoke(modelP, testC); 
 predictionsIO = barzanLinInvoke(modelIO, testC);
 predictionsL  = barzanLinInvoke(modelL, testC);
-predictionsLw  = barzanLinInvoke(modelLw, [testC testW]);
-predictionsRowsChanged = barzanLinInvoke(modelRowsChanged, testC);
+if exist('testW','var')
+    predictionsLw  = barzanLinInvoke(modelLw, [testC testW]);
+    predictionsRowsChanged = barzanLinInvoke(modelRowsChanged, testC);
+else
+    clear 'predictionsLw';
+    clear 'predictionsRowsChanged';
+end
+
 predictionsPagesFlushed = barzanLinInvoke(modelFlushRate, testC);
 
 [MRE_p MAE_p rel_diff_p discrete_rel_error_p weka_rel_err_p] = myerr(predictionsP,testP);
@@ -171,10 +229,15 @@ MRE_p = MRE_p*100;
 MRE_io = MRE_io * 100;
 [MRE_l MAE_l rel_diff discrete_rel_error weka_rel_err] = myerr(predictionsL,testL);
 MRE_l = MRE_l * 100;
-[MRE_lw MAE_lw rel_diff_lw discrete_rel_error_lw weka_rel_err_lw] = myerr(predictionsLw,testL);
-MRE_lw = MRE_lw * 100;
-[MRE_rc MAE_rc rel_diff_rc discrete_rel_error_rc weka_rel_err_rc] = myerr(predictionsRowsChanged, testRowsChanged);
-MRE_rc = MRE_rc * 100;
+if exist('predictionsLw','var')    
+    [MRE_lw MAE_lw rel_diff_lw discrete_rel_error_lw weka_rel_err_lw] = myerr(predictionsLw,testL);
+    MRE_lw = MRE_lw * 100;
+    [MRE_rc MAE_rc rel_diff_rc discrete_rel_error_rc weka_rel_err_rc] = myerr(predictionsRowsChanged, testRowsChanged);
+    MRE_rc = MRE_rc * 100;
+else
+    clear 'MRE_lw','MAE_lw','MRE_rc';
+end
+
 %errperf(testP, predictions, 're')
 
 %% %%%%%%%%% BLOWN DATA %%%%%%%%%%%%
@@ -211,6 +274,7 @@ dim1 = 1;
 dim2 = 1;
 
 nextPlot=1;
+
 if strcmp(taskDesc.taskName, 'CountsToCpu')
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
     
@@ -223,13 +287,18 @@ if strcmp(taskDesc.taskName, 'CountsToCpu')
     
     myCpuPred = barzanLinInvoke(myModelP, testC);
     
-    if 1==1
+    if strcmp(taskDesc.plotX, 'byTPS')
         xValuesTest = testTPS;
         xValuesTrain = trainTPS;
+        xLab = 'TPS';
+    elseif strcmp(taskDesc.plotX, 'byCounts')
+        xValuesTest = testC(:,taskDesc.whichTransToPlot) ./ testTPS;
+        xValuesTrain = trainC(:,taskDesc.whichTransToPlot) ./ trainTPS;
+        xLab = ['Fraction of Trans ' num2str(sc.whichTransToPlot)];
     else
-        xValuesTest = testC(:,tranTypes(1)) ./ testTPS;
-        xValuesTrain = trainC(:,tranTypes(1)) ./ trainTPS;
+        error(['taskDesc.plotX cannot be: ' taskDesc.plotx]);
     end
+
 
 temp = [xValuesTest testP predictionsP myCpuPred];
 temp = sortrows(temp, 1);
@@ -237,14 +306,7 @@ ph1 = plot(temp(:,1), temp(:,2),'bo', temp(:,1), temp(:,3), 'm-', temp(:,1), tem
 hold on;
 ph2 = plot(xValuesTrain, trainP, 'gx');
 
-if exist('testMaxThroughput')
-    %drawLine('v', 'k-', testMaxThroughput);
-end
-if exist('trainMaxThroughput')
-    %drawLine('v', 'c-', trainMaxThroughput);
-end
-
-xlabel('TPS or percentage of first trans');
+xlabel(xLab);
 text(min(xValuesTest),max(predictionsP), horzcat(showErr('LR', predictionsP, testP), showErr('LRnoise', myCpuPred, testP), ...
  'mean(trainTPS)= ',num2str(mean(trainTPS)), ' mean(trainP)=', num2str(mean(trainP)) ));
 
@@ -398,51 +460,50 @@ end
 if strcmp(taskDesc.taskName, 'FlushRatePrediction')
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
         
-    if 1==1
-    treeModel = barzanRegressTreeLearn(trainPagesFlushed, trainC);
-    treePred = barzanRegressTreeInvoke(treeModel, testC);
-    
-    naiveLinModel = barzanLinSolve(trainPagesFlushed, trainTPS);
-    linPred = barzanLinInvoke(naiveLinModel, testTPS);
-    
-    betterLinModel = barzanLinSolve(trainPagesFlushed, trainC);
-    classLinPred = barzanLinInvoke(betterLinModel, testC);
+    showOthers = false;
+    if showOthers
+        treeModel = barzanRegressTreeLearn(trainPagesFlushed, trainC);
+        treePred = barzanRegressTreeInvoke(treeModel, testC);
+
+        naiveLinModel = barzanLinSolve(trainPagesFlushed, trainTPS);
+        linPred = barzanLinInvoke(naiveLinModel, testTPS);
+
+        betterLinModel = barzanLinSolve(trainPagesFlushed, trainC);
+        classLinPred = barzanLinInvoke(betterLinModel, testC);
        
+    
+        kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', train_configs{1}.tranTypes,  'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
+        emp = zeros(size(trainC,1), 0);
+        [emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, trainC, trainPagesFlushed);
+        %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
+        %kccaPred = barzanKccaInvoke(kccaModel, testC);
+        nnModel = barzanNeuralNetLearn(trainPagesFlushed, trainC);
+        nnPred = barzanNeuralNetInvoke(nnModel, testC);
+ 
+        err_1 = mre(linPred, testPagesFlushed, true);
+        err_2 = mre(classLinPred, testPagesFlushed, true);
+        err_4 = mre(treePred, testPagesFlushed);
+        err_5 = mre(kccaPred, testPagesFlushed);
+        err_6 = mre(nnPred, testPagesFlushed);
+        
+        [rel_err_1 abs_err_1 rel_diff_1 discrete_rel_error_1 weka_rel_err] = myerr(linPred, testPagesFlushed);
+        [rel_err_2 abs_err_2 rel_diff_2 discrete_rel_error_2 weka_rel_err] = myerr(classLinPred, testPagesFlushed);
+        [rel_err_4 abs_err_4 rel_diff_4 discrete_rel_error_4 weka_rel_err] = myerr(treePred, testPagesFlushed);
+        [rel_err_5 abs_err_5 rel_diff_5 discrete_rel_error_5 weka_rel_err] = myerr(kccaPred, testPagesFlushed);
+        [rel_err_6 abs_err_6 rel_diff_6 discrete_rel_error_6 weka_rel_err] = myerr(nnPred, testPagesFlushed);
+    end
     cfFlushRateApprox_conf = struct('io_conf', taskDesc.io_conf, 'workloadName', taskDesc.workloadName);
     myPred = cfFlushRateApprox(cfFlushRateApprox_conf, testC);
     
-    kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', train_configs{1}.tranTypes,  'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-    emp = zeros(size(trainC,1), 0);
-    [emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, trainC, trainPagesFlushed);
-    kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
-    kccaPred = barzanKccaInvoke(kccaModel, testC);
-    nnModel = barzanNeuralNetLearn(trainPagesFlushed, trainC);
-    nnPred = barzanNeuralNetInvoke(nnModel, testC);
-
-    else
-        treePred = testPagesFlushed;
-        linPred = testPagesFlushed;
-        classLinPred = testPagesFlushed;
-        myPred = testPagesFlushed;
-        kccaPred = testPagesFlushed;
-        nnPred = testPagesFlushed;
-    end
-    err_1 = mre(linPred, testPagesFlushed, true);
-    err_2 = mre(classLinPred, testPagesFlushed, true);
     err_3 = mre(myPred, testPagesFlushed, true);
-    err_4 = mre(treePred, testPagesFlushed);
-    err_5 = mre(kccaPred, testPagesFlushed);
-    err_6 = mre(nnPred, testPagesFlushed);
-
-    [rel_err_1 abs_err_1 rel_diff_1 discrete_rel_error_1 weka_rel_err] = myerr(linPred, testPagesFlushed);
-    [rel_err_2 abs_err_2 rel_diff_2 discrete_rel_error_2 weka_rel_err] = myerr(classLinPred, testPagesFlushed);
     [rel_err_3 abs_err_3 rel_diff_3 discrete_rel_error_3 weka_rel_err] = myerr(myPred, testPagesFlushed);
-    [rel_err_4 abs_err_4 rel_diff_4 discrete_rel_error_4 weka_rel_err] = myerr(treePred, testPagesFlushed);
-    [rel_err_5 abs_err_5 rel_diff_5 discrete_rel_error_5 weka_rel_err] = myerr(kccaPred, testPagesFlushed);
-    [rel_err_6 abs_err_6 rel_diff_6 discrete_rel_error_6 weka_rel_err] = myerr(nnPred, testPagesFlushed);
 
     %%%%%%
-    temp = [testPagesFlushed linPred classLinPred myPred treePred kccaPred nnPred];
+    if showOthers
+        temp = [testPagesFlushed linPred classLinPred myPred treePred kccaPred nnPred];
+    else
+        temp = [testPagesFlushed myPred];
+    end
     if strcmp(taskDesc.plotX, 'byTPS')
         temp = [testTPS temp];
     elseif strcmp(taskDesc.plotX, 'byCounts')
@@ -453,18 +514,28 @@ if strcmp(taskDesc.taskName, 'FlushRatePrediction')
     end
     temp = sortrows(temp,1);
     
-    ph1 = plot(temp(:,1), temp(:,2), 'b.-'); 
-    hold on;
-    ph2 = plot(temp(:,1), temp(:,3), 'ms--');
-    ph3 = plot(temp(:,1), temp(:,4), 'k-.');
-    ph4 = plot(temp(:,1), temp(:,5), 'gp:'); 
-    ph5 = plot(temp(:,1), temp(:,6), 'rp:'); 
-    ph6 = plot(temp(:,1), temp(:,7), 'yp:'); 
-    ph7 = plot(temp(:,1), temp(:,8), 'cp:'); 
+    if showOthers
+        ph1 = plot(temp(:,1), temp(:,2), 'b.-'); 
+        hold on;
+        ph2 = plot(temp(:,1), temp(:,3), 'ms--');
+        ph3 = plot(temp(:,1), temp(:,4), 'k-.');
+        ph4 = plot(temp(:,1), temp(:,5), 'gp:'); 
+        ph5 = plot(temp(:,1), temp(:,6), 'rp:'); 
+        ph6 = plot(temp(:,1), temp(:,7), 'yp:'); 
+        ph7 = plot(temp(:,1), temp(:,8), 'cp:'); 
+
+        hold off;
+        legend('Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'KCCA', 'NeuralNet');
+        text(0.1,max(linPred), horzcat('MRE(lin TPS)=',num2str(err_1), ...
+        ', MRE(lin types)=',num2str(err_2), ', MRE(cf 1)=',num2str(err_3), ', MRE(cf 2)=',num2str(err_4)));
     
-    hold off;
-    title(horzcat('Flush rate prediction #test points=', num2str(size(testC,1)),' '));    
-    legend('Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'KCCA', 'NeuralNet');
+    else
+        ph1 = plot(temp(:,1), temp(:,2), 'b.-'); 
+        hold on;
+        ph2 = plot(temp(:,1), temp(:,3), 'ms--');
+        legend('Actual', 'Our Prediction');
+    end    
+    title(horzcat('Flush rate prediction #test points=', num2str(size(testC,1)),' '));
     ylabel('Average # of page flush per sec');
 
     if strcmp(taskDesc.plotX, 'byTPS')
@@ -475,8 +546,6 @@ if strcmp(taskDesc.taskName, 'FlushRatePrediction')
         error(['taskDesc.plotX cannot be: ' taskDesc.plotx]);
     end
     
-    text(0.1,max(linPred), horzcat('MRE(lin TPS)=',num2str(err_1), ...
-        ', MRE(lin types)=',num2str(err_2), ', MRE(cf 1)=',num2str(err_3), ', MRE(cf 2)=',num2str(err_4)));
     
     if isfield(taskDesc, 'resultsFile')
         if taskDesc.appendToFile == true
@@ -512,7 +581,7 @@ if strcmp(taskDesc.taskName, 'FlushRatePrediction')
     nextPlot=nextPlot+1;    
 end
 
-if strcmp(taskDesc.taskName, 'MaxThroughputPrediction')
+if strcmp(taskDesc.taskName, 'MaxThrouputPrediction')
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
     actualThr = testMaxThroughput;
     realCPU = mean(UGtestP(testMaxThroughputIdx-10:testMaxThroughputIdx+10,:));
@@ -523,14 +592,14 @@ if strcmp(taskDesc.taskName, 'MaxThroughputPrediction')
        
     %CPU-based throughput with classification
     cpuC = barzanLinInvoke(modelP, range*testMixture);
-    cpuCLThoughput = find(cpuC>88 & cpuC<90, 1, 'last');
-    cpuCUThoughput = find(cpuC>98 & cpuC<100, 1, 'last');
+    cpuCLThroughput = find(cpuC>88 & cpuC<90, 1, 'last');
+    cpuCUThroughput = find(cpuC>98 & cpuC<100, 1, 'last');
     
     %CPU-based without classification
     cpuTModel = barzanLinSolve(trainP, trainTPS);
     cpuT = barzanLinInvoke(cpuTModel, range);
-    cpuTLThoughput = find(cpuT>88 & cpuT<90, 1, 'last');
-    cpuTUThoughput = find(cpuT>98 & cpuT<100, 1, 'last');
+    cpuTLThroughput = find(cpuT>88 & cpuT<90, 1, 'last');
+    cpuTUThroughput = find(cpuT>98 & cpuT<100, 1, 'last');
     
     %CPU-based with classification+noise removal %TODO: I need to also
     %automtically remove the first warm-up phase!
@@ -541,8 +610,11 @@ if strcmp(taskDesc.taskName, 'MaxThroughputPrediction')
     end
     myModelP = barzanLinSolve(trainP(idx,:), trainC(idx,:));
     myCpuC = barzanLinInvoke(myModelP, range*testMixture);
-    myCpuCLThoughput = find(myCpuC>88 & myCpuC<90, 1, 'last');
-    myCpuCUThoughput = find(myCpuC>98 & myCpuC<100, 1, 'last');
+    myCpuCLThroughput = find(myCpuC>88 & myCpuC<90, 1, 'last');
+    myCpuCUThroughput = find(myCpuC>98 & myCpuC<100, 1, 'last');
+    
+    myCpuCLThroughput = find(myCpuC>44 & myCpuC<45, 1, 'last');
+    myCpuCUThroughput = find(myCpuC>59 & myCpuC<50, 1, 'last');
     
     %Our IO-based throughput
     cfFlushRateApprox_conf = struct('io_conf', taskDesc.io_conf, 'workloadName', taskDesc.workloadName);
@@ -551,48 +623,68 @@ if strcmp(taskDesc.taskName, 'MaxThroughputPrediction')
 
     %Linear IO-based throughput
     linFlushRate = barzanLinInvoke(modelFlushRate, range*testMixture);
-    linFlushRateThoughput = find(linFlushRate<maxFlushRate, 1, 'last');
-    if isempty(linFlushRateThoughput); linFlushRateThoughput=0; end
+    linFlushRateThroughput = find(linFlushRate<maxFlushRate, 1, 'last');
+    if isempty(linFlushRateThroughput); linFlushRateThroughput=0; end
     
-    %Decision-tree-based throughput
-    treeModel = barzanRegressTreeLearn(trainPagesFlushed, trainC);
-    treeFlushRate = barzanRegressTreeInvoke(treeModel, range*testMixture);
-    treeFlushRateThoughput = find(treeFlushRate<maxFlushRate, 1, 'last');
-    if isempty(treeFlushRateThoughput); treeFlushRateThoughput=0; end
-    
-
     %Lock-based throughput
     getConcurrencyLebel_conf = struct('lock_conf', taskDesc.lock_conf, 'workloadName', taskDesc.workloadName);
     concurrencyThroughput = findClosestValue(@getConcurrencyLevel, (1:10000)'*testMixture, 160, getConcurrencyLebel_conf);
 
     %my final prediction
-    [myMaxThroughput1 PredReasonIdx1] = min([myCpuCLThoughput myFlushRateThroughput concurrencyThroughput]);
-    [myMaxThroughput2 PredReasonIdx2] = min([myCpuCUThoughput myFlushRateThroughput concurrencyThroughput]);
+    [myMaxThroughput1 PredReasonIdx1] = min([myCpuCLThroughput myFlushRateThroughput concurrencyThroughput]);
+    [myMaxThroughput2 PredReasonIdx2] = min([myCpuCUThroughput myFlushRateThroughput concurrencyThroughput]);
     
-    ph1=plot(testTPS);
-    ph2=drawLine('h', 'm+', actualThr);
-    ph3=drawLine('h', 'ko', cpuCLThoughput);    
-    ph4=drawLine('h', 'kx', cpuCUThoughput);    
-    ph5=drawLine('h', 'ks', cpuTLThoughput);    
-    ph6=drawLine('h', 'kd', cpuTUThoughput);
-    ph7=drawLine('h', 'rp', myFlushRateThroughput);
-    ph8=drawLine('h', 'b^', linFlushRateThoughput);
-    ph9=drawLine('h', 'kv', concurrencyThroughput);
-
+    %Now draw the plot!
+    
+    ph1=plot(testTPS, 'DisplayName', 'Original Signal');
+    hold all;
+    legend('-DynamicLegend');
+    if ~isempty(actualThr)
+        ph2=drawLine('h', 'm+', actualThr, 'Actual MT');
+    end
+    if ~isempty(cpuCLThroughput)
+        ph3=drawLine('h', 'ko', cpuCLThroughput, horzcat('MT based on adjusted LR for CPU+classification, error: ', num2str(100*(cpuCLThroughput-actualThr)/actualThr) ,'%'));    
+        e4 = 100*(cpuCLThroughput-actualThr)/actualThr;
+    end
+    if ~isempty(cpuCUThroughput)
+        ph4=drawLine('h', 'kx', cpuCUThroughput, horzcat('MT based on LR for CPU+classification, error: ', num2str(100*(cpuCUThroughput-actualThr)/actualThr), '%'));
+        e3 = 100*(cpuCUThroughput-actualThr)/actualThr;
+    end
+    if ~isempty(cpuTLThroughput)
+        ph5=drawLine('h', 'ks', cpuTLThroughput, horzcat('MT based on adjusted LR for CPU, error: ', num2str(100*(cpuTLThroughput-actualThr)/actualThr), '%'));    
+        e2 = 100*(cpuTLThroughput-actualThr)/actualThr;
+    end
+    if ~isempty(cpuTUThroughput)
+        ph6=drawLine('h', 'kd', cpuTUThroughput, horzcat('MT based on LR for CPU, error: ', num2str(100*(cpuTUThroughput-actualThr)/actualThr), '%'));
+        e1 = 100*(cpuTUThroughput-actualThr)/actualThr;
+    end
+    if ~isempty(myFlushRateThroughput)
+        ph7=drawLine('h', 'rp', myFlushRateThroughput, horzcat('MT based on our flushrate model, error: ', num2str(100*(myFlushRateThroughput-actualThr)/actualThr), '%'));
+        e7 = 100*(myFlushRateThroughput-actualThr)/actualThr;
+    end
+    if ~isempty(linFlushRateThroughput)
+        ph8=drawLine('h', 'b^', linFlushRateThroughput, horzcat('MT based on LR for flushrate, error: ', num2str(100*(linFlushRateThroughput-actualThr)/actualThr), '%'));
+        e5 = 100*(linFlushRateThroughput-actualThr)/actualThr;
+    end
+    if ~isempty(concurrencyThroughput)
+        ph9=drawLine('h', 'kv', concurrencyThroughput, horzcat('MT based on our contention model, error: ', num2str(100*(concurrencyThroughput-actualThr)/actualThr), '%'));
+        e8 = 100*(concurrencyThroughput-actualThr)/actualThr;
+    end
     reasons={'CPU-bound', 'IO-bound', 'Lock-bound'};
-    e1 = 100*(cpuTUThoughput-actualThr)/actualThr;
-    e2 = 100*(cpuTLThoughput-actualThr)/actualThr;
-    e3 = 100*(cpuCUThoughput-actualThr)/actualThr;
-    e4 = 100*(cpuCLThoughput-actualThr)/actualThr;
-    e5 = 100*(linFlushRateThoughput-actualThr)/actualThr;
-    e6 = 100*(myCpuCLThoughput-actualThr)/actualThr;
-    e7 = 100*(myFlushRateThroughput-actualThr)/actualThr;
-    e8 = 100*(concurrencyThroughput-actualThr)/actualThr;
+    
+    e6 = 100*(myCpuCLThroughput-actualThr)/actualThr;
     e9 = 100*(myMaxThroughput1-actualThr)/actualThr;
     [tempMT realReasonIdx] = min(abs([e6 e7 e8]));
-    e10 = 100*(treeFlushRateThoughput-actualThr)/actualThr;
     
-    othersMT = [e1 e2 e3 e4 e5 e10];
+    title(horzcat('Max Throughput Prediction (actual CPU=',num2str(realCPU),', PF=', num2str(realPageFlushed), ', our maxPF=', num2str(maxFlushRate),')'));
+    ylabel(horzcat('TPS my error:', num2str(100*(myMaxThroughput1-actualThr)/actualThr),'% or ',num2str(100*(myMaxThroughput2-actualThr)/actualThr),'% '));
+    xlabel(horzcat('Time. train mix=',num2str(trainMixture), ' min=', num2str(min(trainTPS)), ' max=', num2str(max(trainTPS)), ...
+        'test mix=',num2str(testMixture), ' min=', num2str(min(testTPS)), ' max=', num2str(max(testTPS)), ' '));
+
+    grid on;
+    
+    if 1==0
+    othersMT = [e1 e2 e3 e4 e5];
     minOP = min(othersMT(othersMT>=0)); %if isempty(minOP); minOP=0; end
     maxOP = max(othersMT(othersMT>=0)); %if isempty(maxOP); maxOP=0; end
     minUP = min(abs(othersMT(othersMT<0))); %if isempty(minUP); minUP=0; end
@@ -605,7 +697,6 @@ if strcmp(taskDesc.taskName, 'MaxThroughputPrediction')
         minUP = minUP - abs(e9);
         maxUP = maxUP - abs(e9);
     end
-    
     if isfield(taskDesc, 'resultsFile')
         if taskDesc.appendToFile == true
             fid = fopen(taskDesc.resultsFile, 'a');
@@ -623,7 +714,6 @@ if strcmp(taskDesc.taskName, 'MaxThroughputPrediction')
         'LR + clasification for CPU\t' 'LR + clasification for CPU (err%%)\t'  ... 
         'Adjusted LR + classification for CPU\t' 'Adjusted LR + classification for CPU (err%%)\t'  ... 
         'LR for #PF\t' 'LR for #PF (err%%)\t'  ...   
-        'Dec. Tree for #PF\t' 'Dec. Tree for #PF (err%%)\t'  ...           
         'Our model for CPU\t' 'Our model for CPU (err%%)\t'  ... 
         'Our model for #PF\t' 'Our model for #PF (err%%)\t'  ...
         'Our model for lock contention\t' 'Our model for lock contention (err%%)\t'  ...
@@ -638,13 +728,12 @@ if strcmp(taskDesc.taskName, 'MaxThroughputPrediction')
         end
         fprintf(fid, '%s\t%.0f~%.0f\t%s\t%.0f~%.0f\t%.0f\t%.0f\t%.0f', trainSummary, min(trainTPS),max(trainTPS), testSummary, min(testTPS), max(testTPS), ...
             actualThr, realCPU, realPageFlushed);
-        fprintf(fid, '\t%.2f\t%.0f', cpuTUThoughput, e1);
-        fprintf(fid, '\t%.2f\t%.0f', cpuTLThoughput, e2);
-        fprintf(fid, '\t%.2f\t%.0f', cpuCUThoughput, e3);
-        fprintf(fid, '\t%.2f\t%.0f', cpuCLThoughput, e4);
-        fprintf(fid, '\t%.2f\t%.0f', linFlushRateThoughput, e5);
-        fprintf(fid, '\t%.2f\t%.0f', treeFlushRateThoughput, e10);        
-        fprintf(fid, '\t%.2f\t%.0f', myCpuCLThoughput, e6);
+        fprintf(fid, '\t%.2f\t%.0f', cpuTUThroughput, e1);
+        fprintf(fid, '\t%.2f\t%.0f', cpuTLThroughput, e2);
+        fprintf(fid, '\t%.2f\t%.0f', cpuCUThroughput, e3);
+        fprintf(fid, '\t%.2f\t%.0f', cpuCLThroughput, e4);
+        fprintf(fid, '\t%.2f\t%.0f', linFlushRateThroughput, e5);
+        fprintf(fid, '\t%.2f\t%.0f', myCpuCLThroughput, e6);
         fprintf(fid, '\t%.2f\t%.0f', myFlushRateThroughput, e7);
         fprintf(fid, '\t%.2f\t%.0f', concurrencyThroughput, e8);
         fprintf(fid, '\t%.2f\t%.0f', myMaxThroughput1, e9);
@@ -652,23 +741,8 @@ if strcmp(taskDesc.taskName, 'MaxThroughputPrediction')
         fprintf(fid, '\t%s\t%s\t%s\t%s\n', char(reasons(realReasonIdx)), char(reasons(PredReasonIdx1)), cmdLine, horzcat('io_conf=[', num2str(taskDesc.io_conf),']; lock_conf=[', num2str(taskDesc.lock_conf),'];'));
         fclose(fid);
     end
-    title(horzcat('Max Throughput: realCPU=',num2str(realCPU),' realPF=', num2str(realPageFlushed), ' our maxPF=', num2str(maxFlushRate),' '));
-    legend('Original signal', 'Actual MT ', ...
-        horzcat('MT based on adjusted LR for CPU+classification, error: ', num2str(100*(cpuCLThoughput-actualThr)/actualThr) ,'%'), ...
-        horzcat('MT based on LR for CPU+classification, error: ', num2str(100*(cpuCUThoughput-actualThr)/actualThr), '%'), ...
-        horzcat('MT based on adjusted LR for CPU, error: ', num2str(100*(cpuTLThoughput-actualThr)/actualThr), '%'), ...
-        horzcat('MT based on LR for CPU, error: ', num2str(100*(cpuTUThoughput-actualThr)/actualThr), '%'), ...
-        horzcat('MT based on our flushrate model, error: ', num2str(100*(myFlushRateThroughput-actualThr)/actualThr), '%'), ...
-        horzcat('MT based on LR for flushrate, error: ', num2str(100*(linFlushRateThoughput-actualThr)/actualThr), '%'), ...
-        horzcat('MT based on our contention model, error: ', num2str(100*(concurrencyThroughput-actualThr)/actualThr), '%'), ...
-        'Location', 'SouthEast');
-
-    ylabel(horzcat('TPS my error:', num2str(100*(myMaxThroughput1-actualThr)/actualThr),'% or ',num2str(100*(myMaxThroughput2-actualThr)/actualThr),'% '));
-    xlabel(horzcat('Time. train mix=',num2str(trainMixture), ' min=', num2str(min(trainTPS)), ' max=', num2str(max(trainTPS)), ...
-        'test mix=',num2str(testMixture), ' min=', num2str(min(testTPS)), ' max=', num2str(max(testTPS)), ' '));
-%    text(0.1,max(linPred), horzcat('MRE(lin TPS)=',num2str(err_1), ...
-%        ', MRE(lin types)=',num2str(err_2), ', MRE(cf 1)=',num2str(err_3), ', MRE(cf 2)=',num2str(err_4)));
-    grid on;
+    end
+    
     nextPlot=nextPlot+1;
 end
 
@@ -855,8 +929,13 @@ end
 
 
 
+elapsed = toc(overallTime);
+fprintf(1,'Overall elapsed time=%f\n', elapsed);
+
+
 %%%%%%%%%%%% More modeling + producing Weka files
 
+return;
 
 %%% Initializing the Train features
 Tr_rowsChanged = sum(diff(M(:,[Innodb_rows_deleted Innodb_rows_updated Innodb_rows_inserted]))')';

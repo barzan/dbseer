@@ -1,0 +1,471 @@
+.\" ** You probably do not want to edit this file directly **
+.\" It was generated using the DocBook XSL Stylesheets (version 1.69.1).
+.\" Instead of manually editing it, you probably should edit the DocBook XML
+.\" source for it and then use the DocBook XSL Stylesheets to regenerate it.
+.TH "DSTAT" "1" "03/16/2010" "\  0.7.0" "\ "
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+dstat \- versatile tool for generating system resource statistics
+.SH "SYNOPSIS"
+dstat [\-afv] [options..] [delay [count]]
+.sp
+.SH "DESCRIPTION"
+Dstat is a versatile replacement for vmstat, iostat and ifstat. Dstat overcomes some of the limitations and adds some extra features.
+.sp
+Dstat allows you to view all of your system resources instantly, you can eg. compare disk usage in combination with interrupts from your IDE controller, or compare the network bandwidth numbers directly with the disk throughput (in the same interval).
+.sp
+Dstat also cleverly gives you the most detailed information in columns and clearly indicates in what magnitude and unit the output is displayed. Less confusion, less mistakes, more efficient.
+.sp
+Dstat is unique in letting you aggregate block device throughput for a certain diskset or network bandwidth for a group of interfaces, ie. you can see the throughput for all the block devices that make up a single filesystem or storage system.
+.sp
+Dstat allows its data to be directly written to a CSV file to be imported and used by OpenOffice, Gnumeric or Excel to create graphs.
+.sp
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+\fBNote\fR
+Users of Sleuthkit might find Sleuthkit\(cqs dstat being renamed to datastat to avoid a name conflict. See Debian bug #283709 for more information.
+.sp
+.SH "OPTIONS"
+.TP
+\-c, \-\-cpu
+enable cpu stats (system, user, idle, wait, hardware interrupt, software interrupt)
+.TP
+\-C 0,3,total
+include cpu0, cpu3 and total (when using \-c/\-\-cpu)
+.TP
+\-d, \-\-disk
+enable disk stats (read, write)
+.TP
+\-D total,hda
+include total and hda (when using \-d/\-\-disk)
+.TP
+\-g, \-\-page
+enable page stats (page in, page out)
+.TP
+\-i, \-\-int
+enable interrupt stats
+.TP
+\-I 5,10
+include interrupt 5 and 10 (when using \-i/\-\-int)
+.TP
+\-l, \-\-load
+enable load average stats (1 min, 5 mins, 15mins)
+.TP
+\-m, \-\-mem
+enable memory stats (used, buffers, cache, free)
+.TP
+\-n, \-\-net
+enable network stats (receive, send)
+.TP
+\-N eth1,total
+include eth1 and total (when using \-n/\-\-net)
+.TP
+\-p, \-\-proc
+enable process stats (runnable, uninterruptible, new)
+.TP
+\-r, \-\-io
+enable I/O request stats (read, write requests)
+.TP
+\-s, \-\-swap
+enable swap stats (used, free)
+.TP
+\-S swap1,total
+include swap1 and total (when using \-s/\-\-swap)
+.TP
+\-t, \-\-time
+enable time/date output
+.TP
+\-T, \-\-epoch
+enable time counter (seconds since epoch)
+.TP
+\-y, \-\-sys
+enable system stats (interrupts, context switches)
+.TP
+\-\-aio
+enable aio stats (asynchronous I/O)
+.TP
+\-\-fs
+enable filesystem stats (open files, inodes)
+.TP
+\-\-ipc
+enable ipc stats (message queue, semaphores, shared memory)
+.TP
+\-\-lock
+enable file lock stats (posix, flock, read, write)
+.TP
+\-\-raw
+enable raw stats (raw sockets)
+.TP
+\-\-socket
+enable socket stats (total, tcp, udp, raw, ip\-fragments)
+.TP
+\-\-tcp
+enable tcp stats (listen, established, syn, time_wait, close)
+.TP
+\-\-udp
+enable udp stats (listen, active)
+.TP
+\-\-unix
+enable unix stats (datagram, stream, listen, active)
+.TP
+\-\-vm
+enable vm stats (hard pagefaults, soft pagefaults, allocated, free)
+.TP
+\-\-plugin\-name
+enable (external) plugins by plugin name, see
+\fBPLUGINS\fR
+for options
+.TP
+Possible internal stats are
+aio, cpu, cpu24, disk, disk24, disk24old, epoch, fs, int, int24, io, ipc, load, lock, mem, net, page, page24, proc, raw, socket, swap, swapold, sys, tcp, time, udp, unix, vm
+.TP
+\-\-list
+list the internal and external plugin names
+.TP
+\-a, \-\-all
+equals \-cdngy (default)
+.TP
+\-f, \-\-full
+expand \-C, \-D, \-I, \-N and \-S discovery lists
+.TP
+\-v, \-\-vmstat
+equals \-pmgdsc \-D total
+.TP
+\-\-float
+force float values on screen (mutual exclusive with
+\fB\-\-integer\fR)
+.TP
+\-\-integer
+force integer values on screen (mutual exclusive with
+\fB\-\-float\fR)
+.TP
+\-\-bw, \-\-blackonwhite
+change colors for white background terminal
+.TP
+\-\-nocolor
+disable colors (implies
+\fB\-\-noupdate\fR)
+.TP
+\-\-noheaders
+disable repetitive headers
+.TP
+\-\-noupdate
+disable intermediate updates when delay > 1
+.TP
+\-\-output file
+write CSV output to file
+.TP
+\-\-profile
+show profiling statistics when exiting dstat
+.SH "PLUGINS"
+While anyone can create their own dstat plugins (and contribute them) dstat ships with a number of plugins already that extend its capabilities greatly. Here is an overview of the plugins dstat ships with:
+.sp
+.TP
+\-\-battery
+battery in percentage (needs ACPI)
+.TP
+\-\-battery\-remain
+battery remaining in hours, minutes (needs ACPI)
+.TP
+\-\-cpufreq
+CPU frequency in percentage (needs ACPI)
+.TP
+\-\-dbus
+number of dbus connections (needs python\-dbus)
+.TP
+\-\-disk\-tps
+per disk transactions per second (tps) stats
+.TP
+\-\-disk\-util
+per disk utilization in percentage
+.TP
+\-\-dstat
+show dstat cputime consumption and latency
+.TP
+\-\-fan
+fan speed (needs ACPI)
+.TP
+\-\-freespace
+per filesystem disk usage
+.TP
+\-\-gpfs
+GPFS read/write I/O (needs mmpmon)
+.TP
+\-\-gpfs\-ops
+GPFS filesystem operations (needs mmpmon)
+.TP
+\-\-helloworld
+Hello world example dstat plugin
+.TP
+\-\-innodb\-buffer
+show innodb buffer stats
+.TP
+\-\-innodb\-io
+show innodb I/O stats
+.TP
+\-\-innodb\-ops
+show innodb operations counters
+.TP
+\-\-lustre
+show lustre I/O throughput
+.TP
+\-\-memcache\-hits
+show the number of hits and misses from memcache
+.TP
+\-\-mysql5\-cmds
+show the MySQL5 command stats
+.TP
+\-\-mysql5\-conn
+show the MySQL5 connection stats
+.TP
+\-\-mysql5\-io
+show the MySQL5 I/O stats
+.TP
+\-\-mysql5\-keys
+show the MySQL5 keys stats
+.TP
+\-\-mysql\-io
+show the MySQL I/O stats
+.TP
+\-\-mysql\-keys
+show the MySQL keys stats
+.TP
+\-\-net\-packets
+show the number of packets received and transmitted
+.TP
+\-\-nfs3
+show NFS v3 client operations
+.TP
+\-\-nfs3\-ops
+show extended NFS v3 client operations
+.TP
+\-\-nfsd3
+show NFS v3 server operations
+.TP
+\-\-nfsd3\-ops
+show extended NFS v3 server operations
+.TP
+\-\-ntp
+show NTP time from an NTP server
+.TP
+\-\-postfix
+show postfix queue sizes (needs postfix)
+.TP
+\-\-power
+show power usage
+.TP
+\-\-proc\-count
+show total number of processes
+.TP
+\-\-qmail
+show qmail queue sizes (needs qmail)
+.TP
+\-\-rpc
+show RPC client calls stats
+.TP
+\-\-rpcd
+show RPC server calls stats
+.TP
+\-\-sendmail
+show sendmail queue size (needs sendmail)
+.TP
+\-\-snooze
+show number of ticks per second
+.TP
+\-\-test
+show test plugin output
+.TP
+\-\-thermal
+system temperature sensors
+.TP
+\-\-top\-bio
+show most expensive block I/O process
+.TP
+\-\-top\-childwait
+show process waiting for child the most
+.TP
+\-\-top\-cpu
+show most expensive CPU process
+.TP
+\-\-top\-cputime
+show process using the most CPU time (in ms)
+.TP
+\-\-top\-cputime\-avg
+show process with the highest average timeslice (in ms)
+.TP
+\-\-top\-io
+show most expensive I/O process
+.TP
+\-\-top\-latency
+show process with highest total latency (in ms)
+.TP
+\-\-top\-latency\-avg
+show process with the highest average latency (in ms)
+.TP
+\-\-top\-mem
+show process using the most memory
+.TP
+\-\-top\-oom
+show process that will be killed by OOM the first
+.TP
+\-\-utmp
+show number of utmp connections (needs python\-utmp)
+.TP
+\-\-vmk\-hba
+show VMware ESX kernel vmhba stats
+.TP
+\-\-vmk\-int
+show VMware ESX kernel interrupt stats
+.TP
+\-\-vmk\-nic
+show VMware ESX kernel port stats
+.TP
+\-\-vm\-memctl
+show ballooning status inside VMware guests
+.TP
+\-\-vz\-io
+show CPU usage per OpenVZ guest
+.TP
+\-\-vz\-ubc
+show OpenVZ user beancounters
+.TP
+\-\-wifi
+wireless link quality and signal to noise ratio
+.SH "ARGUMENTS"
+\fBdelay\fR is the delay in seconds between each update
+.sp
+\fBcount\fR is the number of updates to display before exiting
+.sp
+The default delay is 1 and count is unspecified (unlimited)
+.sp
+.SH "INTERMEDIATE UPDATES"
+When invoking dstat with a \fBdelay\fR greater than 1 and without the \fB\-\-noupdate\fR option, it will show intermediate updates, ie. the first time a 1 sec average, the second update a 2 second average, etc. until the delay has been reached.
+.sp
+So in case you specified a delay of 10, \fBthe 9 intermediate updates are NOT snapshots\fR, they are averages over the time that passed since the last final update. The end result is that you get a 10 second average on a new line, just like with vmstat.
+.sp
+.SH "EXAMPLES"
+Using dstat to relate disk\-throughput with network\-usage (eth0), total CPU\-usage and system counters:
+.sp
+.sp
+.nf
+dstat \-dnyc \-N eth0 \-C total \-f 5
+.fi
+Checking dstat\(cqs behaviour and the system impact of dstat:
+.sp
+.sp
+.nf
+dstat \-taf \-\-debug
+.fi
+Using the time plugin together with cpu, net, disk, system, load, proc and top_cpu plugins:
+.sp
+.sp
+.nf
+dstat \-tcndylp \-\-top\-cpu
+.fi
+this is identical to
+.sp
+.sp
+.nf
+dstat \-\-time \-\-cpu \-\-net \-\-disk \-\-sys \-\-load \-\-proc \-\-top\-cpu
+.fi
+Using dstat to relate cpu stats with interrupts per device:
+.sp
+.sp
+.nf
+dstat \-tcyif
+.fi
+.SH "BUGS"
+Since it is practically impossible to test dstat on every possible permutation of kernel, python or distribution version, I need your help and your feedback to fix the remaining problems. If you have improvements or bugreports, please send them to: [1]\&\fIdag@wieers.com\fR
+.sp
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+\fBNote\fR
+Please see the TODO file for known bugs and future plans.
+.sp
+.SH "FILES"
+Paths that may contain external dstat_*.py plugins:
+.sp
+.sp
+.nf
+~/.dstat/
+(path of binary)/plugins/
+/usr/share/dstat/
+/usr/local/share/dstat/
+.fi
+.SH "SEE ALSO"
+.SS "Performance tools"
+.sp
+.nf
+ifstat(1), iftop(8), iostat(1), mpstat(1), netstat(1), nfsstat(1), nstat, vmstat(1), xosview(1)
+.fi
+.SS "Debugging tools"
+.sp
+.nf
+htop(1), lslk(1), lsof(8), top(1)
+.fi
+.SS "Process tracing"
+.sp
+.nf
+ltrace(1), pmap(1), ps(1), pstack(1), strace(1)
+.fi
+.SS "Binary debugging"
+.sp
+.nf
+ldd(1), file(1), nm(1), objdump(1), readelf(1)
+.fi
+.SS "Memory usage tools"
+.sp
+.nf
+free(1), memusage, memusagestat, slabtop(1)
+.fi
+.SS "Accounting tools"
+.sp
+.nf
+dump\-acct, dump\-utmp, sa(8)
+.fi
+.SS "Hardware debugging tools"
+.sp
+.nf
+dmidecode, ifinfo(1), lsdev(1), lshal(1), lshw(1), lsmod(8), lspci(8), lsusb(8), smartctl(8), x86info(1)
+.fi
+.SS "Application debugging"
+.sp
+.nf
+mailstats(8), qshape(1)
+.fi
+.SS "Xorg related tools"
+.sp
+.nf
+xdpyinfo(1), xrestop(1)
+.fi
+.SS "Other useful info"
+.sp
+.nf
+collectl(1), proc(5), procinfo(8)
+.fi
+.SH "AUTHOR"
+Written by Dag Wieers [1]\&\fIdag@wieers.com\fR
+.sp
+Homepage at [2]\&\fIhttp://dag.wieers.com/home\-made/dstat/\fR
+.sp
+This manpage was initially written by Andrew Pollock [3]\&\fIapollock@debian.org\fR for the Debian GNU/Linux system.
+.sp
+.SH "REFERENCES"
+.TP 3
+1.\ dag@wieers.com
+\%mailto:dag@wieers.com
+.TP 3
+2.\ http://dag.wieers.com/home\-made/dstat/
+\%http://dag.wieers.com/home\-made/dstat/
+.TP 3
+3.\ apollock@debian.org
+\%mailto:apollock@debian.org

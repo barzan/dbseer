@@ -24,25 +24,27 @@
 %
 % lock_conf:    a 4*1 vector containing the configuation learned based on this data that could be used for
 % predicting the lock behavior, e.g. [0.080645      0.0001           2         0.8]
-%    
+%   
+% groupingStrategy: a struct containing either groups, or groupParams, or
+% neither one! 
 % groups:   a 2*k matrix, where the i'th row is [a b] indicating the starting
 % (inclusive) and ending row number of the i'th group of the data
 %
 % groupParams:	a struct containing the following fields:
-% minFreq:  [always needed] an integer specifying the min number of rows that can form a group, e.g. 30
-% minTPS:   [always needed] an integer specifying minimum TPS of the rows that are considered for grouping, e.g. 10
-% maxTPS:   [always needed] an integer specifying maximum TPS of the rows that are considered for grouping, e.g. 950
-% groupByTPSinsteadOfIndivCounts:   [needed for GroupByAvg] a boolean which if true (false) considers the average TPS (trans counts) of rows for clustering
-% byWhichTranTypes:     [needed if groupByTPSinsteadOfIndivCounts is false] a vector of integers [a1 a2 ... ak], where each ai is a trans type, specifying which trans counts will be considered to group the rows, e.g. [2 3 5]
-% allowedRelativeDiff:  [needed for GroupByAvg] a number in [0,1] indicating how much the subsequent traces can differ from each other, e.g. 0.3
-% nClusers:     [needed for BetterGroupByAvg] an integer specifying the exact number of groups to partition the data in, e.g. 8, 
+%   minFreq:  [always needed] an integer specifying the min number of rows that can form a group, e.g. 30
+%   minTPS:   [always needed] an integer specifying minimum TPS of the rows that are considered for grouping, e.g. 10
+%   maxTPS:   [always needed] an integer specifying maximum TPS of the rows that are considered for grouping, e.g. 950
+%   groupByTPSinsteadOfIndivCounts:   [needed for GroupByAvg] a boolean which if true (false) considers the average TPS (trans counts) of rows for clustering
+%   byWhichTranTypes:     [needed if groupByTPSinsteadOfIndivCounts is false] a vector of integers [a1 a2 ... ak], where each ai is a trans type, specifying which trans counts will be considered to group the rows, e.g. [2 3 5]
+%   allowedRelativeDiff:  [needed for GroupByAvg] a number in [0,1] indicating how much the subsequent traces can differ from each other, e.g. 0.3
+%   nClusers:     [needed for BetterGroupByAvg] an integer specifying the exact number of groups to partition the data in, e.g. 8, 
 % 
 
 %defaults: 
 
 groupParams = struct('allowedRelativeDiff', 0.3, 'minFreq', 30, 'minTPS', 10, 'maxTPS', 950, 'groupByTPSinsteadOfIndivCounts', true, 'nClusers', 8, 'byWhichTranTypes', [1 2 3]);
 groups = [];
-%typical_conf = struct('dir', '.', 'signature', 'blah', 'tranTypes', [1 2 3 4 5], 'startIdx', 1, 'endIdx', 3000, 'groupParams', groupParams, 'groups', groups, ...
+%typical_conf = struct('dir', '.', 'signature', 'blah', 'tranTypes', [1 2 3 4 5], 'startIdx', 1, 'endIdx', 3000, 'groupingStrategy', groupingStrategy, 'groupingStrategy', groupingStrategy , ...
 %    'testMaxThroughputIdx', testMaxThroughputIdx, 'testMaxThroughputIdx', testMaxThroughputIdx, 'io_conf', io_conf, 'lock_conf', lock_conf);
 
 %tpcc4-redo
@@ -52,7 +54,8 @@ tranTypes = [1 2 3 4 5];
 
 groupParams = struct('allowedRelativeDiff', 0.3, 'minFreq', 30, 'minTPS', 10, 'maxTPS', 950, 'groupByTPSinsteadOfIndivCounts', true);
 %'t12345', 2500+600, 2500+1600, 't12345', 2500, 2500+600
-tpcc4_redo_t12345_conf = struct('dir', dirName, 'signature', 't12345', 'tranTypes', tranTypes, 'startIdx', 2500, 'endIdx', 2500+1600, 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+tpcc4_redo_t12345_conf = struct('dir', dirName, 'signature', 't12345', 'tranTypes', tranTypes, 'startIdx', 2500, 'endIdx', 2500+1600, 'groupingStrategy', groupingStrategy);
 
 
 
@@ -82,51 +85,51 @@ tpcc4_redo_t12345_conf = struct('dir', dirName, 'signature', 't12345', 'tranType
 
 %Max Throughput Datasets!
 %training data:
-Dt12345_b0_orig_0_615_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 4600, 'io_conf', [669360    1100      20], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt3_230_4066_conf = struct('dir', './tpcc4-redo', 'signature', 't3', 'tranTypes', [1  2  3  4  5], 'startIdx', 1250, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8]);
-Dt5_212_4066_conf = struct('dir', './tpcc4-redo', 'signature', 't5', 'tranTypes', [1  2  3  4  5], 'startIdx', 1250, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8]);
-Dt3_230_4066_conf = struct('dir', './tpcc4-redo', 'signature', 't3', 'tranTypes', [1  2  3  4  5], 'startIdx', 1250, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8]);
-Dt35_225_4066_conf = struct('dir', './tpcc4-redo', 'signature', 't35', 'tranTypes', [1  2  3  4  5], 'startIdx', 1250, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8]);
-D256m_t35_1_7628_conf = struct('dir', './tpcc4-redo', 'signature', '256m-t35', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8]);
-D256m_t3_1_7628_conf = struct('dir', './tpcc4-redo', 'signature', '256m-t3', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8]);
-Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0_orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0_orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0_orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0_orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b1_1_451_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 4600, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
-Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8]);
+Dt12345_b0_orig_0_615_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 4600, 'io_conf', [669360    1100      20], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt3_230_4066_conf = struct('dir', './tpcc4-redo', 'signature', 't3', 'tranTypes', [1  2  3  4  5], 'startIdx', 1250, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt5_212_4066_conf = struct('dir', './tpcc4-redo', 'signature', 't5', 'tranTypes', [1  2  3  4  5], 'startIdx', 1250, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt3_230_4066_conf = struct('dir', './tpcc4-redo', 'signature', 't3', 'tranTypes', [1  2  3  4  5], 'startIdx', 1250, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt35_225_4066_conf = struct('dir', './tpcc4-redo', 'signature', 't35', 'tranTypes', [1  2  3  4  5], 'startIdx', 1250, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'groupingStrategy', struct());
+D256m_t35_1_7628_conf = struct('dir', './tpcc4-256m', 'signature', '256m-t35', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'groupingStrategy', struct());
+D256m_t3_1_7628_conf = struct('dir', './tpcc4-256m', 'signature', '256m-t3', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0_orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0_orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0_orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0_orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b1_1_451_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 4600, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
+Dt12345_b4_0_1593_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b4', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
 
 %testing data:
-Dt12345_b0_orig_55_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 4600, 'endIdx', 7000, 'io_conf', [669360    1100      20], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1549);
-Dt35_0_6202_conf = struct('dir', './tpcc4-redo', 'signature', 't35', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 8350, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'actualMaxThroughput', 4838);
-Dt5_0_3469_conf = struct('dir', './tpcc4-redo', 'signature', 't5', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 8350, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'actualMaxThroughput', 3212);
-D256m_t5_1_3563_conf = struct('dir', './tpcc4-redo', 'signature', '256m-t5', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'actualMaxThroughput', 3396);
-Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1504);
-Dt12345_b2_0_2233_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b2', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1891);
-Dt12345_b3_1_2239_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b3', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 2041);
-Dt12345_b5_1_2057_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b5', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1557);
-Dt12345_00_1_2224_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-00', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1740);
-Dt12345_b1_82_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 4600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1504);
-Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1549);
-Dt12345_b2_0_2233_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b2', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1891);
-Dt12345_b3_1_2239_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b3', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 2041);
-Dt12345_b5_1_2057_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b5', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1557);
-Dt12345_00_1_2224_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-00', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1740);
-Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1504);
-Dt12345_b2_0_2233_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b2', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1891);
-Dt12345_b3_1_2239_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b3', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 2041);
-Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1549);
-Dt12345_b5_1_2057_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b5', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1557);
+Dt12345_b0_orig_55_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 4600, 'endIdx', 7000, 'io_conf', [669360    1100      20], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1549, 'groupingStrategy', struct());
+Dt35_0_6202_conf = struct('dir', './tpcc4-redo', 'signature', 't35', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 8350, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'actualMaxThroughput', 4838, 'groupingStrategy', struct());
+Dt5_0_3469_conf = struct('dir', './tpcc4-redo', 'signature', 't5', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 8350, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'actualMaxThroughput', 3212, 'groupingStrategy', struct());
+D256m_t5_1_3563_conf = struct('dir', './tpcc4-256m', 'signature', '256m-t5', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100     1000], 'lock_conf', [0.00625      0.0001           2         0.8], 'actualMaxThroughput', 3396, 'groupingStrategy', struct());
+Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1504, 'groupingStrategy', struct());
+Dt12345_b2_0_2233_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b2', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1891, 'groupingStrategy', struct());
+Dt12345_b3_1_2239_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b3', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 2041, 'groupingStrategy', struct());
+Dt12345_b5_1_2057_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b5', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1557, 'groupingStrategy', struct());
+Dt12345_00_1_2224_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-00', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1740, 'groupingStrategy', struct());
+Dt12345_b1_82_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 4600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1504, 'groupingStrategy', struct());
+Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1549, 'groupingStrategy', struct());
+Dt12345_b2_0_2233_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b2', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1891, 'groupingStrategy', struct());
+Dt12345_b3_1_2239_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b3', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 2041, 'groupingStrategy', struct());
+Dt12345_b5_1_2057_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b5', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1557, 'groupingStrategy', struct());
+Dt12345_00_1_2224_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-00', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1740, 'groupingStrategy', struct());
+Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1504, 'groupingStrategy', struct());
+Dt12345_b2_0_2233_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b2', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1891, 'groupingStrategy', struct());
+Dt12345_b3_1_2239_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b3', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 2041, 'groupingStrategy', struct());
+Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1549, 'groupingStrategy', struct());
+Dt12345_b5_1_2057_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b5', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1557, 'groupingStrategy', struct());
 
 
 
@@ -164,7 +167,8 @@ groups = [1250 2900; ...
         25250 26900; ...
         28250 29900; ...
     ];
-Dwiki_dist_100_0_107_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki-dist-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 30000, 'io_conf',[115050     300      27], 'groups', groups);
+groupingStrategy = struct('groups', groups);
+Dwiki_dist_100_0_107_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki-dist-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 30000, 'io_conf',[115050     300      27], 'groupingStrategy', groupingStrategy );
 groups = [1250 2900; ...
         4250 5900; ...
         7250 8900; ...
@@ -176,182 +180,50 @@ groups = [1250 2900; ...
         25250 26900; ...
         28250 29900; ...
     ];
-Dwiki_dist_900_0_1074_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki-dist-900', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 30000, 'io_conf',[67950    300     39], 'groups', groups);
+Dwiki_dist_900_0_1074_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki-dist-900', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 30000, 'io_conf',[67950    300     39], 'groupingStrategy', groupingStrategy );
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 8, 'minFreq', 1000, 'minTPS', 30, 'maxTPS', 950);
-Dwiki100k_io_0_2044_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki100k-io', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 24000, 'io_conf',[94099    300    119], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+Dwiki100k_io_0_2044_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki100k-io', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 24000, 'io_conf',[94099    300    119], 'groupingStrategy', groupingStrategy);
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 70, 'minTPS', 30, 'maxTPS', 950);
-%Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',([1787598.3575              1000      15.586694996]+[1525423.883              1000       8.606397511])/2, 'groupParams', groupParams);
-Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
-%Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1787598.3575              1000      15.586694996], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+%Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',([1787598.3575              1000      15.586694996]+[1525423.883              1000       8.606397511])/2, 'groupingStrategy', groupingStrategy);
+Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupingStrategy', groupingStrategy);
+%Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1787598.3575              1000      15.586694996], 'groupingStrategy', groupingStrategy);
 
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 70, 'minTPS', 30, 'maxTPS', 950);
-Dt12345_brk_200_0_230_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-200', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+Dt12345_brk_200_0_230_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-200', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupingStrategy', groupingStrategy);
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-Dt12345_brk_400_0_2248_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-400', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+Dt12345_brk_400_0_2248_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-400', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupingStrategy', groupingStrategy);
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-Dt12345_brk_500_0_784_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-500', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[2242874.3906              1000                20], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+Dt12345_brk_500_0_784_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-500', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[2242874.3906              1000                20], 'groupingStrategy', groupingStrategy);
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-Dt12345_brk_600_0_1215_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-600', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1707887.0511              1000       3.257251899], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+Dt12345_brk_600_0_1215_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-600', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1707887.0511              1000       3.257251899], 'groupingStrategy', groupingStrategy);
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-Dt12345_brk_700_0_2217_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-700', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1707887.0511              1000       3.257251899], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+Dt12345_brk_700_0_2217_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-700', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1707887.0511              1000       3.257251899], 'groupingStrategy', groupingStrategy);
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-Dt12345_brk_800_0_1484_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-800', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1499771.0694              1000       4.014853186], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+Dt12345_brk_800_0_1484_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-800', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1499771.0694              1000       4.014853186], 'groupingStrategy', groupingStrategy);
 groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-Dt12345_brk_900_0_1498_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-900', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1524984.8632              1000       4.985266236], 'groupParams', groupParams);
+groupingStrategy = struct('groupParams', groupParams);
+Dt12345_brk_900_0_1498_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-900', 'tranTypes', [1  2  3  4  5], 'startIdx', 4000, 'endIdx', 28000, 'io_conf',[1524984.8632              1000       4.985266236], 'groupingStrategy', groupingStrategy);
+
+
+%%%%%%%%%%%%%%%%%%% PostgreSQL
+
+groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2],  'nClusters', 9, 'minFreq', 50, 'minTPS', 90, 'maxTPS', 115);
+groupingStrategy = struct('groupParams', groupParams);
+Dpsql_t12345_brk_100_var12_conf = struct('dir', '/Users/alekh/Work/RelationalCloud/postgres_experiments/psql_exp5', 'signature', 'pgtpcc', 'tranTypes', [1  2  3  4  5], 'startIdx', 200, 'endIdx', 2900, 'io_conf',[50202             301             100], 'groupingStrategy', groupingStrategy);
+
+groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2],  'nClusters', 9, 'minFreq', 80, 'minTPS', 800, 'maxTPS', 1000);
+groupingStrategy = struct('groupParams', groupParams);
+Dpsql_t12345_brk_900_var12_conf = struct('dir', '/Users/alekh/Work/RelationalCloud/postgres_experiments/psql_exp6', 'signature', 'pgtpcc', 'tranTypes', [1  2  3  4  5], 'startIdx', 260, 'endIdx', 390, 'io_conf',[50202             301             100], 'groupingStrategy', groupingStrategy);
+%flushRateJob = struct('taskName', 'FlushRatePrediction', 'io_conf', train_config1.io_conf, 'workloadName', 'pgtpcc', 'resultsFile', 'FlushRatePrediction.txt', 'appendToFile', false, 'plotX', 'byTPS', 'whichTransToPlot', 1);
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if 1==0
-    %Testing data for pageflush prediction
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.2, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-    Dwiki_dist_100_0_107_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki-dist-900', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 30000, 'io_conf',[115050     300      27], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.2, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-    Dwiki_dist_900_0_1074_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki-dist-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 30000, 'io_conf',[67950    300     39], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.01, 'minFreq', 1000, 'minTPS', 30, 'maxTPS', 950);
-    Dwiki100k_io_0_2044_conf = struct('dir', './wiki-sigmod', 'signature', 'wiki100k-io', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 24000, 'io_conf',[94099    300    119], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.4, 'minFreq', 70, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-500', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 70, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-600', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 500, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-600', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1787598.3575              1000      15.586694996], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 100, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-700', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1787598.3575              1000      15.586694996], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 100, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-800', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1787598.3575              1000      15.586694996], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.2, 'minFreq', 70, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-900', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1787598.3575              1000      15.586694996], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 100, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-700', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 100, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_200_0_230_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-700', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.2, 'minFreq', 70, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_100_0_121_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-900', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.2, 'minFreq', 70, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_200_0_230_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-900', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1525423.883              1000       8.606397511], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.45, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_500_0_784_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[2242874.3906              1000                20], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.45, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_600_0_1215_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-100', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1707887.0511              1000       3.257251899], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_800_0_1484_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-200', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1499771.0694              1000       4.014853186], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_900_0_1498_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-200', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[1524984.8632              1000       4.985266236], 'groupParams', groupParams);
-    groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'allowedRelativeDiff', 0.3, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-    Dt12345_brk_500_0_784_conf = struct('dir', './t-memless-dist', 'signature', 't12345-brk-400', 'tranTypes', [1  2  3  4  5], 'startIdx', 1, 'endIdx', 28000, 'io_conf',[2242874.3906              1000                20], 'groupParams', groupParams);
-
-end
-
-if 1==0
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% desc:
-dirName = '?';
-tranTypes = [1 2 3 4 5];
-
-io_conf=[669360    1100      20];  lock_conf=[0.080645  0.0001 2 0.8];
-
-
-% wiki
-%% desc:
-dirName = '?';
-
-groupParams = []; 
-groups = [1250 2900; ...
-        4250 5900; ...
-        7250 8900; ...
-        10250 11900; ...
-    	13250 14900; ...
-        16250 17900; ...
-        19250 20900; ...
-        22250 23900; ...
-        25250 26900; ...
-        28250 29900; ...
-    ];
-
-%wiki_dist_100_conf = struct('dir', dirName, 'signature', '?', 'tranTypes', tranTypes, 'startIdx', ?, 'endIdx', ?, 'groupParams', [], 'groups', groups);
-%wiki_dist_900_conf = struct('dir', dirName, 'signature', '?', 'tranTypes', tranTypes, 'startIdx', ?, 'endIdx', ?, 'groupParams', [], 'groups', groups);
-
-
-%%
-    %group by indiv tran counts
-    %use ncluster=9 for brk-100, brk-900 etc
-    %use ncluster=7 for brk1
-    %use ncluster=8 for wiki-io
-
-    io_conf = [2008080/1.89 1000 2.04];
-    io_conf = 1.0e+06 * [1.787598357501278   0.001000000000000   0.000015586694996] + 1.0e+06 * [1.263249408464585   0.001000000000000   0.000001626100026] + 1.0e+06 * [2.564844265633735   0.001000000000000   0.000020000000000];
-    io_conf = io_conf / 3;
-    io_conf = [214108.8703             1000      1.577432854]; % bestC
-    io_conf = [94099 300 119];
-    io_conf = [50202 300 150];
-    
-        bestC100 = [115050 300 27];
-        bestC900 = [67950  300 39];
-        bestC_100k_io = [94099 300 119];
-        io_conf = (bestC100 + bestC900) / 2;
-        io_conf = bestC_100k_io;
-        
-        
-            %Our IO-based throughput
-        %bestC = [2008080   216 0.8e6]; %wiki100k-io
-    bestC_io_old = [2008080/2   maxFlushRate+100 1000]; %tpcc4-redo old ones
-    bestC_io_new = [2008080/2   maxFlushRate+100 10]; %tpcc4-redo new ones
-    bestC_io_new2 = [2008080/3   maxFlushRate+100 20]; %tpcc4-redo new ones IO-bound
-    io_conf = bestC_io_new;
-
-    
-        bestC_lock_old = [0.1250000000/2.2 0.0001000000*1 1*2 0.4*2]; %0.0100000000]; % good for older datasets
-    bestC_lock_old2 = [0.1250000000/20 0.0001000000*1 1*2 0.4*2]; %0.0100000000]; % good for older datasets including t35
-    %bestC_lock_new = [0.1250000000/1.4 0.0001000000*1 1*2 0.4*2]; %0.0100000000]; % good for -00, -b0-orig, and b1-b4
-    bestC_lock_new = [0.1250000000/1.55 0.0001000000*1 1*2 0.4*2]; %0.0100000000]; % good for -00, -b0-orig, and b1-b4
-    lock_conf = bestC_lock_new;
-
-    lock_conf = [0.1250000000 0.0001000000 1 0.4];
-    
-%% %%%%%%%%%%%%%%    
-
-        % this is for latency of 25-dist
-        lock_conf = [0.1050874431 0.0000999981 0.0000000100 0.0307117300];
-        % this is for latency of 12-dist
-        lock_conf = [0.0076735456 0.0001003837 0.0000000100 0.9765507474];
-        % this is for wait time of 12-dist
-        lock_conf = [0.1000000000 0.0001000000 0.0000000100 0.0100000000];
-        lock_conf = [0.0983629881 0.0001000000 0.0000000100 0.0005281376];
-        % this is for wait time of 12-distL
-        %lock_conf = [0.3429431024 0.0001000000 0.0000000100 9.9922342108];
-        % this is for wait time of 13-distL
-        %lock_conf = [0.1890497919 0.0001000000 0.0000418524 9.4850970135];
-        % this is best for t1 from tpcc4-redo
-        lock_conf = [0.1250000000/100000 0.0001000000*1 1*43 0.4]; %35% err on t12345-brk1 with: 0.2 test/training ratio, grouping=(0.03, 30, 10, 650)
-        %lock_conf = [0.1250000000/100000 0.0001000000*1 1*3 0.4*0.95]; %best for 0.2 test data, 0.8 training, grouping=(0.03, 30, 10, 650)
-        lock_conf = [0.1250000000/100000 0.0001000000*1 1*103 0.4]; %0.0100000000];
-        lock_conf = [0.1250000000/100000 0.0001000000*1 1*203 0.4]; %0.0100000000];
-        lock_conf = [0.1250000000/100000 0.0001000000*1 1*330 0.4]; %0.0100000000];
-        lock_conf = [0.1250000000/2.5 0.0001000000*1 1*2 0.4*2];
-
-
-end

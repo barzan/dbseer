@@ -1,4 +1,4 @@
-function ph = drawLine(HorzOrVert, ColorStyle, value)
+function ph = drawLine(HorzOrVert, ColorStyle, value, caption)
 
 ax = gca;
 xlim = get(ax, 'XLim');
@@ -18,7 +18,7 @@ else
     end
 end
 hold on;    
-ph = plot(vals(:,1), vals(:,2), ColorStyle);
+ph = plot(vals(:,1), vals(:,2), ColorStyle, 'DisplayName', caption);
 
 end
 

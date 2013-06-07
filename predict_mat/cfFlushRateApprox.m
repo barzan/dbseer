@@ -1,4 +1,6 @@
 function flushRates = cfFlushRateApprox(conf, transCounts)
+overallTime = tic;
+
 io_conf = conf.io_conf;
 max_log_capacity = io_conf(1,1);
 maxPagesPerSecs = io_conf(1,2);
@@ -18,6 +20,8 @@ elseif strcmp(conf.workloadName, 'WIKI-FAKE')
     FreqWrite = ones(size(PPwrite));
     PPwrite = 2 * 1 ./ PPwrite.^0.1;
     PPwrite(PPwrite>1) = 1;
+elseif strcmp(conf.workloadName, 'pgtpcc')
+    load('tpcc-write.mat');
 else
     error(['Unknown workloadName in cfFlushRateApprox: ' conf.workloadName]);
 end
@@ -26,8 +30,6 @@ D = size(PPwrite,2);
 
 PPwrite = PPwrite * scaling;
 PPwrite(PPwrite>1)=1;
-
-overallTime = tic;
 
 [PP IX] = sort(PPwrite,2,'descend');
 freq = FreqWrite;
@@ -90,6 +92,8 @@ logSizePerTransaction = 1;
 
 L = max_log_capacity / logSizePerTransaction;
 
+couldNotKeepUp = false;
+
 for i=1:size(uniqueTransCounts,1)
 
     initTime = tic;
@@ -142,7 +146,7 @@ for i=1:size(uniqueTransCounts,1)
         
         d1 = d1 - f*howManySecondsToRotate;
         if d1>f+epsilon
-            fprintf(1,'We could not keep up! %f pages left at log rotation time. f=%f\n', d1-f, f);
+            couldNotKeepUp = true;
         end
         %%%%%%%%%%%%%% THIS IS THE LINE TO CHANGE!!
         %p2 = p2 + (1-p1-p2).* T;
@@ -183,8 +187,12 @@ for i=1:size(transCounts,1)
     flushRates(i) = uniqueFlush(bigIdx(i));
 end
 
+if couldNotKeepUp
+    fprintf(1,'WARNING: We could not keep up! %f pages left at log rotation time. f=%f\n', d1-f, f);
+end
+
 elapsed = toc(overallTime);
-fprintf(1,'cfFlushRate elapsed time=%f\n',elapsed);
+fprintf(1,'cfFlushRateApprox  time=%f\n',elapsed);
 
 
 

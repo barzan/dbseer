@@ -1,57 +1,34 @@
+function load_and_plot2(data_dir, signature, plotDesc, nextPlot, dim1, dim2)
 
-function load_and_plot(signature, nextPlot, dim1, dim2)
+%plotDesc = {'IndividualCoreUsageUser','IndividualCoreUsageSys','InterCoreStandardDeviation','AvgCpuUsage','TPSCommitRollback','ContextSwitches',
+%'DiskWriteMB','DiskWriteMB_friendly','DiskWriteNum','DiskWriteNum_friendly','FlushRate','DiskReadMB','DiskReadNum','RowsChangedOverTime',
+%'RowsChangedPerWriteMB','RowsChangedPerWriteNo','LockAnalysis','LatencyA','LatencyB','LatencyOverall','Network','CacheHit',
+%'BarzanPrediction','StrangeFeatures1','StrangeFeatures2','AllStrangeFeatures','Interrupts','DirtyPagesPrediction','FlushRatePrediction',
+%'LatencyPrediction','LockConcurrencyPrediction','DirtyPagesOverTime','PagingInOut','CombinedAvgLatency','LatencyVersusCPU','Latency3D',
+%'workingSetSize','workingSetSize2','LatencyPerTPS','LatencyPerLocktime'};
+
+mv = load_modeling_variables(data_dir, signature);
 
 overallTime = tic;
-
-header_aligned
-
-if Uptime_since_flush_status~=434
-    error('The header is messed up!')
-end
-
-%monitor = csvread(horzcat('monitor-',signature),2);
-%monitor = [monitor zeros(size(monitor,1),11)];
-
-%avglat = load(horzcat('trans-',signature,'_avg_latency.al'));
-prclat = load(horzcat('trans-',signature,'_prctile_latencies.mat'));
-%locktime = load(horzcat(transactionprefix,'percona_transactions.csv_locktimes.al'));
-%IndividualCounts = load(horzcat('trans-',signature,'_rough_trans_count.al'));
-[monitor avglat IndividualCounts dM] = load3('./', signature, 1);
-
-
-cpu_usr_indexes = [cpu1_usr cpu2_usr cpu3_usr cpu4_usr cpu5_usr cpu6_usr cpu7_usr cpu8_usr cpu9_usr cpu10_usr cpu11_usr cpu12_usr cpu13_usr cpu14_usr cpu15_usr cpu16_usr];
-cpu_usr_indexes1 = [cpu1_usr cpu2_usr cpu3_usr cpu4_usr cpu5_usr cpu6_usr cpu7_usr cpu8_usr];
-cpu_usr_indexes2 = [cpu9_usr cpu10_usr cpu11_usr cpu12_usr cpu13_usr cpu14_usr cpu15_usr cpu16_usr];
-cpu_sys_indexes = [cpu1_sys cpu2_sys cpu3_sys cpu4_sys cpu5_sys cpu6_sys cpu7_sys cpu8_sys cpu9_sys cpu10_sys cpu11_sys cpu12_sys cpu13_sys cpu14_sys cpu15_sys cpu16_sys]; 
-cpu_sys_indexes1 = [cpu1_sys cpu2_sys cpu3_sys cpu4_sys cpu5_sys cpu6_sys cpu7_sys cpu8_sys]; 
-cpu_sys_indexes2 = [cpu9_sys cpu10_sys cpu11_sys cpu12_sys cpu13_sys cpu14_sys cpu15_sys cpu16_sys]; 
-
-tstart= 10; %t1=1300 t12345=1300;
-tend= size(monitor,1)- 10; %t1=2800 t12345=1650
-tranA=1;
-tranB=2;
-transTypeRange=1:5;
-
 startSmooth=1; % the offset of where the smooth data begins, FROM tstart
-endSmooth=tend-tstart+1 -1; % the index of where the smooth data ends!
+endSmooth= mv.numberOfObservations -1; % the index of where the smooth data ends!
 
 %if monotoneTPS ~= 0
 %    Xdata = sum(IndividualCounts(tstart:tend,:)')';
 %    xlab = 'TPS';
 %else
-    Xdata = tstart:1:tend;
-    Xdata = Xdata' - tstart;
+    Xdata = 1:1:mv.numberOfObservations;  % 1 row skipped from the beginning and 10 rows skipped at the end in load3_offset
     xlab = 'Time (sec)';
 %end
 
-if nargin < 4
-    dim1=3;
-    dim2=1;
+if nargin < 6
+    dim1=2;
+    dim2=4;
 end
 
-if nargin < 2
-    screen_size = get(0, 'ScreenSize');
-    fh = figure('Name',signature,'Color',[1 1 1]);
+if nargin < 4
+    %screen_size = get(0, 'ScreenSize');
+    %fh = figure('Name',signature,'Color',[1 1 1]);
     %set(fh, 'Position', [0 0 screen_size(3) screen_size(4)]);
     nextPlot=1;
 end
@@ -61,128 +38,9 @@ linewidth=1; % 1 normal, 6.5 paper;
 format('long');
 
 
-if 1==0
-    IndividualCoreUsageUser=1;
-    IndividualCoreUsageSys=0;
-    InterCoreVariance=0;
-    AvgCpuUsage=1;
-    TPSCommitRollback=1;
-    ContextSwitches=0;
-    DiskWriteMB=0;
-    DiskWriteMB_friendly=1;
-    DiskWriteNum=0;
-    DiskWriteNum_friendly=0;
-    FlushRate=1;
-    DiskReadMB=1;
-    DiskReadNum=1;
-    RowsChangedOverTime=0;
-    RowsChangedPerWriteMB=0;
-    RowsChangedPerWriteNo=0;
-    LockAnalysis=1;
-    LatencyA=0;
-    LatencyB=0;
-    LatencyOverall=0;
-    Network=0;
-    CacheHit=0;
-else
-    IndividualCoreUsageUser=0;
-    IndividualCoreUsageSys=0;
-    InterCoreVariance=0;
-    AvgCpuUsage=0;
-    TPSCommitRollback=1;
-    ContextSwitches=0;
-    DiskWriteMB=0;
-    DiskWriteMB_friendly=0;
-    DiskWriteNum=0;
-    DiskWriteNum_friendly=0;
-    FlushRate=0;
-    DiskReadMB=0;
-    DiskReadNum=0;
-    RowsChangedOverTime=0;
-    RowsChangedPerWriteMB=0;
-    RowsChangedPerWriteNo=0;
-    LockAnalysis=1;
-    LatencyA=0;
-    LatencyB=0;
-    LatencyOverall=0;
-    Network=1;
-    CacheHit=0;
-end
-
-BarzanPrediction=0;
-
-StrangeFeatures1=0;
-StrangeFeatures2=0;
-AllStrangeFeatures=0;
-Interrupts=0;
-DirtyPagesPrediction=0; %tested this! It's solid!
-FlushRatePrediction=0; %tested this! It's solid! Nov 9th, 2011
-LatencyPrediction=0;
-LockConcurrencyPrediction=0;
-DirtyPagesOverTime=0;
-PagingInOut=0;
-CombinedAvgLatency=0;
-LatencyVersusCPU=0;
-Latency3D=0;
-workingSetSize=0;
-workingSetSize2=0;
-LatencyPerTPS=0;
-LatencyPerLocktime=0;
-
-%Init
-rowsChanged = sum(diff(monitor(tstart:tend,[Innodb_rows_deleted Innodb_rows_updated Innodb_rows_inserted]))')';
-cumRowsChanged=cumsum(rowsChanged);
-cumPagesFlushed = monitor(tstart+1:tend, Innodb_buffer_pool_pages_flushed);
-pagesFlushed = smooth(diff(monitor(tstart:tend, Innodb_buffer_pool_pages_flushed)), 10);
-currentPagesDirty = monitor(tstart+1:tend, Innodb_buffer_pool_pages_dirty);
-pagesDirtied = diff(monitor(tstart:tend, Innodb_buffer_pool_pages_dirty));
-pagesWithData = monitor(tstart+1:tend, Innodb_buffer_pool_pages_data);
-pagesFree = monitor(tstart+1:tend, Innodb_buffer_pool_pages_free);
-pagesTotal = monitor(tstart+1:tend, Innodb_buffer_pool_pages_total); 
-
-
-mysqlTotalIOw=diff(monitor(tstart:tend,Innodb_data_written))./1024./1024; %MB
-mysqlLogIOw=diff(monitor(tstart:tend,Innodb_os_log_written))./1024./1024; %MB
-mysqlPagesWrittenMB=diff(monitor(tstart:tend,Innodb_pages_written)).*2.*16./1024; % to account for double write buffering
-mysqlPagesDblWrittenMB=diff(monitor(tstart:tend,Innodb_dblwr_pages_written)).*2.*16./1024; % to account for double write buffering
-sysPhysicalIOw=monitor(tstart+1:tend,dsk_writ)./1024./1024; %MB
-
-
-ComCommit=diff(monitor(tstart:tend,Com_commit));
-ComRollback=diff(monitor(tstart:tend,Com_rollback));
-HandlerRollback=diff(monitor(tstart:tend,Handler_rollback));
-SubmittedTransTotal=sum(IndividualCounts(tstart+1:tend,:)')';
-SubmittedTransA=IndividualCounts(tstart+1:tend,tranA);
-SubmittedTransB=IndividualCounts(tstart+1:tend,tranB);
-SubmittedTransInd=IndividualCounts(tstart+1:tend,transTypeRange);
-
-AvgLatencyA = avglat(tstart+1:tend,tranA+1);
-AvgLatencyB = avglat(tstart+1:tend,tranB+1);
-
-[AvgCpuUser AvgCpuSys AvgCpuIdle AvgCpuWai AvgCpuHiq AvgCpuSiq] = CpuAggregate(monitor(tstart+1:tend,:));
-CoreVariance = var(monitor(tstart+1:tend,[cpu2_usr cpu3_usr cpu4_usr cpu5_usr cpu6_usr cpu7_usr cpu8_usr])')';
-MysqldCpu=monitor(tstart+1:tend,mysqld_cpu)+monitor(tstart+1:tend,mysqld_children_cpu);
-MysqldWrittenMB=monitor(tstart+1:tend,mysqld_bytes_written) / 1024 / 1024;
-MysqldReadMB=monitor(tstart+1:tend,mysqld_bytes_read) / 1024 / 1024;
-
-NetworkSendKB=(monitor(tstart+1:tend,net0_send)+monitor(tstart+1:tend,net1_send)) ./1024;
-NetworkRecvKB=(monitor(tstart+1:tend,net0_recv)+monitor(tstart+1:tend,net1_recv))./1024;
-
-lock_smoothing = 1;
-LocksBeingWaitedFor=smooth(monitor(tstart+1:tend,Innodb_row_lock_current_waits),lock_smoothing);
-NumOfWaitsDueToLocks=smooth(diff(monitor(tstart:tend,Innodb_row_lock_waits)),lock_smoothing);
-TimeSpentWaitingForLocks=smooth(diff(monitor(tstart:tend,Innodb_row_lock_time)),lock_smoothing) / 1000; % to turn it into seconds!
-
-
-KeyReadRequests = diff(monitor(tstart:tend, Innodb_buffer_pool_read_requests));
-PhysicalKeyReads = diff(monitor(tstart:tend, Innodb_buffer_pool_reads));
-PhysicalReadMB = diff(monitor(tstart:tend,[Innodb_data_read]))./1024./1024;
-
-%Init end
-
-if IndividualCoreUsageUser==1
+if sum(ismember(plotDesc,'IndividualCoreUsageUser'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end,:), monitor(tstart+1:tend,cpu_usr_indexes1), ':');
+    plot(Xdata(:,:), mv.cpu_usr, ':');
     title('Individual core Usr usage');
     xlabel(xlab);
     %ylabel('Individual usr cpu usage per core (%)');
@@ -192,9 +50,9 @@ if IndividualCoreUsageUser==1
     nextPlot=nextPlot+1;
 end
 
-if IndividualCoreUsageSys==1
+if sum(ismember(plotDesc,'IndividualCoreUsageSys'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end,:), monitor(tstart+1:tend,cpu_sys_indexes1), ':');
+    plot(Xdata(:,:), mv.cpu_sys, ':');
     title('Individual core Sys usage');
     xlabel(xlab);
     %ylabel('Individual usr cpu usage per core (%)');
@@ -204,23 +62,22 @@ if IndividualCoreUsageSys==1
     nextPlot=nextPlot+1;
 end
 
-if InterCoreVariance==1
+if sum(ismember(plotDesc,'InterCoreStandardDeviation'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end,:), CoreVariance);
-    title('Variance in core usage');
+    plot(Xdata(:,:), sqrt(mv.CoreVariance));
+    title('Stdev of core usage');
     xlabel(xlab);
-    %ylabel('Individual usr cpu usage per core (%)');
-    ylabel('Inter-core variance');
+    ylabel('Inter-core stdev');
     grid on;
     nextPlot=nextPlot+1;
 end
 
-if AvgCpuUsage==1
+if sum(ismember(plotDesc,'AvgCpuUsage'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end,:), [AvgCpuUser AvgCpuSys AvgCpuWai AvgCpuHiq AvgCpuSiq], '-.');
+    plot(Xdata(:,:), [mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq], '-.');
     hold on;
-    plot(Xdata(2:end,:), MysqldCpu, 'k-.');
-    plot(Xdata(2:end,:), AvgCpuIdle, 'r-.');    
+    plot(Xdata(:,:), mv.measuredCPU, 'k-.');
+    plot(Xdata(:,:), mv.AvgCpuIdle, 'r-.');    
     
     title('Avg Cpu Usage');
     xlabel(xlab);
@@ -231,15 +88,22 @@ if AvgCpuUsage==1
     nextPlot=nextPlot+1;
 end
 
-if TPSCommitRollback==1
+if sum(ismember(plotDesc,'TPSCommitRollback'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    ph1 = plot(Xdata(2:end), SubmittedTransTotal,'kd');
-    hold on;
-    plot(Xdata(2:end), SubmittedTransA,'m*');
-    plot(Xdata(2:end), SubmittedTransB,'go');
-    plot(Xdata(2:end), [ComCommit ComRollback HandlerRollback]);
+    ph1 = plot(Xdata(:), mv.clientTotalSubmittedTrans,'kd');
+    hold all;
+    legend('-DynamicLegend');
+    for i=1:size(mv.clientIndividualSubmittedTrans, 2)
+        plot(Xdata(:), mv.clientIndividualSubmittedTrans(:,i), nextPlotStyle, 'DisplayName', ['# Transactions ' num2str(i)]);        
+    end
     
-    [xThroughput yThroughput] = findMaxThroughput(SubmittedTransTotal);
+    if isfield(mv, 'dbmsRollbackHandler')
+        plot(Xdata(:), mv.dbmsRollbackHandler, nextPlotStyle, 'DisplayName', 'dbmsRollbackHandler');
+    end    
+    plot(Xdata(:), mv.dbmsCommittedCommands, nextPlotStyle, 'DisplayName', 'dbmsCommittedCommands');
+    plot(Xdata(:), mv.dbmsRolledbackCommands, nextPlotStyle, 'DisplayName', 'dbmsRolledbackCommands');    
+    
+    [xThroughput yThroughput] = findMaxThroughput(mv.clientTotalSubmittedTrans);
     if ~isempty(yThroughput) 
         ph2 = drawLine('h', 'b-', yThroughput);
         ph3 = drawLine('v', 'm-', xThroughput);
@@ -247,118 +111,161 @@ if TPSCommitRollback==1
     
     title(horzcat('Max throughput ', num2str(yThroughput), ' TPS at t=', num2str(xThroughput),' '));
     xlabel(xlab);
+    
     ylabel('Transactions (tps)');
-    legend('Overal TPS', horzcat('# of Trx ', num2str(tranA)), horzcat('# of Trx ', num2str(tranB)), 'ComCommit','ComRollback','HandlerRollback', 'Location', 'SouthEast');
     grid on;
     nextPlot=nextPlot+1;
 end
 
-if ContextSwitches==1
+if sum(ismember(plotDesc,'ContextSwitches'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata, monitor(tstart:tend,[csw])./1500, Xdata, monitor(tstart:tend,[Threads_running]),'-');
+    plot(Xdata, mv.osNumberOfContextSwitches./1500, nextPlotStyle, 'DisplayName', 'Context Switches (x1500)');
+    hold all;
+    legend('-DynamicLegend');    
+    if isfield(mv, 'dbmsThreadsRunning')
+        plot(Xdata, mv.dbmsThreadsRunning, nextPlotStyle, 'DisplayName', 'Threads running');
+    end
     title('Threads');
     xlabel(xlab);
     ylabel('# of threads');
-    legend('Context Switches (x1500)','Threads running');
+    %legend('Context Switches (x1500)','Threads running');
     grid on;
     nextPlot=nextPlot+1;
 end
 
-if DiskWriteMB==1
+if sum(ismember(plotDesc,'DiskWriteMB'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), [diff(monitor(tstart:tend,[Innodb_data_written Innodb_os_log_written]))./1024./1024 ...
-        diff(monitor(tstart:tend,[Innodb_pages_written Innodb_dblwr_pages_written])).*16./1024],...
-        Xdata, monitor(tstart:tend,[dsk_writ io_writ])./1024./1024,'-');
-    hold on;
+    
+    if isfield(mv, 'dbmsTotalWritesMB')
+        plot(Xdata, mv.dbmsTotalWritesMB, nextPlotStyle, 'DisplayName', ' DB Total Writes(MB)');
+        hold all;
+        legend('-DynamicLegend');
+    end
+    plot(Xdata, mv.dbmsLogWritesMB, nextPlotStyle, 'DisplayName', 'DB Log Writes (MB)');
+    hold all;
+    legend('-DynamicLegend');
+    plot(Xdata, mv.dbmsPageWritesMB, nextPlotStyle, 'DisplayName', 'DB Page Writes (MB) (page=16K)');
+    if isfield(mv, 'dbmsDoublePageWritesMB')
+        plot(Xdata, mv.dbmsDoublePageWritesMB, nextPlotStyle, 'DisplayName', 'DB Double Page Writes (MB) (half of dirty pages)');
+    end
+    plot(Xdata, mv.osNumberOfSectorWrites, nextPlotStyle, 'DisplayName', 'OS No. Sector Writes (actual IO)');
+    plot(Xdata, mv.osNumberOfWritesCompleted, nextPlotStyle, 'DisplayName', 'OS No. Writes Completed');
+    
+    %hold on;
     %plot(,'-.');
     title('Write Volume (MB)');
     xlabel(xlab);
-    ylabel('written data (MB/sec)');
-    legend('InnodbDataWritten','Mysql log, i.e. InnodbOsLogWritten','InnodbPagesWritten (*16K)','half of Dirty pages, i.e. InnodbDblwrPagesWritten((*16K))','dskWrit, i.e. actual IO','ioWrit');
+    ylabel('Written data (MB/sec)');
+    %legend('InnodbDataWritten','Mysql log, i.e. InnodbOsLogWritten','InnodbPagesWritten (*16K)','half of Dirty pages, i.e. InnodbDblwrPagesWritten((*16K))','dskWrit, i.e. actual IO','ioWrit');
     grid on;
     nextPlot=nextPlot+1;
 end
 
-if DiskWriteMB_friendly==1
+if sum(ismember(plotDesc,'DiskWriteMB_friendly'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), [mysqlTotalIOw mysqlLogIOw mysqlPagesWrittenMB mysqlPagesDblWrittenMB sysPhysicalIOw MysqldWrittenMB MysqldReadMB], '-.');
+    if isfield(mv, 'dbmsDoublePageWritesMB')
+        plot(Xdata(:), [mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.dbmsDoublePageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB], '-.');
+    else
+        plot(Xdata(:), [mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB], '-.');
+    end
     title('Write Volume (MB)');
     xlabel(xlab);
     ylabel('Write Volume (MB/sec)');
-    legend('MySQL total IO','MySQL log IO','mysqlPagesWrittenMB', 'mysqlPagesDblWrittenMB','System physical IO', 'Mysql Written (MB)', 'Mysql Read (MB)');
+    if isfield(mv, 'dbmsDoublePageWritesMB')
+        legend('DB Total Writes)','DB Log Writes','DB Page Writes', 'DB Double Page Writes','OS No. Sector Writes', 'Measured Writes', 'Measured Reads');
+    else
+        legend('DB Log Writes','DB Page Writes', 'OS No. Sector Writes', 'Measured Writes', 'Measured Reads');
+    end
     grid on;
     nextPlot=nextPlot+1;
     
-    fprintf(1,'total=%f, log=%f, dataPage=%f, dataDblPages=%f, physical=%f\n',mean(mysqlTotalIOw), mean(mysqlLogIOw), ...
-        mean(mysqlPagesWrittenMB), mean(mysqlPagesDblWrittenMB), mean(sysPhysicalIOw));
+    if isfield(mv, 'dbmsDoublePageWritesMB')
+        fprintf(1,'total=%f, log=%f, dataPage=%f, dataDblPages=%f, physical=%f\n',mean(mv.dbmsTotalWritesMB), mean(mv.dbmsLogWritesMB), ...
+            mean(mv.dbmsPageWritesMB), mean(mv.dbmsDoublePageWritesMB), mean(mv.osNumberOfSectorWrites));
+    else
+        fprintf(1,'log=%f, dataPage=%f, physical=%f\n',mean(mv.dbmsLogWritesMB), mean(mv.dbmsPageWritesMB), mean(mv.osNumberOfSectorWrites));
+    end
 end
 
 
-if DiskWriteNum==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), diff(monitor(tstart:tend,[Innodb_log_writes Innodb_data_writes Innodb_dblwr_writes Innodb_log_write_requests Innodb_buffer_pool_write_requests Innodb_os_log_fsyncs async_aio])),...
-    	Xdata, monitor(tstart:tend,[Innodb_data_pending_writes Innodb_os_log_pending_writes Innodb_os_log_pending_fsyncs]),'-');
-    title('Write Requests (#)');
-    xlabel(xlab);
-    ylabel('Number of');
-    legend('InnodbLogWrites','InnodbDataWrites','InnodbDblwrWrites','InnodbLogWriteRequests','InnodbBufferPoolWriteRequests','InnodbOsLogFsyncs','asyncAio',...
-        'InnodbDataPendingWrites','InnodbOsLogPendingWrites','InnodbOsLogPendingFsyncs');
-    grid on;
-    nextPlot=nextPlot+1;
+if sum(ismember(plotDesc,'DiskWriteNum'))==1
+    if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
+        subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+        plot(Xdata(:), [mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites mv.osAsynchronousIO],...
+            Xdata, [mv.dbmsNumberOfPendingWrites mv.dbmsNumberOfPendingLogWrites mv.dbmsNumberOfPendingLogFsyncs],'-');
+        title('Write Requests (#)');
+        xlabel(xlab);
+        ylabel('Number of');
+        legend('DB No. Physical Log Writes','DB No. Data Writes','DB Double Writes Operations','DB No. Log Write Requests','DB Buffer Pool Writes','DB No. Fysnc Log Writes','osAsynchronousIO',...
+            'dbmsNumberOfPendingWrites','dbmsNumberOfPendingLogWrites','dbmsNumberOfPendingLogFsyncs');
+        grid on;
+        nextPlot=nextPlot+1;
+    end
 end
 
-if DiskWriteNum_friendly==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), diff(monitor(tstart:tend,[Innodb_log_writes Innodb_data_writes Innodb_dblwr_writes Innodb_log_write_requests Innodb_buffer_pool_write_requests Innodb_os_log_fsyncs])),'-');
-    title('Write Requests (#)');
-    xlabel(xlab);
-    ylabel('Number of');
-    legend('InnodbLogWrites','InnodbDataWrites','InnodbDblwrWrites','InnodbLogWriteRequests','InnodbBufferPoolWriteRequests','InnodbOsLogFsyncs');
-    grid on;
-    nextPlot=nextPlot+1;
+if sum(ismember(plotDesc,'DiskWriteNum_friendly'))==1 
+    if isfield(mv, 'dbmsNumberOfPhysicalLogWrites') && isfield(mv, 'dbmsNumberOfDataWrites') && isfield(mv, 'dbmsDoubleWritesOperations') && isfield(mv, 'dbmsNumberOfLogWriteRequests')...
+            && isfield(mv, 'dbmsBufferPoolWrites') && isfield(mv, 'dbmsNumberOfFysncLogWrites')
+        subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+        plot(Xdata(:), [mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites],'-');
+        title('Write Requests (#)');
+        xlabel(xlab);
+        ylabel('Number of');
+        legend('DB No. Physical Log Writes','DB No. Data Writes','DB Double Writes Operations','DB No. Log Write Requests','DB Buffer Pool Writes','DB No. Fysnc Log Writes');
+        grid on;
+        nextPlot=nextPlot+1;
+    end
 end
 
-if DiskReadMB==1
+if sum(ismember(plotDesc,'DiskReadMB'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), diff(monitor(tstart:tend,[Innodb_data_read]))./1024./1024,...
-        Xdata, monitor(tstart:tend,[dsk_read io_read])./1024./1024,'-');
+    if exist('mv.dbmsPhysicalReadsMB', 'var')
+        plot(Xdata, mv.dbmsPhysicalReadsMB, nextPlotStyle, 'DisplayName', 'InnodbDataRead');
+    end
+    plot(Xdata, mv.osNumberOfSectorReads, nextPlotStyle, 'DisplayName', 'dskRead');
+    plot(Xdata, mv.osNumberOfReadsIssued, nextPlotStyle, 'DisplayName', 'ioRead');
     hold on;
     title('Read Volume (MB)');
     xlabel(xlab);
     ylabel('Read data (MB/sec)');
-    legend('InnodbDataRead','dskRead','ioRead');
     grid on;
     nextPlot=nextPlot+1;
 end
 
 
-if DiskReadNum==1
+if sum(ismember(plotDesc,'DiskReadNum'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), diff(monitor(tstart:tend,[Innodb_data_reads Innodb_buffer_pool_reads])),...
-        Xdata, monitor(tstart:tend,[Innodb_data_pending_reads]),'-');
-    title('Read Requests (#)');
-    xlabel(xlab);
-    ylabel('Number of');
-    legend('InnodbDataReads','InnodbBufferPoolReads','InnodbDataPendingReads');
-    grid on;
-    nextPlot=nextPlot+1;
+    if isfield(mv, 'dbmsNumberOfDataReads')
+        plot(Xdata(:), [mv.dbmsNumberOfDataReads mv.dbmsNumberOfLogicalReadsFromDisk],...
+            Xdata, mv.dbmsNumberOfPendingReads,'-');
+        title('Read Requests (#)');
+        xlabel(xlab);
+        ylabel('Number of');
+        legend('DB No. Data Reads','DB No. Logical Reads From Disk','DB No. Pending Reads');
+        grid on;
+        nextPlot=nextPlot+1;
+    end
 end
 
-if CacheHit==1
+if sum(ismember(plotDesc,'CacheHit'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
     
     allowedRelativeDiff = 0.1;
     minFreq=100;
     if 1==1
         %grouping by total TPS
-        [grouped freq] = GroupByAvg([SubmittedTransTotal SubmittedTransInd PhysicalKeyReads KeyReadRequests PhysicalReadMB], 1, allowedRelativeDiff, minFreq, 10, 1000);
+        if isfield(mv, 'dbmsPhysicalReadsMB')
+            [grouped freq] = GroupByAvg([mv.clientTotalSubmittedTrans mv.clientIndividualSubmittedTrans mv.dbmsReads mv.dbmsReadRequests mv.dbmsPhysicalReadsMB], 1, allowedRelativeDiff, minFreq, 10, 1000);
+        else
+            [grouped freq] = GroupByAvg([mv.clientTotalSubmittedTrans mv.clientIndividualSubmittedTrans mv.dbmsReads mv.dbmsReadRequests], 1, allowedRelativeDiff, minFreq, 10, 1000);
+        end
         grouped = grouped(:,2:end);        
         %goupring by individual counts
-        %[grouped freq] = GroupByAvg([SubmittedTransInd PhysicalKeyReads KeyReadRequests], 1:size(SubmittedTransInd,2), allowedRelativeDiff, minFreq, 10, 1000);
+        %[grouped freq] = GroupByAvg([clientIndSubmittedTrans dbmsReads dbmsReadRequests], 1:size(clientIndSubmittedTrans,2), allowedRelativeDiff, minFreq, 10, 1000);
     else
         nPoints = 1;
-        idx = randsample(size(SubmittedTransInd,1), nPoints, false);
-        grouped = [SubmittedTransInd(idx,:) PhysicalKeyReads(idx,:) KeyReadRequests(idx,:) ];
+        idx = randsample(size(clientIndSubmittedTrans,1), nPoints, false);
+        grouped = [clientIndSubmittedTrans(idx,:) dbmsReads(idx,:) dbmsReadRequests(idx,:) ];
     end    
     
     actualCacheMiss = grouped(:,end-2) ./ grouped(:,end-1);
@@ -376,28 +283,40 @@ if CacheHit==1
     xlabel('TPS');
     ylabel('Actual miss ratio');
     %legend();
-    ratio = mean(PhysicalKeyReads(KeyReadRequests>0) ./KeyReadRequests(KeyReadRequests>0));
-    title(horzcat('Avg Read(MB)=',num2str(mean(PhysicalReadMB)),' Actual Cache miss ratio=', num2str(mean(actualCacheMiss)), ' =', num2str(mean(PhysicalKeyReads)), ' / ', num2str(mean(KeyReadRequests)), '=', num2str(ratio)));
+    ratio = mean(mv.dbmsReads(mv.dbmsReadRequests>0) ./mv.dbmsReadRequests(mv.dbmsReadRequests>0));
+    
+    if isfield(mv, 'dbmsPhysicalReadsMB')
+        title(['Avg Read(MB)=' num2str(mean(mv.dbmsPhysicalReadsMB),1) ' Actual Cache Miss Ratio=', num2str(mean(actualCacheMiss),3) '=' num2str(mean(mv.dbmsReads),3) '/' num2str(mean(mv.dbmsReadRequests),1) '=' num2str(ratio,3)]);
+    else
+        title(['Actual Cache Miss Ratio=', num2str(mean(actualCacheMiss),3) '=' num2str(mean(mv.dbmsReads),3) '/' num2str(mean(mv.dbmsReadRequests),1) '=' num2str(ratio,3)]);
+    end
     grid on;
     nextPlot=nextPlot+1;
 end
 
 
-if RowsChangedOverTime==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), diff(monitor(tstart:tend,[Innodb_rows_deleted Innodb_rows_updated Innodb_rows_inserted Handler_write])),'-');
-    title('Rows changed');
-    xlabel(xlab);
-    ylabel('# Rows changed');
-    legend('Rows deleted','Rows updated','Rows inserted','HandlerWrite');
-    grid on;
-    nextPlot=nextPlot+1;
+if sum(ismember(plotDesc,'RowsChangedOverTime'))==1
+    if isfield(mv, 'dbmsChangedRows')
+        subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+        plot(Xdata(:), [mv.dbmsChangedRows mv.dbmsNumberOfRowInsertRequests],'-');
+        title('Rows changed');
+        xlabel(xlab);
+        ylabel('# Rows changed');
+        legend('Rows deleted','Rows updated','Rows inserted','HandlerWrite');
+        grid on;
+        nextPlot=nextPlot+1;
+    end
 end
 
-if RowsChangedPerWriteMB==1
+if sum(ismember(plotDesc,'RowsChangedPerWriteMB'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    temp = [rowsChanged diff(monitor(tstart:tend,[Innodb_data_written Innodb_os_log_written]))./1024./1024 ...
-        diff(monitor(tstart:tend,[Innodb_pages_written])).*2.*16./1024 monitor(tstart+1:tend,[dsk_writ])./1024./1024];
+    if isfield(mv, 'dbmsChangedRows')
+        temp = [mv.dbmsChangedRows mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites];
+    elseif isfield(mv, 'dbmsTotalWritesMB')
+        temp = [mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites];
+    else
+        temp = [mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites];
+    end
     temp = sortrows(temp, 1);
     plot(temp(:,1), temp(:,2:end));    
     title('Rows changed vs. written data (MB)');
@@ -408,102 +327,107 @@ if RowsChangedPerWriteMB==1
     nextPlot=nextPlot+1;
 end
 
-if RowsChangedPerWriteNo==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(rowsChanged,...
-        diff(monitor(tstart:tend,[Innodb_log_writes Innodb_data_writes Innodb_dblwr_writes Innodb_log_write_requests Innodb_buffer_pool_write_requests Innodb_os_log_fsyncs async_aio])), '*',...
-        rowsChanged, ...
-        monitor(tstart+1:tend,[Innodb_data_pending_writes Innodb_os_log_pending_writes Innodb_os_log_pending_fsyncs]),'.');
-    title('Rows changed vs. # write requests');
-    xlabel('# Rows Changed');
-    ylabel('Number of ');
-    legend('InnodbLogWrites','InnodbDataWrites','InnodbDblwrWrites','InnodbLogWriteRequests','InnodbBufferPoolWriteRequests','InnodbOsLogFsyncs','asyncAio',...
-        'InnodbDataPendingWrites','InnodbOsLogPendingWrites','InnodbOsLogPendingFsyncs');
-    grid on;
-    nextPlot=nextPlot+1;
-end
-
-if DirtyPagesPrediction==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-   
-    if 1==0
-        trainTime=tic;    
-        trainSize = size(rowsChanged,1)/2;        
-        D1 = lsqcurvefit(@mapRowsToPages, mean(pagesWithData)/8, cumRowsChanged(1:trainSize,:), currentPagesDirty(1:trainSize,:));
-        
-        trainData = zeros(trainSize,3);
-        trainData(:,1) = rowsChanged(1:trainSize,:);
-        trainData(:,2) = pagesFlushed(1:trainSize,:);
-        trainData(1,3) = currentPagesDirty(1,1);            
-        D2 = lsqcurvefit(@recursiveDirtyPageEstimate, mean(pagesWithData)/8, trainData, currentPagesDirty(1:trainSize,:));
-                
-        elapsed=toc(trainTime);
-        fprintf(1,'Train time=%f\n', elapsed);
-    else
-        %for t1
-        D1 = 158086.769859;
-        D2 = 142131;% t1=156919.490116; t12345=142131 []
+if sum(ismember(plotDesc,'RowsChangedPerWriteNo'))==1
+    if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
+        subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+        plot(mv.dbmsChangedRows,...
+            [mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites mv.osAsynchronousIO], '*',...
+            mv.dbmsChangedRows, ...
+            [mv.dbmsNumberOfPendingWrites mv.dbmsNumberOfPendingLogWrites mv.dbmsNumberOfPendingLogFsyncs],'.');
+        title('Rows changed vs. # write requests');
+        xlabel('# Rows Changed');
+        ylabel('Number of ');
+        legend('InnodbLogWrites','InnodbDataWrites','InnodbDblwrWrites','InnodbLogWriteRequests','InnodbBufferPoolWriteRequests','InnodbOsLogFsyncs','asyncAio',...
+            'InnodbDataPendingWrites','InnodbOsLogPendingWrites','InnodbOsLogPendingFsyncs');
+        grid on;
+        nextPlot=nextPlot+1;
     end
-    fprintf(1,'Best database cardinality estimations1=%f and estimation2=%f\n', D1, D2);
-    
-    testTime=tic;
-    predictedDirtyPages1 = mapRowsToPages(D1, cumRowsChanged);
-    
-    testData = zeros(size(rowsChanged,1),3);
-    testData(:,1) = rowsChanged;
-    testData(:,2) = pagesFlushed;
-    testData(1,3) = currentPagesDirty(1,1); 
-    predictedDirtyPages2 = recursiveDirtyPageEstimate(D2, testData);
-    
-    %bestC = [2113090.173030 2000000 1 0.287701]; % t12345
-    bestC = [2099659.5012109471 2000000 1 0.2757456055]; %t1
-    
-    log_capacity = bestC(1);
-    max_log_capacity = bestC(2);
-    maxPagesPerSecs = bestC(3); 
-    logSizePerTransaction = bestC(4);
-    [predictedDirtyPages3 predictedFlushRates]= estimateWriteIO(currentPagesDirty(1,1),D2,log_capacity,max_log_capacity,maxPagesPerSecs,logSizePerTransaction,rowsChanged);
-    elapsed=toc(testTime);
-    fprintf(1,'Test time=%f\n', elapsed);       
-    
-    MAE2=mae(predictedDirtyPages2, currentPagesDirty);
-    MRE2=mre(predictedDirtyPages2, currentPagesDirty, true);
-    fprintf(1,'Dirty page prediction from actual Flush MAE=%f, MRE=%f\n', MAE2, MRE2);
-        
-    MAE3=mae(predictedDirtyPages3, currentPagesDirty);
-    MRE3=mre(predictedDirtyPages3, currentPagesDirty, true);
-    fprintf(1,'Dirty page prediction from estimated Flush MAE=%f, MRE=%f\n', MAE3, MRE3);
-        
-    MAEf=mae(predictedFlushRates, currentPagesDirty);
-    MREf=mre(predictedFlushRates, currentPagesDirty, true);
-    fprintf(1,'Dirty flush rate from estimated dirty pages MAE=%f, MRE=%f\n', MAEf, MREf);
-        
-    temp = [SubmittedTransTotal currentPagesDirty predictedDirtyPages2 predictedDirtyPages3 predictedFlushRates];
-    temp = sortrows(temp,1);
-    ph1 = plot(temp(:,1), temp(:,2), 'c*');
-    hold on;    
-    ph2 = plot(temp(:,1), temp(:,3:5), '-');
-    %plot(([pagesFlushed pagesTotal pagesWithData]), '*');
-    %plot(([mysqlPagesDblWrittenMB *(1024 /(16*2))*1024 predictedDirtyPages1]), '-');
-    
-    
-    title('Dirty page prediction using #rows changed');
-    xlabel('TPS');
-    ylabel('# of dirty pages');
-    legend('Actual DP', 'Predcited DP from actual Flush', 'Predcited DP from estimated Flush', ...
-          'Predicted flush rate', 'Actual Page flush rate','Total # pages','# data pages', '# written pages (using written MB)', 'Predicted (old model)');
+end
 
-    grid on;
-    nextPlot=nextPlot+1;
+if sum(ismember(plotDesc,'DirtyPagesPrediction'))==1
+    if isfield(mv, 'dbmsChangedRows')
+    
+        subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+
+        if 1==0
+            trainTime=tic;    
+            trainSize = size(mv.dbmsChangedRows,1)/2;        
+            D1 = lsqcurvefit(@mapRowsToPages, mean(dbmsDataPages)/8, mv.dbmsCumChangedRows(1:trainSize,:), mv.dbmsCurrentDirtyPages(1:trainSize,:));
+
+            trainData = zeros(trainSize,3);
+            trainData(:,1) = mv.dbmsChangedRows(1:trainSize,:);
+            trainData(:,2) = mv.dbmsFlushedPages(1:trainSize,:);
+            trainData(1,3) = mv.dbmsCurrentDirtyPages(1,1);            
+            D2 = lsqcurvefit(@recursiveDirtyPageEstimate, mean(dbmsDataPages)/8, trainData, mv.dbmsCurrentDirtyPages(1:trainSize,:));
+
+            elapsed=toc(trainTime);
+            fprintf(1,'Train time=%f\n', elapsed);
+        else
+            %for t1
+            D1 = 158086.769859;
+            D2 = 142131;% t1=156919.490116; t12345=142131 []
+        end
+        fprintf(1,'Best database cardinality estimations1=%f and estimation2=%f\n', D1, D2);
+
+        testTime=tic;
+        %predictedDirtyPages1 = mapRowsToPages(D1, mv.dbmsCumChangedRows);
+
+        testData = zeros(size(mv.dbmsChangedRows,1),3);
+        testData(:,1) = mv.dbmsChangedRows;
+        testData(:,2) = mv.dbmsFlushedPages;
+        testData(1,3) = mv.dbmsCurrentDirtyPages(1,1); 
+        predictedDirtyPages2 = recursiveDirtyPageEstimate(D2, testData);
+
+        %bestC = [2113090.173030 2000000 1 0.287701]; % t12345
+        bestC = [2099659.5012109471 2000000 1 0.2757456055]; %t1
+
+        log_capacity = bestC(1);
+        max_log_capacity = bestC(2);
+        maxPagesPerSecs = bestC(3); 
+        logSizePerTransaction = bestC(4);
+        [predictedDirtyPages3 predictedFlushRates]= estimateWriteIO(mv.dbmsCurrentDirtyPages(1,1),D2,log_capacity,max_log_capacity,maxPagesPerSecs,logSizePerTransaction,mv.dbmsChangedRows);
+        elapsed=toc(testTime);
+        fprintf(1,'Test time=%f\n', elapsed);       
+
+        MAE2=mae(predictedDirtyPages2, dbmsCurrentDirtyPages);
+        MRE2=mre(predictedDirtyPages2, dbmsCurrentDirtyPages, true);
+        fprintf(1,'Dirty page prediction from actual Flush MAE=%f, MRE=%f\n', MAE2, MRE2);
+
+        MAE3=mae(predictedDirtyPages3, dbmsCurrentDirtyPages);
+        MRE3=mre(predictedDirtyPages3, dbmsCurrentDirtyPages, true);
+        fprintf(1,'Dirty page prediction from estimated Flush MAE=%f, MRE=%f\n', MAE3, MRE3);
+
+        MAEf=mae(predictedFlushRates, dbmsCurrentDirtyPages);
+        MREf=mre(predictedFlushRates, dbmsCurrentDirtyPages, true);
+        fprintf(1,'Dirty flush rate from estimated dirty pages MAE=%f, MRE=%f\n', MAEf, MREf);
+
+        temp = [mv.clientTotalSubmittedTrans dbmsCurrentDirtyPages predictedDirtyPages2 predictedDirtyPages3 predictedFlushRates];
+        temp = sortrows(temp,1);
+        ph1 = plot(temp(:,1), temp(:,2), 'c*');
+        hold on;    
+        ph2 = plot(temp(:,1), temp(:,3:5), '-');
+        %plot(([dbmsFlushedPages dbmsTotalPages dbmsDataPages]), '*');
+        %plot(([dbmsDoublePageWritesMB *(1024 /(16*2))*1024 predictedDirtyPages1]), '-');
+
+
+        title('Dirty page prediction using #rows changed');
+        xlabel('TPS');
+        ylabel('# of dirty pages');
+        legend('Actual DP', 'Predcited DP from actual Flush', 'Predcited DP from estimated Flush', ...
+              'Predicted flush rate', 'Actual Page flush rate','Total # pages','# data pages', '# written pages (using written MB)', 'Predicted (old model)');
+
+        grid on;
+        nextPlot=nextPlot+1;
+    end
 end
 
 
-if FlushRate==1
+if sum(ismember(plotDesc,'FlushRate'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
     
-    plot(Xdata(2:end), pagesFlushed,'-');
+    plot(Xdata(:), mv.dbmsFlushedPages,'-');
     hold on;
-    range = pagesFlushed(end-100:end,:);
+    range = mv.dbmsFlushedPages(end-100:end,:);
     m1 = mean(range);
     m2 = quantile(range, 0.5);
     m3 = quantile(range, 0.95);
@@ -516,146 +440,10 @@ if FlushRate==1
     nextPlot=nextPlot+1;
 end
 
-if FlushRatePrediction==1
+
+if sum(ismember(plotDesc,'Network'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-
-    %grouping for brk-100:  0.4, 50, 10, 1000 => 4 points
-    %grouping for brk-200: 0.3, 50, 10, 1000 => 15 points
-    %grouping for brk-800: 0.2, 70, 10, 1000
-    %grping for brk-900: 0.3, 100, 10, 1000
-    
-    allowedRelativeDiff = 0.3;
-    minFreq=30;
-    %load('grouping.mat');
-    if 1==1
-        %grouping by total TPS
-        %[grouped freq] = GroupByAvg([SubmittedTransTotal SubmittedTransInd pagesFlushed], 1, allowedRelativeDiff, minFreq, 10, 1000);
-        %grouped = grouped(:,2:end);        
-        %goupring by individual counts
-        [grouped freq] = GroupByAvg([SubmittedTransInd pagesFlushed], 1:size(SubmittedTransInd,2), allowedRelativeDiff, minFreq, 10, 1000);
-    else
-        idx = randperm(size(SubmittedTransInd,1));
-        idx = idx(1:10);
-        grouped = [SubmittedTransInd(idx,:) pagesFlushed(idx,:)];
-    end
- 
-%bestC = [200808             1000               20];
-%temp = [SubmittedTransInd pagesFlushed];
-%For wiki100k-dist-100
-%grouped = zeros(6, size(temp,2));
-%grouped(1,:) = mean(temp(2250:3900,:));
-%grouped(2,:) = mean(temp(5250:6900,:));
-%grouped(3,:) = mean(temp(8250:9900,:));
-%grouped(4,:) = mean(temp(11240:12900,:));
-%grouped(5,:) = mean(temp(14240:15940,:));
-%grouped(6,:) = mean(temp(17240:17730,:));
-%bestC = [50202 300 150];
-
-%For wiki100k-io
-%grouped = zeros(8, size(temp,2));
-%grouped(1,:) = mean(temp(2350:3900,:));
-%grouped(2,:) = mean(temp(5300:6900,:));
-%grouped(3,:) = mean(temp(8250:9900,:));
-%grouped(4,:) = mean(temp(11350:12900,:));
-%grouped(5,:) = mean(temp(14200:15850,:));
-%grouped(6,:) = mean(temp(17350:18800,:));
-%grouped(7,:) = mean(temp(20200:21800,:));
-%grouped(8,:) = mean(temp(23300:24950,:));
-%bestC = [94099 300 119]; error: 18%
-
-%For wiki-dist-100 and wiki-dist-900
-%temp = [SubmittedTransInd pagesFlushed];
-%grouped = zeros(10, size(temp,2));
-%grouped(1,:) = mean(temp(1250:2900,:));
-%grouped(2,:) = mean(temp(4250:5900,:));
-%grouped(3,:) = mean(temp(7250:8900,:));
-%grouped(4,:) = mean(temp(10250:11900,:));
-%grouped(5,:) = mean(temp(13250:14900,:));
-%grouped(6,:) = mean(temp(16250:17900,:));
-%grouped(7,:) = mean(temp(19250:20900,:));
-%grouped(8,:) = mean(temp(22250:23900,:));
-%grouped(9,:) = mean(temp(25250:26900,:));
-%grouped(10,:) = mean(temp(28250:29900,:));
-%bestC = [50202 300 100];
-% bestC = [67950 300 39]; for wiki-dist-900 => 3%
-% bestC = [115050 300 27]; for wiki-dist-100 => 5%
-
-    groupedCounts = grouped(:,1:size(SubmittedTransInd,2));
-    groupedPagesFlushed = grouped(:,size(SubmittedTransInd,2)+1);
-    
-    if 1==0
-        opt = optimset('MaxIter', 400, 'MaxFunEvals', 400, 'TolFun', 0.000000000001, 'DiffMinChange', 1, 'DiffMaxChange', 100);
-        bmm = size(groupedCounts,1) / 2;
-        bestC = lsqcurvefit(@cfFlushRateApprox, ...
-            [2008080/20 300 50],...
-            groupedCounts(1:bmm,:), groupedPagesFlushed(1:bmm,:), ...
-            [2008080/40 299 10], [2008080/10 301 100], ... %[1.5e+6 190 1e+6], [2.5e+6 250 1.6e+6],
-            opt) %lower and upper bounds, and options
-        if 1==0 %  I think this worked perfectly for 
-            bestC = lsqcurvefit(@expectedFlushRate, ...
-                [1980367 200 1300000],...
-                groupedCounts, groupedPagesFlushed, ...
-                [1980366 190 1e+3], [1980367 220 1e+8], ... %[1.5e+6 190 1e+6], [2.5e+6 250 1.6e+6],
-                opt) %lower and upper bounds, and options
-        end
-    else
-        bestC = [2008080/1.8649 1000 2.57]; %t12345-brk-900, grouping(0.3, 100, 10, 1000), err:8.8%
-        bestC = [2008080/1.45 1000 2.69]; %t12345-brk-800, grouping(0.2, 70, 10, 1000), err:1% => for brk-900, we get 14%, for brk-100 we get 12%, for brk-200 we get 14%
-        bestC = [2008080/2.37 1000 0.8728274424]; %t12345-brk-100, grouping(0.4, 50, 10, 1000)
-        bestC = [2008080/mean([1.8649 1.45 2.37]) 1000 mean([2.57 2.69 0.872])];
-        %bestC = [2339382.8443              1000                10];
-        %bestC = [2008080   216 0.14e7]; %wiki1k-io with cfFlushRateApprox gives 13% error
-        %bestC = [2000   216 375102]; %wiki1k-io with cfFlushRateApprox using the real distribution!!
-        %bestC = [2008080  216 0.44e6]; %synthetic powerlaw dist+wiki1k, no division by sum(PP)
-        bestC = [50202 300 150];
-        bestC = [94099 300 119];
-        bestC100 = [115050 300 27];
-        bestC900 = [67950  300 39];
-        bestC = (bestC100 + bestC900) / 2;
-        bestC = [115050 300 27];;
-    end
-    fprintf(1,'FlushRate bestC=%10.10f\n',bestC);
-    
-    if 1==1
-        fid = fopen('bestC.txt', 'a'); 
-        fprintf(fid, '%s\n', num2str(bestC));
-        fclose(fid);
-    end
-    
-    %max_log_capacity = bestC(1);
-    %maxPagesPerSecs = bestC(2); 
-    %domainCardinality = bestC(3);
-    
-    
-    %predictedFlushRate = expectedFlushRate(bestC, ComCommit); 
-    %MAE = mae(predictedFlushRate, pagesFlushed);
-    %MRE = mre(predictedFlushRate, pagesFlushed);
-    %fprintf(1, 'FlushRate prediction: Pointwise error:MAE=%f, MRE=%f\n', MAE, MRE);
-
-%    [predictedGroupedFlush dpol] = expectedFlushRate(bestC, groupedCounts);   
-%    predictedGroupedFlush = mcFlushRate(bestC, groupedCounts);   
-    predictedGroupedFlush = cfFlushRateApprox(bestC, groupedCounts);
-    MAE = mae(predictedGroupedFlush, groupedPagesFlushed);
-    MRE = mre(predictedGroupedFlush, groupedPagesFlushed);
-    fprintf(1, 'FlushRate prediction: expected value error:MAE=%f, MRE=%f\n', MAE, MRE);    
-    
-    %asymp = dpol .* (groupedCounts ./ max_log_capacity) ./ ((groupedCounts ./ max_log_capacity)-1)
-    plot(groupedCounts(:,tranA) ./ sum(groupedCounts,2), [groupedPagesFlushed predictedGroupedFlush],'*');
-    %plot(sum(groupedCounts,2), [groupedPagesFlushed predictedGroupedFlush],'*');
-
-    
-    title(horzcat('Flush rate prediction ', num2str(MRE),'%% '));
-    xlabel('Average TPS');
-    ylabel('# of pages flushed');
-    legend('Actual flush rate', 'Predicted flush rate');
-
-    grid on;
-    nextPlot=nextPlot+1;
-end
-
-if Network==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), [NetworkRecvKB NetworkSendKB],'-');
+    plot(Xdata(:), [mv.osNetworkRecvKB mv.osNetworkSendKB],'-');
     title('Network');
     xlabel(xlab);
     ylabel('KB');
@@ -664,18 +452,21 @@ if Network==1
     nextPlot=nextPlot+1;  
 end
 
-if LatencyPrediction==1
+if sum(ismember(plotDesc,'LatencyPrediction'))==1
+    hold all;
+    legend('-DynamicLegend');
+    
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    myCounts = zeros(tend-tstart,5);
     AllLatencies = zeros(endSmooth-startSmooth+1, 5);
-    myCounts(:,[tranA tranB]) = [SubmittedTransA SubmittedTransB];
-    AllLatencies(:,[tranA tranB]) = [AvgLatencyA(startSmooth:endSmooth,:) AvgLatencyB(startSmooth:endSmooth,:)];
+    myCounts = mv.clientIndividualSubmittedTrans;
+    AllLatencies = mv.clientTransLatency;
     
     ratio = 0.3;
     trainSt=startSmooth;
     trainEnd=startSmooth+ (endSmooth-startSmooth)*ratio;
     testSt=trainEnd;
     testEnd=endSmooth;    
+    testRange=testSt:testEnd;
     if 1==1
         tic;   
         bestC = lsqcurvefit(@fitRealistic, [0.1 0.0001 0.00000001 0.01], myCounts(trainSt:trainEnd,:), ...
@@ -701,37 +492,36 @@ if LatencyPrediction==1
     
     fprintf(1,'testing time=');
     toc;
-    temp = [SubmittedTransTotal(testSt:testEnd,:) ...
-            AllLatencies(testSt:testEnd,tranA) predictedLatencies(:,tranA) AllLatencies(testSt:testEnd,tranB) predictedLatencies(:,tranB)];
-    %temp = sortrows(temp,1);
-    plot(temp(:,2:end));
+    workingTitle = '';
+    for i=1:mv.numOfTransType
+       MAE = mae(mv.clientTransLatency(testRange,i), predictedLatencies(testRange,i));
+       MRE = mre(mv.clientTransLatency(testRange,i), predictedLatencies(testRange,i)); 
+       plot(mv.clientTransLatency(testRange,i), nextPlotStyle, 'DisplayName', ['Actual latency' num2str(i)]);
+       plot(predictedLatencies(testRange,i), nextPlotStyle, 'DisplayName', ['Predicted latency' num2str(i)]);
+       workingTitle = [workingTitle 'MAE(' num2str(i) ')=' num2str(MAE) ' '];
+       workingTitle = [workingTitle 'MRE(' num2str(i) ')=' num2str(MRE) ' '];
+    end
     
-    MAEa = mae(temp(:,3), temp(:,2));
-    MAEb = mae(temp(:,5), temp(:,4));
-    MREa = mre(temp(:,3), temp(:,2));
-    MREb = mre(temp(:,5), temp(:,4));
-    
-    title(horzcat('MAEa=',num2str(MAEa),' MREa=',num2str(MREa),' MAEb=',num2str(MAEb),' MREb=',num2str(MREb)));
+    title(workingTitle);
     xlabel('TPS');
     ylabel('latency (sec)');
-    legend('Actual latency A', 'Predicted latency A', 'Actual latency B', 'Predicted latency B');
     
     grid on;
     nextPlot=nextPlot+1;    
 end
 
-if LockConcurrencyPrediction==1
+if sum(ismember(plotDesc,'LockConcurrencyPrediction'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
     
-    idx = randperm(size(SubmittedTransTotal,1));
+    idx = randperm(size(clientTotalSubmittedTrans,1));
     idx = idx(1:30);
     
-    [xMax yMax] = findMaxThroughput(SubmittedTransTotal);
+    [xMax yMax] = findMaxThroughput(clientTotalSubmittedTrans);
     if ~isempty(yMax)
         idx = xMax:(xMax+5);
-        range = SubmittedTransInd(idx,:);
+        range = clientIndSubmittedTrans(idx,:);
     else
-        range = SubmittedTransInd(end-5:end,:);
+        range = clientIndSubmittedTrans(end-5:end,:);
     end
     bestC1 = [0.1250000000/100000 0.0001000000*1 1*43 0.4]; %[0.1250000000/100000 0.0001000000*1 1*43 0.4] = 35% err on t12345-brk1 with: 0.2 test/training ratio, grouping=(0.03, 30, 10, 650)
     
@@ -778,13 +568,12 @@ if LockConcurrencyPrediction==1
 end
 
 
-if BarzanPrediction==1
+if sum(ismember(plotDesc,'BarzanPrediction'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    myCounts = zeros(tend-tstart,5);
-    myCounts(:,[tranA tranB]) = [SubmittedTransA SubmittedTransB];
-    lockMetrics = [LocksBeingWaitedFor(startSmooth:endSmooth,:) NumOfWaitsDueToLocks(startSmooth:endSmooth,:) TimeSpentWaitingForLocks(startSmooth:endSmooth,:)];
+    myCounts = mv.clientIndividualSubmittedTrans;
+    lockMetrics = [dbmsCurrentLockWaits(startSmooth:endSmooth,:) dbmsLockWaits(startSmooth:endSmooth,:) dbmsLockWaitTime(startSmooth:endSmooth,:)];
     
-    ph1 = plot(SubmittedTransTotal(startSmooth:endSmooth,:), lockMetrics(:,3), 'b*');
+    ph1 = plot(clientTotalSubmittedTrans(startSmooth:endSmooth,:), lockMetrics(:,3), 'b*');
     hold on;
     barzanIdx = [1 400 800 1200 1600 2000];
     barzanCV = myCounts(barzanIdx,:);
@@ -807,10 +596,10 @@ if BarzanPrediction==1
 end
 
 
-if DirtyPagesOverTime==1 
+if sum(ismember(plotDesc,'DirtyPagesOverTime'))==1 
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), [rowsChanged diff(monitor(tstart:tend,[Innodb_buffer_pool_pages_flushed])) ...
-        monitor(tstart+1:tend,[Innodb_buffer_pool_pages_data Innodb_buffer_pool_pages_dirty Innodb_buffer_pool_pages_free Innodb_buffer_pool_pages_total ])], '-');
+    plot(Xdata(:), [dbmsChangedRows dM(:,[Innodb_buffer_pool_pages_flushed]) ...
+        monitor(:,[Innodb_buffer_pool_pages_data Innodb_buffer_pool_pages_dirty Innodb_buffer_pool_pages_free Innodb_buffer_pool_pages_total ])], '-');
     title('Dirty pages over time');
     xlabel('Time');
     ylabel('# of Pages');
@@ -819,29 +608,32 @@ if DirtyPagesOverTime==1
     nextPlot=nextPlot+1;    
 end
 
-if LockAnalysis==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+if sum(ismember(plotDesc,'LockAnalysis'))==1
     
-    tempPlain = monitor(tstart+1:tend,[Innodb_row_lock_current_waits]);
-    tempDiff = diff(monitor(tstart:tend,[Innodb_row_lock_waits Innodb_row_lock_time]));
-        %Table_locks_immediate Table_locks_waited 
-    
-    
-    plot(Xdata(2:end), normMatrix([LocksBeingWaitedFor NumOfWaitsDueToLocks TimeSpentWaitingForLocks]),'*');
-    title('Lock analysis');
-    xlabel(xlab);
-    ylabel('Locks (Normalized)');
-    legend('#locks being waited for','#waits, due to locks', 'time spent waiting for locks');
-    
-    %mean([tempPlain tempDiff])
-    
-    grid on;
-    nextPlot=nextPlot+1;
+    if isfield(mv, 'dbmsCurrentLockWaits')
+        subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+
+        %tempPlain = [mv.dbmsCurrentLockWaits];
+        %tempDiff = [mv.dbmsLockWaits mv.dbmsLockWaitTime];
+            %Table_locks_immediate Table_locks_waited 
+
+
+        plot(Xdata(:), normMatrix([mv.dbmsCurrentLockWaits mv.dbmsLockWaits mv.dbmsLockWaitTime]),'*');
+        title('Lock analysis');
+        xlabel(xlab);
+        ylabel('Locks (Normalized)');
+        legend('#locks being waited for','#waits, due to locks', 'time spent waiting for locks');
+
+        %mean([tempPlain tempDiff])
+
+        grid on;
+        nextPlot=nextPlot+1;
+    end
 end
 
-if PagingInOut==1
+if sum(ismember(plotDesc,'PagingInOut'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata, monitor(tstart:tend,[paging_in paging_out virtual_majpf]),'-');
+    plot(Xdata, monitor(:,[paging_in paging_out virtual_majpf]),'-');
     %mem_buff mem_cach mem_free mem_used 
     title('Memory analysis');
     xlabel(xlab);
@@ -853,11 +645,11 @@ if PagingInOut==1
 end
 
 
-if CombinedAvgLatency==1
+if sum(ismember(plotDesc,'CombinedAvgLatency'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata, mean(avglat(tstart:tend,2:end)')','b-');
+    plot(Xdata, mean(avglat(:,2:end),2),'b-');
     hold on;
-    plot(Xdata, mean(prclat.latenciesPCtile(tstart:tend,2:end,6)')','r-'); % showing 95%tile
+    plot(Xdata, mean(prclat.latenciesPCtile(:,2:end,6), 2),'r-'); % showing 95%tile
     title('latency');
     xlabel(xlab);
     ylabel('latency (sec)');
@@ -866,40 +658,29 @@ if CombinedAvgLatency==1
     nextPlot=nextPlot+1;
 end
 
-if LatencyA==1
+if sum(ismember(plotDesc,'Latency'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), AvgLatencyA,'b-');
+    plot(Xdata(:), clientAvgLatencyA,'b-');
     hold on;
-    plot(Xdata, prclat.latenciesPCtile(tstart:tend,tranA+1,6),'r-'); % showing 95%tile
-    plot(Xdata, prclat.latenciesPCtile(tstart:tend,tranA+1,7),'g-'); % showing 99%tile    
+    
+    for i=1:mv.numOfTransType
+        plot(Xdata, mv.prclat.latenciesPCtile(:,i+1,6), nextPlotStyle, 'DisplayName', ['95 % Latency ' num2str(i)]); % showing 95%tile
+        plot(Xdata, mv.prclat.latenciesPCtile(:,i+1,7), nextPlotStyle, 'DisplayName', ['99 % Latency ' num2str(i)]); % showing 99%tile    
+    end
+    
     title('latency');
     xlabel(xlab);
     ylabel('Latency (sec)');
-    legend(horzcat('Latency ', num2str(tranA)),'95 % Latency A','99 % latency A');
     
     grid on;
     nextPlot=nextPlot+1;
 end
 
-if LatencyB==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(Xdata(2:end), AvgLatencyB,'b-');
-    hold on;
-    plot(Xdata, prclat.latenciesPCtile(tstart:tend,tranB+1,6),'r-'); % showing 95%tile
-    plot(Xdata, prclat.latenciesPCtile(tstart:tend,tranB+1,7),'g-'); % showing 99%tile
-    title('latency');
-    xlabel(xlab);
-    ylabel('Latency (sec)');
-    legend(horzcat('Latency ', num2str(tranB)),'95 % latency B','99 % latency B');
-    grid on;
-    nextPlot=nextPlot+1;
-end
-
-if LatencyOverall==1
+if sum(ismember(plotDesc,'LatencyOverall'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);  
-    AvgLatencyAllLittle = 160 ./ SubmittedTransTotal;
-    AcgLatencyAll = (SubmittedTransA .* AvgLatencyA + SubmittedTransB .* AvgLatencyB) ./ SubmittedTransTotal;
-    plot(Xdata(2:end), [AvgLatencyAllLittle AcgLatencyAll] ,'*');
+    AvgLatencyAllLittle = 160 ./ mv.clientTotalSubmittedTrans;
+    AcgLatencyAll = sum(mv.clientIndividualSubmittedTrans .* mv.clientTransLatency, 2) ./ mv.clientTotalSubmittedTrans;
+    plot(Xdata(:), [AvgLatencyAllLittle AcgLatencyAll] ,'*');
     a1= mae(AvgLatencyAllLittle, AcgLatencyAll);
     r1 = mre(AvgLatencyAllLittle, AcgLatencyAll);
     title('Overall latency');
@@ -911,23 +692,25 @@ if LatencyOverall==1
     nextPlot=nextPlot+1;
 end
 
-if LatencyVersusCPU==1
+if sum(ismember(plotDesc,'LatencyVersusCPU'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot(mean(monitor(tstart:tend,cpu_usr_indexes)')', avglat(tstart:tend,tranA),'b-');
+    
+    for i=1:mv.numOfTransType
+        plot(mean(mv.cpu_usr, 2), mv.clientTransLatency(:,i), nextPlotStyle, 'DisplayName', ['tran' num2str(i)]);
+    end
     hold on;
-    plot(mean(monitor(tstart:tend,cpu_usr_indexes)')', avglat(tstart:tend,tranA),'b-');
+    
     title('CPU vs Latency');
     xlabel('Average CPU');
     ylabel('latency (sec)');
-    legend('tran A','tran B');
     grid on;
     nextPlot=nextPlot+1;
 end
 
-if Latency3D==1 %this is for producing 3D crap!
+if sum(ismember(plotDesc,'Latency3D'))==1 %this is for producing 3D crap!
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    plot3(IndividualCounts(tstart:tend,1), IndividualCounts(tstart:tend,2), avglat(tstart:tend,1), '-', ...
-          IndividualCounts(tstart:tend,1), IndividualCounts(tstart:tend,2), avglat(tstart:tend,2), '-');
+    plot3(IndividualCounts(:,1), IndividualCounts(:,2), avglat(:,1), '-', ...
+          IndividualCounts(:,1), IndividualCounts(:,2), avglat(:,2), '-');
     title('latency');
     xlabel('Trans 1');
     ylabel('Trans 2');
@@ -938,57 +721,58 @@ if Latency3D==1 %this is for producing 3D crap!
     set(gcf,'Color','w');
 end
 
-if workingSetSize==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    temp=diff(monitor(tstart:tend, [ ...
-        Innodb_buffer_pool_read_ahead_rnd Innodb_buffer_pool_read_ahead_seq Innodb_buffer_pool_read_requests ...
-        Innodb_buffer_pool_reads Innodb_buffer_pool_wait_free]));    
+if sum(ismember(plotDesc,'workingSetSize'))==1
+    if isfield(mv, 'dbmsRandomReadAheads')
+        subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+        temp=[ ...
+            mv.dbmsRandomReadAheads mv.dbmsSequentialReadAheads mv.dbmsNumberOfLogicalReadRequests ...
+            mv.dbmsNumberOfLogicalReadsFromDisk mv.dbmsNumberOfWaitsForFlush];    
 
-    plot(normMatrix(temp));
-    legend(...
-        'InnodbBufferPoolReadAheadRnd','InnodbBufferPoolReadAheadSeq','InnodbBufferPoolReadRequests',...
-        'InnodbBufferPoolReads','InnodbBufferPoolWaitFree');
-    
-    % Innodb_buffer_pool_read_ahead? 
-    % Innodb_buffer_pool_read_ahead_evicted?
-    
-    
-    
-    title('Working Set Analysis');
-    xlabel(xlab);
-    ylabel('?');
-    grid on;
-    nextPlot=nextPlot+1;
+        plot(normMatrix(temp));
+        legend(...
+            'InnodbBufferPoolReadAheadRnd','InnodbBufferPoolReadAheadSeq','InnodbBufferPoolReadRequests',...
+            'InnodbBufferPoolReads','InnodbBufferPoolWaitFree');
+
+        % Innodb_buffer_pool_read_ahead? 
+        % Innodb_buffer_pool_read_ahead_evicted?
+
+
+
+        title('Working Set Analysis');
+        xlabel(xlab);
+        ylabel('?');
+        grid on;
+        nextPlot=nextPlot+1;
+    end
 end
 
-if workingSetSize2==1
-    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    temp=diff(monitor(tstart:tend, [ ...
-        Handler_read_first Handler_read_key Handler_read_next Handler_read_prev Handler_read_rnd Handler_read_rnd_next]));
+if sum(ismember(plotDesc,'workingSetSize2'))==1
+    if isfield(mv, 'dbmsNumberOfNextRowReadRequests')
+        subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+        temp=[mv.dbmsNumberOfFirstEntryReadRequests mv.dbmsNumberOfKeyBasedReadRequests mv.dbmsNumberOfNextKeyBasedReadRequests mv.dbmsNumberOfPrevKeyBasedReadRequests mv.dbmsNumberOfRowReadRequests mv.dbmsNumberOfNextRowReadRequests];
 
-    plot(normMatrix(temp));
-    legend(...
-        'Handler_read_first','Handler_read_key','Handler_read_next','Handler_read_prev','Handler_read_rnd','Handler_read_rnd_next');  
-    
-    title('Working Set Analysis');
-    xlabel(xlab);
-    ylabel('?');
-    grid on;
-    nextPlot=nextPlot+1;
+        plot(normMatrix(temp));
+        legend(...
+            'Handler_read_first','Handler_read_key','Handler_read_next','Handler_read_prev','Handler_read_rnd','Handler_read_rnd_next');  
+
+        title('Working Set Analysis');
+        xlabel(xlab);
+        ylabel('?');
+        grid on;
+        nextPlot=nextPlot+1;
+    end
 end
 
 
-if LatencyPerTPS==1
+if sum(ismember(plotDesc,'LatencyPerTPS'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
     
-    AvgLatencyA=avglat(tstart+1:tend,tranA+1);
-    AvgLatencyB=avglat(tstart+1:tend,tranB+1);
-    
-    temp = [SubmittedTransTotal AvgLatencyA AvgLatencyB];
+    temp = [mv.clientTotalSubmittedTrans mv.clientTransLatency];
     temp = sortrows(temp,1);
-    plot(temp(:,1),temp(:,2:end));
+    for i=1:mv.numOfTransType
+        plot(temp(:,1), temp(:,i+1), nextPlotStyle, 'DisplayName', ['avg latency ' num2str(i)])
+    end
     
-    legend('avg latency A','avg latency B')
     title('Latency vs TPS');
     xlabel('TPS');
     ylabel('Latency (sec)');
@@ -996,13 +780,13 @@ if LatencyPerTPS==1
     nextPlot=nextPlot+1;
 end
 
-if LatencyPerLocktime==1
+if sum(ismember(plotDesc,'LatencyPerLocktime'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
 
-    RowLockTime=diff(monitor(tstart:tend,Innodb_row_lock_time));
-    CurrentRowLockTime=monitor(tstart+1:tend,Innodb_row_lock_current_waits);
+    %RowLockTime=mv.dbmsLockWaitTime;
+    CurrentRowLockTime=mv.dbmsCurrentLockWaits;
     
-    temp = [CurrentRowLockTime AvgLatencyA AvgLatencyB];
+    temp = [CurrentRowLockTime mv.clientTransLatency];
     temp = sortrows(temp,1);
     plot(temp(:,1),temp(:,2:end));
         
@@ -1014,11 +798,11 @@ if LatencyPerLocktime==1
     nextPlot=nextPlot+1;
 end
     
-if StrangeFeatures1==1
+if sum(ismember(plotDesc,'StrangeFeatures1'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    temp = monitor(tstart+1:tend, [intr_82 intr_83 intr_84 intr_85 intr_86]);
+    temp = monitor(:, [intr_82 intr_83 intr_84 intr_85 intr_86]);
     %temp=normMatrix(temp);
-    plot(Xdata(2:end), temp,'-');
+    plot(Xdata(:), temp,'-');
 
     title('Streange featurs 1');
     xlabel(xlab);
@@ -1029,11 +813,11 @@ if StrangeFeatures1==1
 end
 
     
-if StrangeFeatures2==1
+if sum(ismember(plotDesc,'StrangeFeatures2'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    temp = monitor(tstart+1:tend, [files inodes]); 
+    temp = monitor(:, [files inodes]); 
     %temp=normMatrix(temp);
-    plot(Xdata(2:end), temp,'-');
+    plot(Xdata(:), temp,'-');
 
     title('Streange featurs 2');
     xlabel(xlab);
@@ -1044,12 +828,12 @@ if StrangeFeatures2==1
 end
 
     
-if AllStrangeFeatures==1
+if sum(ismember(plotDesc,'AllStrangeFeatures'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    temp = monitor(tstart+1:tend, [dsk_read dsk_writ io_read io_writ async_aio swap_used swap_free paging_in paging_out virtual_majpf virtual_minpf virtual_alloc virtual_free files inodes intr_19 intr_23 intr_33 intr_79 intr_80 intr_81 intr_82 intr_83 intr_84 intr_85 intr_86 int csw proc_run proc_new sda_util]);
+    temp = monitor(:, [dsk_read dsk_writ io_read io_writ async_aio swap_used swap_free paging_in paging_out virtual_majpf virtual_minpf virtual_alloc virtual_free files inodes intr_19 intr_23 intr_33 intr_79 intr_80 intr_81 intr_82 intr_83 intr_84 intr_85 intr_86 int csw proc_run proc_new sda_util]);
     %temp=normMatrix(temp);
     
-    plot(Xdata(2:end), temp,'-');
+    plot(Xdata(:), temp,'-');
 
     title('Streange featurs!');
     xlabel(xlab);
@@ -1060,11 +844,11 @@ if AllStrangeFeatures==1
 end
 
  
-if Interrupts==1
+if sum(ismember(plotDesc,'Interrupts'))==1
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
-    temp = monitor(tstart+1:tend, [int csw proc_run proc_new sda_util]);
+    temp = monitor(:, [mv.osCountOfInterruptsServicedSinceBootTime mv.osNumberOfContextSwitches mv.osNumberOfProcessesCurrentlyRunning mv.osNumberOfProcessesCreated mv.osDiskUtilization]);
     %temp=normMatrix(temp);
-    plot(Xdata(2:end), temp,'-');
+    plot(Xdata(:), temp,'-');
 
     title('Interrupts');
     xlabel(xlab);
@@ -1074,8 +858,90 @@ if Interrupts==1
     nextPlot=nextPlot+1;
 end
 
+
+if sum(ismember(plotDesc,'FlushRatePrediction'))==1
+    error('to be fixed ...');
+    
+    subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
+
+    allowedRelativeDiff = 0.3;
+    minFreq=30;
+    test_config = struct('groupParams', struct('nClusters', 15, 'groupByTPSinsteadOfIndivCounts', true, 'minFreq', 10, 'minTPS', 50, 'maxTPS', 1520));
+    [groupedPagesFlushed Lg groupedCounts dMg] = applyGroupingPolicy(test_config, mv.dbmsFlushedPages, mv.clientTransLatency, mv.clientTotalSubmittedTrans, dM);
+ 
+    
+    if 1==1
+        opt = optimset('MaxIter', 400, 'MaxFunEvals', 400, 'TolFun', 0.000000000001, 'DiffMinChange', 1, 'DiffMaxChange', 100);
+        bmm = 1:3;
+        bestC = lsqcurvefit(@cfFlushRateApproxTPCCWrapper, ...
+            [2008080/20 300 50],...
+            groupedCounts(bmm,:), groupedPagesFlushed(bmm,:), ...
+            [2008080/40 299 10], [2008080/10 301 100], ... %[1.5e+6 190 1e+6], [2.5e+6 250 1.6e+6],
+            opt) %lower and upper bounds, and options
+        if 1==0 %  I think this worked perfectly for 
+            bestC = lsqcurvefit(@expectedFlushRate, ...
+                [1980367 200 1300000],...
+                groupedCounts, groupedPagesFlushed, ...
+                [1980366 190 1e+3], [1980367 220 1e+8], ... %[1.5e+6 190 1e+6], [2.5e+6 250 1.6e+6],
+                opt) %lower and upper bounds, and options
+        end
+    else
+        bestC = [2008080/1.8649 1000 2.57]; %t12345-brk-900, grouping(0.3, 100, 10, 1000), err:8.8%
+        bestC = [2008080/1.45 1000 2.69]; %t12345-brk-800, grouping(0.2, 70, 10, 1000), err:1% => for brk-900, we get 14%, for brk-100 we get 12%, for brk-200 we get 14%
+        bestC = [2008080/2.37 1000 0.8728274424]; %t12345-brk-100, grouping(0.4, 50, 10, 1000)
+        bestC = [2008080/mean([1.8649 1.45 2.37]) 1000 mean([2.57 2.69 0.872])];
+        %bestC = [2339382.8443              1000                10];
+        %bestC = [2008080   216 0.14e7]; %wiki1k-io with cfFlushRateApprox gives 13% error
+        %bestC = [2000   216 375102]; %wiki1k-io with cfFlushRateApprox using the real distribution!!
+        %bestC = [2008080  216 0.44e6]; %synthetic powerlaw dist+wiki1k, no division by sum(PP)
+        bestC = [50202 300 150];
+        bestC = [94099 300 119];
+        bestC100 = [115050 300 27];
+        bestC900 = [67950  300 39];
+        bestC = (bestC100 + bestC900) / 2;
+        bestC = [115050 300 27];;
+    end
+    fprintf(1,'FlushRate bestC=%10.10f\n',bestC);
+    
+    if 1==1
+        fid = fopen('bestC.txt', 'a'); 
+        fprintf(fid, '%s\n', num2str(bestC));
+        fclose(fid);
+    end
+    
+    %max_log_capacity = bestC(1);
+    %maxPagesPerSecs = bestC(2); 
+    %domainCardinality = bestC(3);
+    
+    
+    %predictedFlushRate = expectedFlushRate(bestC, dbmsCommittedCommands); 
+    %MAE = mae(predictedFlushRate, dbmsFlushedPages);
+    %MRE = mre(predictedFlushRate, dbmsFlushedPages);
+    %fprintf(1, 'FlushRate prediction: Pointwise error:MAE=%f, MRE=%f\n', MAE, MRE);
+
+%    [predictedGroupedFlush dpol] = expectedFlushRate(bestC, groupedCounts);   
+%    predictedGroupedFlush = mcFlushRate(bestC, groupedCounts);   
+    predictedGroupedFlush = cfFlushRateApproxTPCCWrapper(bestC, groupedCounts);
+    MAE = mae(predictedGroupedFlush, groupedPagesFlushed);
+    MRE = mre(predictedGroupedFlush, groupedPagesFlushed);
+    fprintf(1, 'FlushRate prediction: expected value error:MAE=%f, MRE=%f\n', MAE, MRE);    
+    
+    %asymp = dpol .* (groupedCounts ./ max_log_capacity) ./ ((groupedCounts ./ max_log_capacity)-1)
+    %plot(groupedCounts(:,tranA) ./ sum(groupedCounts,2), [groupedPagesFlushed predictedGroupedFlush],'*');
+    plot(sum(groupedCounts,2), [groupedPagesFlushed predictedGroupedFlush],'*');
+
+    
+    title(horzcat('Flush rate prediction ', num2str(MRE),'%% '));
+    xlabel('Average TPS');
+    ylabel('# of pages flushed');
+    legend('Actual flush rate', 'Predicted flush rate');
+
+    grid on;
+    nextPlot=nextPlot+1;
+end
+
 elapsed = toc(overallTime);
-fprintf(1,'elapsed time=%f\n',elapsed);
+fprintf(1,'Total load_and_plot time=%f\n',elapsed);
 
 if exist('ph1')
     set(ph1, 'LineWidth', linewidth);
