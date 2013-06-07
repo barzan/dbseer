@@ -1,8 +1,13 @@
-the first release consists of two modules:
+You can use the rs-sysmon2 to collect data. For quick evaluation, you can use some of the example datasets that are provided under the example_data directory.
 
- sc directory contains all the python scripts that you need to convert the mysql logs into proper MATLAB files that can be processed by the predict_mat module. 
+The main entry to DBSeer is through one of the following scripts:
 
- predict_mat directory contains all the MATLAB scripts that you need to analyze the collected log files. You will need MATLAB installed, preferably MATLAB 2010a or later.
+predict_mat/load_and_plot.m
+predict_mat/predictionConsole.m
+
+To see how to use these scripts, you can run the provided demo example:
+
+predict_mat/demo.m
 
 Please report all bugs or questions to Barzan Mozafari <barzan@csail.mit.edu>
 
