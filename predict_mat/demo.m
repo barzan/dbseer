@@ -1,6 +1,4 @@
 
-%% You need to run this script by going to the example_data/mysql5
-cd ../example_data/mysql5
 
 %% Visualization
 %Choose some of the options below
