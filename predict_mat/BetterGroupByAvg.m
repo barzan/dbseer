@@ -11,7 +11,8 @@ function [groupedMatrix freuqencies] = BetterGroupByAvg(matrix, keyIndices, howM
 
     %mySeed = 1363;
     %RandStream.setGlobalStream(RandStream('mt19937ar','seed', mySeed));
-    [IDX Centroids] = kmeans(key, nClusters, 'emptyaction','drop');
+    %[IDX Centroids] = kmeans(key, nClusters, 'emptyaction','drop');
+    [IDX Centroids] = kmeans(key, nClusters, 'emptyaction','singleton');
 
     groupedMatrix = zeros(nClusters, size(matrix,2));
     freuqencies = zeros(nClusters,1);

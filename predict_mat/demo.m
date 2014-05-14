@@ -19,6 +19,7 @@ dir = 'tpcc4-redo/';
 signature = 't12';
 
 load_and_plot(dir, signature, plotDesc);
+%psql_load_and_plot(signature);
 
 
 %% Predicting I/O

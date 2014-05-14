@@ -13,7 +13,7 @@ overallTime = tic;
 
 taskDesc.taskName
 
-tranTypes = test_config.tranTypes;
+tranTypes = test_config.tranTypes; 
 tranLabels = tranTypes;
 
 mvTestUngrouped = load_modeling_variables(test_config.dir, test_config.signature);
@@ -115,6 +115,14 @@ UGtestMixture = mean(ratios);
 if strcmp(taskDesc.taskName,'MaxThrouputPrediction')
     [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(UGtestTPS);
     [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(UGtrainTPS);
+    %save('testMaxThroughputIdx',  'testMaxThroughputIdx');
+    %save('testMaxThroughput',  'testMaxThroughput');
+    %save('trainMaxThroughputIdx', 'trainMaxThroughputIdx');
+    %save('trainMaxThroughput', 'trainMaxThroughput');
+    %load('testMaxThroughput', 'testMaxThroughput');
+    %load('testMaxThroughputIdx', 'testMaxThroughputIdx');
+    %load('trainMaxThroughput', 'trainMaxThroughput');
+    %load('trainMaxThroughputIdx', 'trainMaxThroughputIdx');
 end
 
 
@@ -460,11 +468,11 @@ end
 if strcmp(taskDesc.taskName, 'FlushRatePrediction')
     subplot(dim1,dim2,nextPlot,'FontSize',fontsize);
         
-    showOthers = false;
+    showOthers = true;
     if showOthers
         treeModel = barzanRegressTreeLearn(trainPagesFlushed, trainC);
         treePred = barzanRegressTreeInvoke(treeModel, testC);
-
+        
         naiveLinModel = barzanLinSolve(trainPagesFlushed, trainTPS);
         linPred = barzanLinInvoke(naiveLinModel, testTPS);
 
@@ -483,13 +491,13 @@ if strcmp(taskDesc.taskName, 'FlushRatePrediction')
         err_1 = mre(linPred, testPagesFlushed, true);
         err_2 = mre(classLinPred, testPagesFlushed, true);
         err_4 = mre(treePred, testPagesFlushed);
-        err_5 = mre(kccaPred, testPagesFlushed);
+        %err_5 = mre(kccaPred, testPagesFlushed);
         err_6 = mre(nnPred, testPagesFlushed);
         
         [rel_err_1 abs_err_1 rel_diff_1 discrete_rel_error_1 weka_rel_err] = myerr(linPred, testPagesFlushed);
         [rel_err_2 abs_err_2 rel_diff_2 discrete_rel_error_2 weka_rel_err] = myerr(classLinPred, testPagesFlushed);
         [rel_err_4 abs_err_4 rel_diff_4 discrete_rel_error_4 weka_rel_err] = myerr(treePred, testPagesFlushed);
-        [rel_err_5 abs_err_5 rel_diff_5 discrete_rel_error_5 weka_rel_err] = myerr(kccaPred, testPagesFlushed);
+        %[rel_err_5 abs_err_5 rel_diff_5 discrete_rel_error_5 weka_rel_err] = myerr(kccaPred, testPagesFlushed);
         [rel_err_6 abs_err_6 rel_diff_6 discrete_rel_error_6 weka_rel_err] = myerr(nnPred, testPagesFlushed);
     end
     cfFlushRateApprox_conf = struct('io_conf', taskDesc.io_conf, 'workloadName', taskDesc.workloadName);
@@ -500,9 +508,10 @@ if strcmp(taskDesc.taskName, 'FlushRatePrediction')
 
     %%%%%%
     if showOthers
-        temp = [testPagesFlushed linPred classLinPred myPred treePred kccaPred nnPred];
+        %temp = [testPagesFlushed linPred classLinPred myPred treePred kccaPred nnPred];
+        temp = [testPagesFlushed linPred classLinPred myPred treePred nnPred];
     else
-        temp = [testPagesFlushed myPred];
+        temp = [testPagesFlushed myPred];   
     end
     if strcmp(taskDesc.plotX, 'byTPS')
         temp = [testTPS temp];
@@ -521,11 +530,12 @@ if strcmp(taskDesc.taskName, 'FlushRatePrediction')
         ph3 = plot(temp(:,1), temp(:,4), 'k-.');
         ph4 = plot(temp(:,1), temp(:,5), 'gp:'); 
         ph5 = plot(temp(:,1), temp(:,6), 'rp:'); 
-        ph6 = plot(temp(:,1), temp(:,7), 'yp:'); 
-        ph7 = plot(temp(:,1), temp(:,8), 'cp:'); 
+%        ph6 = plot(temp(:,1), temp(:,7), 'yp:'); 
+        %ph7 = plot(temp(:,1), temp(:,8), 'cp:'); 
 
         hold off;
-        legend('Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'KCCA', 'NeuralNet');
+        %legend('Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'KCCA', 'NeuralNet');
+        legend('Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'NeuralNet');
         text(0.1,max(linPred), horzcat('MRE(lin TPS)=',num2str(err_1), ...
         ', MRE(lin types)=',num2str(err_2), ', MRE(cf 1)=',num2str(err_3), ', MRE(cf 2)=',num2str(err_4)));
     

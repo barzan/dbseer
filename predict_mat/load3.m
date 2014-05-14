@@ -1,6 +1,6 @@
 function [ Monitor LatencyAvg Counts DiffedMonitor] = load3( inputDir, signature, startIdx, endIdx )
 
-Monitor = csvread(horzcat(inputDir,'/monitor-',signature),2);
+Monitor = csvread(horzcat(inputDir,'/monitor-',signature),2,0);
 
 %Monitor = [Monitor zeros(size(Monitor,1), 11)];
 

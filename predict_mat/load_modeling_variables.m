@@ -62,7 +62,8 @@ if strcmpi(header.dbms, 'mysql')
     mv.dbmsChangedRows = sum(dM(:,[header.columns.Innodb_rows_deleted header.columns.Innodb_rows_updated header.columns.Innodb_rows_inserted]),2);
     mv.dbmsCumChangedRows=cumsum(mv.dbmsChangedRows);
     mv.dbmsCumFlushedPages = monitor(:, header.columns.Innodb_buffer_pool_pages_flushed);
-    mv.dbmsFlushedPages = smooth(dM(:, header.columns.Innodb_buffer_pool_pages_flushed), 10);
+    mv.dbmsFlushedPages = DoSmooth(dM(:, header.columns.Innodb_buffer_pool_pages_flushed), 10);
+    %mv.dbmsFlushedPages = dM(:, header.columns.Innodb_buffer_pool_pages_flushed);
     mv.dbmsCurrentDirtyPages = monitor(:, header.columns.Innodb_buffer_pool_pages_dirty);
     mv.dbmsDirtyPages = dM(:, header.columns.Innodb_buffer_pool_pages_dirty);
     mv.dbmsDataPages = monitor(:, header.columns.Innodb_buffer_pool_pages_data);
@@ -113,16 +114,29 @@ if strcmpi(header.dbms, 'mysql')
     mv.measuredReadsMB=monitor(:,header.columns.mysqld_bytes_read) / 1024 / 1024;
 
     lock_smoothing = 1;
-    mv.dbmsCurrentLockWaits=smooth(monitor(:,header.columns.Innodb_row_lock_current_waits), lock_smoothing);
-    mv.dbmsLockWaits=smooth(dM(:,header.columns.Innodb_row_lock_waits), lock_smoothing);
-    mv.dbmsLockWaitTime=smooth(dM(:,header.columns.Innodb_row_lock_time), lock_smoothing) / 1000; % to turn it into seconds!
+    mv.dbmsCurrentLockWaits=DoSmooth(monitor(:,header.columns.Innodb_row_lock_current_waits), lock_smoothing);
+    mv.dbmsLockWaits=DoSmooth(dM(:,header.columns.Innodb_row_lock_waits), lock_smoothing);
+    mv.dbmsLockWaitTime=DoSmooth(dM(:,header.columns.Innodb_row_lock_time), lock_smoothing) / 1000; % to turn it into seconds!
+    %mv.dbmsCurrentLockWaits=monitor(:,header.columns.Innodb_row_lock_current_waits);
+    %mv.dbmsLockWaits=dM(:,header.columns.Innodb_row_lock_waits);
+    %mv.dbmsLockWaitTime=dM(:,header.columns.Innodb_row_lock_time) / 1000; % to turn it into seconds!
+    if exist('OCTAVE_VERSION')
+        save('dbmsCurrentLockWaits_Octave.mat', '-v6', '-struct', 'mv', 'dbmsCurrentLockWaits');
+        save('dbmsLockWaits_Octave.mat', '-v6', '-struct', 'mv', 'dbmsLockWaits');
+        save('dbmsLockWaitTime_Octave.mat', '-v6', '-struct', 'mv', 'dbmsLockWaitTime');
+    else
+        save('dbmsCurrentLockWaits_Matlab', '-v6', '-struct', 'mv', 'dbmsCurrentLockWaits');
+        save('dbmsLockWaits_Matlab', '-v6', '-struct', 'mv', 'dbmsLockWaits');
+        save('dbmsLockWaitTime_Matlab', '-v6', '-struct', 'mv', 'dbmsLockWaitTime');
+    end
 
     mv.dbmsReadRequests = dM(:, header.columns.Innodb_buffer_pool_read_requests);
     mv.dbmsReads = dM(:, header.columns.Innodb_buffer_pool_reads);
     mv.dbmsPhysicalReadsMB = dM(:,[header.columns.Innodb_data_read])./1024./1024;
 
 elseif strcmpi(header.dbms, 'psql')
-    mv.dbmsFlushedPages = smooth(dM(:, header.columns.buffers_clean)+dM(:, header.columns.buffers_backend), 10);
+    mv.dbmsFlushedPages = DoSmooth(dM(:, header.columns.buffers_clean)+dM(:, header.columns.buffers_backend), 10);
+    %mv.dbmsFlushedPages = dM(:, header.columns.buffers_clean)+dM(:, header.columns.buffers_backend);
     mv.dbmsLogWritesMB=dM(:,header.columns.buffers_checkpoint).*8192./1024./1024; %MB
     mv.dbmsPageWritesMB=(dM(:,header.columns.buffers_clean)+dM(:,header.columns.buffers_backend)).*2.*8./1024; % to account for double write buffering
     mv.dbmsCommittedCommands=dM(:,header.columns.xact_commit);

@@ -1,6 +1,6 @@
 function [ Monitor LatencyAvg Counts DiffedMonitor] = load3_offset(inputDir, signature, skipFromBegining, skipFromEnd, flag)
 
-Monitor = csvread(horzcat(inputDir,'/monitor-',signature),2);
+Monitor = csvread(horzcat(inputDir,'/monitor-',signature),2,0); % dyoon: 0 added as third argument for col.
 
 startIdx = 1 + skipFromBegining;
 if flag == true

@@ -8,6 +8,10 @@ ymin = ylim(1); ymax=ylim(2);
 
 s=50;
 
+if nargin < 4
+    caption = '';
+end
+
 if HorzOrVert=='h'
     vals = [(xmin:s:xmax)' repmat(value, size((xmin:s:xmax)'))];
 else

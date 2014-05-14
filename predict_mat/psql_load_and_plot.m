@@ -183,7 +183,7 @@ else % POSTGRES_ENV
 	%rowsChanged = sum(diff(monitor(tstart:tend,[Innodb_rows_deleted Innodb_rows_updated Innodb_rows_inserted]))')';
 	%cumRowsChanged=cumsum(rowsChanged);
 	cumPagesFlushed = monitor(tstart+1:tend, buffers_clean) + monitor(tstart+1:tend, buffers_backend);
-	pagesFlushed = smooth(diff(cumPagesFlushed), 10);
+	pagesFlushed = DoSmooth(diff(cumPagesFlushed), 10);
 	%currentPagesDirty = monitor(tstart+1:tend, Innodb_buffer_pool_pages_dirty);
 	%pagesDirtied = diff(monitor(tstart:tend, Innodb_buffer_pool_pages_dirty));
 
@@ -210,7 +210,10 @@ else % POSTGRES_ENV
 
 	lock_smoothing = 1;
 	%LocksBeingWaitedFor=smooth(monitor(tstart+1:tend,Innodb_row_lock_current_waits),lock_smoothing);
-	NumOfWaitsDueToLocks=smooth(diff(monitor(tstart:tend,confl_lock)),lock_smoothing);
+    
+	%NumOfWaitsDueToLocks=smooth(diff(monitor(tstart:tend,confl_lock)),lock_smoothing);
+    NumOfWaitsDueToLocks=DoSmooth(diff(monitor(tstart:tend,confl_lock)),lock_smoothing);
+    
 	%TimeSpentWaitingForLocks=smooth(diff(monitor(tstart:tend,Innodb_row_lock_time)),lock_smoothing) / 1000; % to turn it into seconds!
 
 
