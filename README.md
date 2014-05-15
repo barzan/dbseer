@@ -1,6 +1,13 @@
 A) INSTALLATION:
- You need to add the following directories to your MATLAB path:
-common_mat
+
+1. You need to download the following libraries and add them to your mathlab's path:
+
+Common-Libs:
+	https://github.com/barzan/common-libs
+
+
+
+2. You need to add the following directories to your MATLAB path:
 predict_data
 predict_mat
 sc
