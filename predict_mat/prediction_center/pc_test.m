@@ -1,0 +1,18 @@
+task = TaskDescription;
+task.workloadName = 'TPCC';
+task.taskName = 'FlushRatePrediction';
+groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', [1 2 3 4 5],  'nClusters', 9, 'minFreq', 70, 'minTPS', 30, 'maxTPS', 950);
+gp = GroupParameters;
+gp.setStruct(groupParams);
+test_config = PredictionConfig;
+test_config.directory = './t-memless-dist';
+test_config.transactionTypes = [1:5];
+test_config.signature = 't12345-brk-100';
+test_config.startIndex = 4000;
+test_config.endIndex = 28000;
+test_config.ioConfiguration = [1525423.883 1000 8.606397511];
+test_config.groupingStrategy = gp;
+pc = PredictionCenter;
+pc.testConfig = test_config;
+pc.taskDescription = task;
+res = pc.performPrediction;
