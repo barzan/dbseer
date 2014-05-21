@@ -5,12 +5,12 @@ groupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes'
 gp = GroupParameters;
 gp.setStruct(groupParams);
 test_config = PredictionConfig;
-test_config.directory = './t-memless-dist';
-test_config.transactionTypes = [1:5];
+test_config.dir = './t-memless-dist';
+test_config.tranTypes = [1:5];
 test_config.signature = 't12345-brk-100';
-test_config.startIndex = 4000;
-test_config.endIndex = 28000;
-test_config.ioConfiguration = [1525423.883 1000 8.606397511];
+test_config.startIdx = 4000;
+test_config.endIdx = 28000;
+test_config.io_conf = [1525423.883 1000 8.606397511];
 test_config.groupingStrategy = gp;
 pc = PredictionCenter;
 pc.testConfig = test_config;
