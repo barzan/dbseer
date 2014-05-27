@@ -1,10 +1,8 @@
 package dbseer.gui;
 
 import matlabcontrol.*;
-import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
-import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -98,9 +96,9 @@ public class DBSeerGUI
 					proxy = factory.getProxy();
 					proxy.eval("clear");
 				} catch (MatlabConnectionException e) {
-					JOptionPane.showMessageDialog(null, "Error", e.toString(), JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, e.toString(), e.toString(), JOptionPane.ERROR_MESSAGE);
 				} catch (MatlabInvocationException e) {
-					JOptionPane.showMessageDialog(null, "Error", e.toString(), JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, e.toString(), e.toString(), JOptionPane.ERROR_MESSAGE);
 				}
 
 				splash.dispose();
