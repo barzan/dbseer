@@ -1,4 +1,4 @@
-classdef PredictionConfig < handle
+classdef PredictionConfigDesc < handle
 
     properties
         dir
@@ -9,7 +9,6 @@ classdef PredictionConfig < handle
         maxThroughputIdx
         io_conf
         lock_conf
-        groupingStrategy
     end
     
     methods

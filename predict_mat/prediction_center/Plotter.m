@@ -43,7 +43,7 @@ classdef Plotter < handle
         function [title legends Xdata Ydata Xlabel Ylabel] = plotAvgCpuUsage(this)
             mv = this.mv;
             Xdata = {this.Xdata}
-            Ydata = {mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq mv.measuredCPU mv.AvgCpuIdle};
+            Ydata = {[mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq mv.measuredCPU mv.AvgCpuIdle]};
             Xlabel = this.Xlabel;
             Ylabel = 'Average cpu usage (%)';
             title = 'Average CPU Usage';
@@ -57,13 +57,17 @@ classdef Plotter < handle
             legends = {};
             legends{end+1} = 'Total client submitted transactions';
             for i=1:size(mv.clientIndividualSubmittedTrans, 2)
+                Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.clientIndividualSubmittedTrans(:,i);
                 legends{end+1} = horzcat('# Transactions ', num2str(i));
             end
             if isfield(mv, 'dbmsRollbackHandler')
+                Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.dbmsRollbackHandler;
                 legends{end+1} = 'DBMS Rollback Handler';
             end
+            Xdata{end+1} = this.Xdata;
+            Xdata{end+1} = this.Xdata;
             Ydata{end+1} = mv.dbmsCommittedCommands;
             Ydata{end+1} = mv.dbmsRolledbackCommands;
             legends{end+1} = 'DBMS Committed Commands';
@@ -82,6 +86,7 @@ classdef Plotter < handle
             legends = {};
             legends{end+1} = 'Context Switches (x1500)';
             if isfield(mv, 'dbmsThreadsRunning')
+                Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.dbmsThreadsRunning;
                 legends{end+1} = 'Threads running';
             end
@@ -92,21 +97,27 @@ classdef Plotter < handle
         
         function [title legends Xdata Ydata Xlabel Ylabel] = plotDiskWriteMB(this)
             mv = this.mv;
-            Xdata = {this.Xdata};
+            Xdata = {};
             Ydata = {};
             legends = {};
             if isfield(mv, 'dbmsTotalWritesMB')
+                Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.dbmsTotalWritesMB;
                 legends{end+1} = 'DB Total Writes (MB)';
             end
+            Xdata{end+1} = this.Xdata;
             Ydata{end+1} = mv.dbmsLogWritesMB;
             legends{end+1} = 'DB Log Writes (MB)';
+            Xdata{end+1} = this.Xdata;
             Ydata{end+1} = mv.dbmsPageWritesMB;
             legends{end+1} = 'DB Page Writes (MB) (pages=16K)';
             if isfield(mv, 'dbmsDoublePageWritesMB')
+                Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.dbmsDoublePageWritesMB;
                 legends{end+1} = 'DB Double Page Writes (MB) (half of dirty pages)';
             end
+            Xdata{end+1} = this.Xdata;
+            Xdata{end+1} = this.Xdata;
             Ydata{end+1} = mv.osNumberOfSectorWrites;
             Ydata{end+1} = mv.osNumberOfWritesCompleted;
             legends{end+1} = 'OS No. Sector Writes (actual IO)';
@@ -120,10 +131,10 @@ classdef Plotter < handle
             mv = this.mv;
             Xdata = {this.Xdata};
             if isfield(mv, 'dbmsDoublePageWritesMB')
-                Ydata = {mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.dbmsDoublePageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB};
+                Ydata = {[mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.dbmsDoublePageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB]};
                 legends = {'DB Total Writes','DB Log Writes','DB Page Writes', 'DB Double Page Writes','OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
             else
-                Ydata = {mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB};
+                Ydata = {[mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB]};
                 legends = {'DB Log Writes','DB Page Writes', 'OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
             end
             
@@ -136,7 +147,7 @@ classdef Plotter < handle
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
                 Xdata = {this.Xdata};
-                Ydata = {mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites mv.osAsynchronousIO mv.dbmsNumberOfPendingWrites mv.dbmsNumberOfPendingLogWrites mv.dbmsNumberOfPendingLogFsyncs};
+                Ydata = {[mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites mv.osAsynchronousIO mv.dbmsNumberOfPendingWrites mv.dbmsNumberOfPendingLogWrites mv.dbmsNumberOfPendingLogFsyncs]};
                 legends = {'DB No. Physical Log Writes','DB No. Data Writes','DB Double Writes Operations','DB No. Log Write Requests','DB Buffer Pool Writes','DB No. Fysnc Log Writes','osAsynchronousIO', 'dbmsNumberOfPendingWrites','dbmsNumberOfPendingLogWrites','dbmsNumberOfPendingLogFsyncs'}
                 Xlabel = this.Xlabel;
                 Ylabel = 'Number of';
@@ -150,7 +161,7 @@ classdef Plotter < handle
                 && isfield(mv, 'dbmsBufferPoolWrites') && isfield(mv, 'dbmsNumberOfFysncLogWrites')
                 
                 Xdata = {this.Xdata};
-                Ydata = {mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites};
+                Ydata = {[mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites]};
                 title = 'Write Requests (#)';
                 Xlabel = this.Xlabel;
                 Ylabel = 'Number of';
@@ -161,13 +172,16 @@ classdef Plotter < handle
         
         function [title legends Xdata Ydata Xlabel Ylabel] = plotDiskReadMB(this)
             mv = this.mv;
-            Xdata = {this.Xdata};
+            Xdata = {};
             Ydata = {};
             legends = {};
             if exist('mv.dbmsPhysicalReadsMB', 'var')
+                Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.dbmsPhysicalReadsMB;
                 legends{end+1} = 'InnoDB Data Read';
             end
+            Xdata{end+1} = this.Xdata;
+            Xdata{end+1} = this.Xdata;
             Ydata{end+1} = mv.osNumberOfSectorReads;
             Ydata{end+1} = mv.osNumberOfReadsIssued;
             legends{end+1} = 'Disk Read';
@@ -182,7 +196,7 @@ classdef Plotter < handle
             if isfield(mv, 'dbmsNumberOfDataReads')
                 Xdata = {this.Xdata};
                 Xlabel = this.Xlabel;
-                Ydata = {mv.dbmsNumberOfDataReads mv.dbmsNumberOfLogicalReadsFromDisk mv.dbmsNumberOfPendingReads};
+                Ydata = {[mv.dbmsNumberOfDataReads mv.dbmsNumberOfLogicalReadsFromDisk mv.dbmsNumberOfPendingReads]};
                 Ylabel = 'Number of';
                 legends = {'DB No. Data Reads','DB No. Logical Reads From Disk','DB No. Pending Reads'};
                 title = 'Read Requests (#)';
@@ -223,7 +237,7 @@ classdef Plotter < handle
             if isfield(mv, 'dbmsChangedRows')
                 Xdata = {this.Xdata};
                 Xlabel = this.Xlabel;
-                Ydata = {mv.dbmsChangedRows mv.dbmsNumberOfRowInsertRequests};
+                Ydata = {[mv.dbmsChangedRows mv.dbmsNumberOfRowInsertRequests]};
                 Ylabel = '# Rows Changed';
                 legends = {'Rows deleted','Rows updated','Rows inserted','HandlerWrite'};
                 title = 'Rows Changed';
@@ -252,7 +266,7 @@ classdef Plotter < handle
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
                 Xdata = {mv.dbmsChangedRows};
-                Ydata = {mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites mv.osAsynchronousIO mv.dbmsNumberOfPendingWrites mv.dbmsNumberOfPendingLogWrites mv.dbmsNumberOfPendingLogFsyncs};
+                Ydata = {[mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites mv.osAsynchronousIO mv.dbmsNumberOfPendingWrites mv.dbmsNumberOfPendingLogWrites mv.dbmsNumberOfPendingLogFsyncs]};
                 Xlabel = '# Rows Changed';
                 Ylabel = 'Number of';
                 legends = {'InnodbLogWrites', 'InnodbDataWrites', 'InnodbDblwrWrites', 'InnodbLogWriteRequests', 'InnodbBufferPoolWriteRequests', 'InnodbOsLogFsyncs', 'asyncAio', 'InnodbDataPendingWrites','InnodbOsLogPendingWrites','InnodbOsLogPendingFsyncs'};
@@ -283,7 +297,7 @@ classdef Plotter < handle
             mv = this.mv;
             Xdata = {this.Xdata};
             Xlabel = this.Xlabel;
-            Ydata = {mv.osNetworkRecvKB mv.osNetworkSendKB};
+            Ydata = {[mv.osNetworkRecvKB mv.osNetworkSendKB]};
             Ylabel = 'KB';
             legends = {'Network recv(KB)','Network send(KB)'};
             title = 'Network';
@@ -340,7 +354,8 @@ classdef Plotter < handle
             Xdata = {this.Xdata};
             Xlabel = this.Xlabel;
             %Ydata = [mean(mv.clientTransLatency(:,2:end),2) mean(mv.prclat.latenciesPCtile(:,2:end,6), 2)];
-            Ydata = {mean(mv.clientTransLatency(:,2:end),2)};
+            Ydata = {mean(mv.clientTransLatency(:,2:end),2)}; ...
+            Xdata{end+1} = this.Xdata;
             Ydata{end+1} = mean(mv.prclat.latenciesPCtile(:,2:end,6), 2);
             Ylabel = 'latency (sec)';
             legends = {'Avg latency','Avg 95 % latency'};
@@ -357,7 +372,7 @@ classdef Plotter < handle
             AcgLatencyAll = sum(mv.clientIndividualSubmittedTrans .* mv.clientTransLatency, 2) ./ mv.clientTotalSubmittedTrans;
             Xdata = {this.Xdata};
             Xlabel = this.Xlabel;
-            Ydata = {AvgLatencyAllLittle AcgLatencyAll};
+            Ydata = {[AvgLatencyAllLittle AcgLatencyAll]};
             Ylabel = 'Latency (sec)';
             a1= mae(AvgLatencyAllLittle, AcgLatencyAll);
             r1 = mre(AvgLatencyAllLittle, AcgLatencyAll);
@@ -367,11 +382,12 @@ classdef Plotter < handle
         
         function [title legends Xdata Ydata Xlabel Ylabel] = plotLatencyVersusCPU(this)
             mv = this.mv;
-            Xdata = {mean(mv.cpu_usr,2)};
+            Xdata = {};
             Xlabel = 'Average CPU';
             Ydata = {};
             legends = {};
             for i=1:mv.numOfTransType
+                Xdata{end+1} = mean(mv.cpu_usr,2);
                 Ydata{end+1} = mv.clientTransLatency(:,i);
                 legends{end+1} = horzcat('tran', num2str(i));
             end
@@ -415,11 +431,12 @@ classdef Plotter < handle
             mv = this.mv;
             temp = [mv.clientTotalSubmittedTrans mv.clientTransLatency];
             temp = sortrows(temp,1);
-            Xdata = {temp(:,1)};
+            Xdata = {};
             Xlabel = 'TPS';
             Ydata = {};
             legends = {};
             for i=1:mv.numOfTransType
+                Xdata{end+1} = temp(:,1);
                 Ydata{end+1} = temp(:,i+1);
                 legends{end+1} = horzcat('Avg Latency ', num2str(i));
             end

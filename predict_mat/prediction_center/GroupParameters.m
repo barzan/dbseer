@@ -9,7 +9,7 @@ classdef GroupParameters < handle
         allowedRelativeDiff
         nClusters
         groups
-        use_group = 0;
+        use_group
     end % end properties
     
     methods
@@ -34,7 +34,7 @@ classdef GroupParameters < handle
         end
         
         function groupStruct = getStruct(this)
-            if this.use_group > 0
+            if ~isempty(this.use_group) && this.use_group==1
                 groupStruct = struct('groups', groups);
             else
                 groupStruct = struct();
@@ -46,6 +46,11 @@ classdef GroupParameters < handle
                     if ~isempty(getfield(this,propertyName))
                         groupStruct = setfield(groupStruct, propertyName, getfield(this, propertyName));
                     end
+                end
+                if ~isempty(fieldnames(groupStruct))
+                    groupStruct = struct('groupParams', groupStruct);
+                else
+                    groupStruct = struct();
                 end
             end
         end

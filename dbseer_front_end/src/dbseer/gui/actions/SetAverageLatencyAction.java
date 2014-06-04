@@ -28,7 +28,7 @@ public class SetAverageLatencyAction extends AbstractAction
 
 		if (loadDialog.getFile() != null)
 		{
-			DBSeerGUI.config.setAverageLatencyPath(loadDialog.getFile().getAbsolutePath());
+			//DBSeerGUI.config.setAverageLatencyPath(loadDialog.getFile().getAbsolutePath());
 		}
 	}
 }

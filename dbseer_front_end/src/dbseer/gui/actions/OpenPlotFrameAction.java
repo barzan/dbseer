@@ -1,6 +1,6 @@
 package dbseer.gui.actions;
 
-import dbseer.gui.DBSeerPlotFrame;
+import dbseer.gui.frame.DBSeerPlotFrame;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

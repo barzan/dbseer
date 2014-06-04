@@ -1,4 +1,4 @@
-package dbseer.gui;
+package dbseer.gui.panel;
 
 import net.miginfocom.swing.MigLayout;
 

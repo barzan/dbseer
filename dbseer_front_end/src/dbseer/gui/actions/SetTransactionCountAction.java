@@ -26,7 +26,7 @@ public class SetTransactionCountAction extends AbstractAction
 
 		if (loadDialog.getFile() != null)
 		{
-			DBSeerGUI.config.setTransCountPath(loadDialog.getFile().getAbsolutePath());
+			//DBSeerGUI.config.setTransCountPath(loadDialog.getFile().getAbsolutePath());
 		}
 	}
 }

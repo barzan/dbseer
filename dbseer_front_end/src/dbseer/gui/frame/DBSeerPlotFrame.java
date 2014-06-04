@@ -1,4 +1,4 @@
-package dbseer.gui;
+package dbseer.gui.frame;
 
 import dbseer.gui.chart.DBSeerChartFactory;
 import net.miginfocom.swing.MigLayout;

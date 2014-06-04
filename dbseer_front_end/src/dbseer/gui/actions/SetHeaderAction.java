@@ -26,7 +26,7 @@ public class SetHeaderAction extends AbstractAction
 
 		if (loadDialog.getFile() != null)
 		{
-			DBSeerGUI.config.setHeaderPath(loadDialog.getFile().getAbsolutePath());
+			//DBSeerGUI.config.setHeaderPath(loadDialog.getFile().getAbsolutePath());
 		}
 	}
 }

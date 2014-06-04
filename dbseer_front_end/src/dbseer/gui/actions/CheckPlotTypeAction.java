@@ -1,6 +1,6 @@
 package dbseer.gui.actions;
 
-import dbseer.gui.DBSeerPlotControlPanel;
+import dbseer.gui.panel.DBSeerPlotControlPanel;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

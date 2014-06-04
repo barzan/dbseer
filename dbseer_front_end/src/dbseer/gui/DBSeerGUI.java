@@ -1,9 +1,11 @@
 package dbseer.gui;
 
+import dbseer.gui.frame.DBSeerMainFrame;
 import matlabcontrol.*;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 
 /**
  * Created by dyoon on 2014. 5. 17..
@@ -11,11 +13,30 @@ import java.lang.reflect.InvocationTargetException;
 public class DBSeerGUI
 {
 	// config containing all necessary information for DBSeer tasks.
-	public static DBSeerConfiguration config = new DBSeerConfiguration();
+	public static String root = "";
+
+	public static ArrayList<DBSeerConfiguration> configs = new ArrayList<DBSeerConfiguration>();
+
+	//public static ArrayList<DBSeerDataProfile> profiles = new ArrayList<DBSeerDataProfile>();
+	public static DefaultComboBoxModel profiles = new DefaultComboBoxModel();
+
+	public static DBSeerConfiguration testConfig = null;
+
+	public static DBSeerConfiguration trainConfig = null;
 
 	public static MatlabProxy proxy;
 
 	public static JLabel status = new JLabel();
+
+	public static String[] getProfileNames()
+	{
+		String[] names = new String[profiles.getSize()];
+		for (int i = 0; i < profiles.getSize(); ++i)
+		{
+			names[i] = ((DBSeerDataProfile)profiles.getElementAt(i)).getName();
+		}
+		return names;
+	}
 
 	public static final String[] availableCharts = {
 			"IndividualCoreUsageUser",
@@ -94,7 +115,7 @@ public class DBSeerGUI
 
 				try {
 					proxy = factory.getProxy();
-					proxy.eval("clear");
+					proxy.eval("clear all");
 				} catch (MatlabConnectionException e) {
 					JOptionPane.showMessageDialog(null, e.toString(), e.toString(), JOptionPane.ERROR_MESSAGE);
 				} catch (MatlabInvocationException e) {

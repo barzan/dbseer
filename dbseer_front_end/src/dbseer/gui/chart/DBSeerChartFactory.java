@@ -35,7 +35,7 @@ public class DBSeerChartFactory
 			String xLabel = (String)proxy.getVariable("Xlabel");
 			String yLabel = (String)proxy.getVariable("Ylabel");
 
-			double[] xArray = (double[])xCellArray[0]; // assuming only 1 array for X.
+			//double[] xArray = (double[])xCellArray[0]; // assuming only 1 array for X.
 
 			XYSeriesCollection dataSet = new XYSeriesCollection();
 
@@ -43,14 +43,25 @@ public class DBSeerChartFactory
 			//int[] yArrayLengths = yArray.getLengths();
 			//int numRows = (xArrayLengths[0] < yArrayLengths[0]) ? xArrayLengths[0] : yArrayLengths[0];
 			//int numData = yArrayLengths[1];
-			int xLength = xArray.length;
+			//int xLength = xArray.length;
 			int numLegends = legends.length;
+			int numXCellArray = xCellArray.length;
 			int numYCellArray = yCellArray.length;
 			int dataCount = 0;
 
+			if (numXCellArray != numYCellArray)
+			{
+				JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
+						"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
+				System.out.println(numXCellArray + " : " + numYCellArray);
+				return null;
+			}
+
 			for (int i = 0; i < numYCellArray; ++i)
 			{
+				double[] xArray = (double[])xCellArray[i];
 				MatlabNumericArray yArray = converter.getNumericArray("Ydata{" + (i+1) + "}" );
+				int xLength = xArray.length;
 				int[] yArrayLengths = yArray.getLengths();
 				int row = yArrayLengths[0];
 				int col = yArrayLengths[1];

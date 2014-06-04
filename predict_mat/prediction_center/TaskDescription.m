@@ -5,5 +5,7 @@ classdef TaskDescription
         workloadName
         byCounts
         whichTransactionToPlot
+        lockType
+        learnLock = false;
     end
 end

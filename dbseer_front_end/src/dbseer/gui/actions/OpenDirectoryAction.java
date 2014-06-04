@@ -1,6 +1,7 @@
 package dbseer.gui.actions;
 
 import dbseer.gui.DBSeerConfiguration;
+import dbseer.gui.DBSeerDataProfile;
 import dbseer.gui.DBSeerFileLoadDialog;
 import dbseer.gui.DBSeerGUI;
 
@@ -12,19 +13,21 @@ import java.awt.event.ActionEvent;
  */
 public class OpenDirectoryAction extends AbstractAction
 {
+	private DBSeerDataProfile profile;
 	private DBSeerFileLoadDialog loadDialog;
 
-	public OpenDirectoryAction()
+	public OpenDirectoryAction(DBSeerDataProfile profile)
 	{
 		super("Open Directory");
 
+		this.profile = profile;
 		loadDialog = new DBSeerFileLoadDialog();
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
-		DBSeerConfiguration config = DBSeerGUI.config;
+		//DBSeerConfiguration config = DBSeerGUI.config;
 		loadDialog.createFileDialog("Open Directory", DBSeerFileLoadDialog.DIRECTORY_ONLY);
 		loadDialog.showDialog();
 
@@ -41,23 +44,23 @@ public class OpenDirectoryAction extends AbstractAction
 					file = directory + "/" + file;
 					if (fileLower.contains("mon"))
 					{
-						config.setMonitoringDataPath(file);
+						profile.setMonitoringDataPath(file);
 					}
 					else if (fileLower.contains("header"))
 					{
-						config.setHeaderPath(file);
+						profile.setHeaderPath(file);
 					}
 					else if (fileLower.contains("avg") || fileLower.contains("average"))
 					{
-						config.setAverageLatencyPath(file);
+						profile.setAverageLatencyPath(file);
 					}
 					else if (fileLower.contains("count"))
 					{
-						config.setTransCountPath(file);
+						profile.setTransCountPath(file);
 					}
 					else if (fileLower.contains("prctile") || fileLower.contains("percentile"))
 					{
-						config.setPercentileLatencyPath(file);
+						profile.setPercentileLatencyPath(file);
 					}
 				}
 			}

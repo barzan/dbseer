@@ -27,7 +27,7 @@ public class SetPercentileLatencyAction extends AbstractAction
 
 		if (loadDialog.getFile() != null)
 		{
-			DBSeerGUI.config.setPercentileLatencyPath(loadDialog.getFile().getAbsolutePath());
+			//DBSeerGUI.config.setPercentileLatencyPath(loadDialog.getFile().getAbsolutePath());
 		}
 	}
 }

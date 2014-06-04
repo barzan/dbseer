@@ -30,7 +30,7 @@ public class SetMonitoringDataAction extends AbstractAction
 
 		if (loadDialog.getFile() != null)
 		{
-			DBSeerGUI.config.setMonitoringDataPath(loadDialog.getFile().getAbsolutePath());
+			//DBSeerGUI.config.setMonitoringDataPath(loadDialog.getFile().getAbsolutePath());
 		}
 	}
 }
