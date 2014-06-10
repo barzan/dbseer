@@ -53,7 +53,7 @@ classdef PredictionCenter < handle
 
             kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', this.testConfig.transactionType, 'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
             emp = zeros(size(this.trainConfig.transactionCount,1), 0);
-            [emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
+            %[emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
 
             %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
             %kccaPred = barzanKccaInvoke(kccaModel, testC);
@@ -332,7 +332,6 @@ classdef PredictionCenter < handle
             legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions', 'Training data'};
             Ylabel = 'Average CPU (%)';
             title = 'Linear model: Avg CPU';
-            
         end % end function
         
         function [title legends Xdata Ydata Xlabel Ylabel] = transactionCountsToCpuByCounts(this)

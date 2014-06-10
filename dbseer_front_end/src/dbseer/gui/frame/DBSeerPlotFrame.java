@@ -1,6 +1,7 @@
 package dbseer.gui.frame;
 
 import dbseer.gui.chart.DBSeerChartFactory;
+import dbseer.gui.panel.DBSeerSelectableChartPanel;
 import net.miginfocom.swing.MigLayout;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -18,6 +19,7 @@ public class DBSeerPlotFrame extends JFrame
 
 	public DBSeerPlotFrame(String[] chartNames)
 	{
+		this.setTitle("Data Profile Statistics");
 		this.chartNames = chartNames;
 		numCharts = chartNames.length;
 		numChartInRow = (int)Math.ceil(Math.sqrt(numCharts));
@@ -31,7 +33,7 @@ public class DBSeerPlotFrame extends JFrame
 		for (String chartName : chartNames)
 		{
 			JFreeChart chart = DBSeerChartFactory.createXYLineChart(chartName);
-			ChartPanel chartPanel = new ChartPanel(chart);
+			DBSeerSelectableChartPanel chartPanel = new DBSeerSelectableChartPanel(chart);
 			if (++count == numChartInRow)
 			{
 				this.add(chartPanel, "wrap");

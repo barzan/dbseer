@@ -1,11 +1,11 @@
 package dbseer.gui;
 
 import dbseer.gui.frame.DBSeerMainFrame;
+import dbseer.gui.model.SharedComboBoxModel;
 import matlabcontrol.*;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 
 /**
  * Created by dyoon on 2014. 5. 17..
@@ -15,7 +15,8 @@ public class DBSeerGUI
 	// config containing all necessary information for DBSeer tasks.
 	public static String root = "";
 
-	public static ArrayList<DBSeerConfiguration> configs = new ArrayList<DBSeerConfiguration>();
+//	public static SharedComboBoxModel configs = new SharedComboBoxModel(new DefaultListModel());
+	public static DefaultListModel configs = new DefaultListModel();
 
 	//public static ArrayList<DBSeerDataProfile> profiles = new ArrayList<DBSeerDataProfile>();
 	public static DefaultComboBoxModel profiles = new DefaultComboBoxModel();
@@ -37,6 +38,11 @@ public class DBSeerGUI
 		}
 		return names;
 	}
+
+	public static final String[] availableWorkloads = {
+			"TPCC",
+			"LOCK1"
+	};
 
 	public static final String[] availableCharts = {
 			"IndividualCoreUsageUser",
@@ -63,7 +69,24 @@ public class DBSeerGUI
 			"WorkingSetSize",
 			"WorkingSetSize2",
 			"LatencyPerTPS",
-			"LatencyPerLocktime"};
+			"LatencyPerLocktime"
+	};
+
+	public static final String[] availablePredictions = {
+			"FlushRatePredictionByTPS",
+			"FlushRatePredictionByCounts",
+			"MaxThroughputPrediction",
+			"TransactionCountsToCpuByTPS",
+			"TransactionCountsToCpuByCounts",
+			"TransactionCountsToIO",
+			"TransactionCountsToLatency",
+			"TransactionCountsWaitTimeToLatency",
+			"BlownTransactionCountsToCpu",
+			"BlownTransactionCountsToIO",
+			"LinearPrediction",
+			"PhysicalReadPrediction",
+			"LockPrediction"
+	};
 
 	private static DBSeerSplash splash;
 
@@ -110,7 +133,7 @@ public class DBSeerGUI
 
 				MatlabProxyFactoryOptions options = new MatlabProxyFactoryOptions.Builder()
 						.setUsePreviouslyControlledSession(true)
-						.setHidden(true).build();
+						.setHidden(false).build();
 				MatlabProxyFactory factory = new MatlabProxyFactory(options);
 
 				try {

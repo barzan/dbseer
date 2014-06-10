@@ -1,6 +1,5 @@
 package dbseer.gui.panel;
 
-import dbseer.gui.DBSeerConfiguration;
 import dbseer.gui.DBSeerDataProfile;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.frame.DBSeerPlotFrame;
@@ -31,7 +30,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 	private JButton selectAllButton;
 	private JButton deselectAllButton;
 	private JComboBox profileComboBox;
-	private final int WRAP_COUNT = 5;
+	private final int WRAP_COUNT = 3;
 
 	public DBSeerPlotControlPanel()
 	{
@@ -44,7 +43,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 
 		buttonPanel = new JPanel();
 		buttonPanel.setLayout(new MigLayout());
-		buttonPanel.setPreferredSize(new Dimension(400,200));
+		buttonPanel.setPreferredSize(new Dimension(300, 200));
 
 		plotButton = new JButton();
 		plotButton.setText("Load & Plot");
@@ -59,7 +58,8 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 		deselectAllButton.addActionListener(this);
 
 		profileComboBox = new JComboBox(DBSeerGUI.profiles);
-		profileComboBox.setPreferredSize(new Dimension(300,100));
+		profileComboBox.setBorder(BorderFactory.createTitledBorder("Choose a profile"));
+		profileComboBox.setPreferredSize(new Dimension(250,100));
 
 		buttonPanel.add(profileComboBox, "dock north");
 		buttonPanel.add(plotButton, "cell 0 0");
@@ -90,10 +90,15 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 	{
 		if (actionEvent.getSource() == plotButton)
 		{
+			final DBSeerDataProfile profile = (DBSeerDataProfile)profileComboBox.getSelectedItem();
+
+			if (profile == null)
+			{
+				return;
+			}
+
 			plotButton.setEnabled(false);
 			DBSeerGUI.status.setText("Plotting...");
-
-			final DBSeerDataProfile profile = (DBSeerDataProfile)profileComboBox.getSelectedItem();
 
 			SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
 			{
@@ -108,30 +113,37 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 
 					try
 					{
-						if (profile.isProfileChanged())
-						{
-							proxy.eval("rmpath " + dbseerPath + ";");
-							proxy.eval("rmpath " + dbseerPath + "/common_mat;");
-							proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
-							proxy.eval("rmpath " + dbseerPath + "/predict_data;");
-							proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+						proxy.eval("rmpath " + dbseerPath + ";");
+						proxy.eval("rmpath " + dbseerPath + "/common_mat;");
+						proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
+						proxy.eval("rmpath " + dbseerPath + "/predict_data;");
+						proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-							proxy.eval("addpath " + dbseerPath + ";");
-							proxy.eval("addpath " + dbseerPath + "/common_mat;");
-							proxy.eval("addpath " + dbseerPath + "/predict_mat;");
-							proxy.eval("addpath " + dbseerPath + "/predict_data;");
-							proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+						proxy.eval("addpath " + dbseerPath + ";");
+						proxy.eval("addpath " + dbseerPath + "/common_mat;");
+						proxy.eval("addpath " + dbseerPath + "/predict_mat;");
+						proxy.eval("addpath " + dbseerPath + "/predict_data;");
+						proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-							proxy.eval("plotter = Plotter;");
-							proxy.eval("header_path = '" + profile.getHeaderPath() + "';");
-							proxy.eval("monitor_path = '" + profile.getMonitoringDataPath() + "';");
-							proxy.eval("trans_count_path = '" + profile.getTransCountPath() + "';");
-							proxy.eval("avg_latency_path = '" + profile.getAverageLatencyPath() + "';");
-							proxy.eval("percentile_latency_path = '" + profile.getPercentileLatencyPath() + "';");
-							proxy.eval("mv = load_mv(header_path, monitor_path, trans_count_path, " +
-									"avg_latency_path, percentile_latency_path);");
-							proxy.eval("plotter.mv = mv");
-						}
+						proxy.eval("plotter = Plotter;");
+						profile.loadProfile();
+//							proxy.eval("header_path = '" + profile.getHeaderPath() + "';");
+//							proxy.eval("monitor_path = '" + profile.getMonitoringDataPath() + "';");
+//							proxy.eval("trans_count_path = '" + profile.getTransCountPath() + "';");
+//							proxy.eval("avg_latency_path = '" + profile.getAverageLatencyPath() + "';");
+//							proxy.eval("percentile_latency_path = '" + profile.getPercentileLatencyPath() + "';");
+//							proxy.eval("[header monitor avglat prclat trcount diffMonitor] = load_stats(header_path, " +
+//									"monitor_path, trans_count_path, avg_latency_path, percentile_latency_path, " +
+//									"0, 0, true);");
+						proxy.eval("[mvGrouped mvUngrouped] = load_mv(" +
+								profile.getUniqueVariableName() + ".header," +
+								profile.getUniqueVariableName() + ".monitor," +
+								profile.getUniqueVariableName() + ".averageLatency," +
+								profile.getUniqueVariableName() + ".percentileLatency," +
+								profile.getUniqueVariableName() + ".transactionCount," +
+								profile.getUniqueVariableName() + ".diffedMonitor);");
+						proxy.eval("plotter.mv = mvUngrouped;");
+
 					}
 					catch (MatlabInvocationException e)
 					{
@@ -156,7 +168,6 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 							DBSeerGUI.status.setText("");
 						}
 					});
-					profile.setProfileChanged(false);
 				}
 			};
 

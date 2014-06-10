@@ -1,8 +1,12 @@
 package dbseer.gui;
 
+import matlabcontrol.MatlabInvocationException;
+import matlabcontrol.MatlabProxy;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
+import java.util.UUID;
 
 /**
  * Created by dyoon on 2014. 5. 24..
@@ -11,8 +15,8 @@ public class DBSeerDataProfile
 {
 	private static final String[] tableHeaders = {"Name of profile", "Monitoring Data", "Transaction Count",
 			"Average Latency", "Percentile Latency", "Header", "Number of transaction types",
-			"Start Index", "End Index", "Max Throughput Index", "I/O Configuration", "Lock Configuration"
-		};
+			"Start Index", "End Index", "Max Throughput Index"}; //"I/O Configuration", "Lock Configuration"
+		//};
 
 	private static final int TYPE_NAME = 0;
 	private static final int TYPE_MONITORING_DATA = 1;
@@ -29,9 +33,10 @@ public class DBSeerDataProfile
 
 	private static int idToAssign = 0;
 
-	private boolean profileChanged = true;
+	private boolean profileLoaded = false;
 
 	private int id = 0;
+	private String uniqueVariableName = "";
 	private String name = "";
 
 	private String monitoringDataPath = "";
@@ -44,8 +49,8 @@ public class DBSeerDataProfile
 	private int startIndex = 0;
 	private int endIndex = 0;
 	private int maxThroughputIndex = 0;
-	private String IOConfiguration = "";
-	private String lockConfiguration = "";
+	private String IOConfiguration = "[]";
+	private String lockConfiguration = "[]";
 
 	private JTable table;
 	private DefaultTableModel tableModel;
@@ -53,19 +58,22 @@ public class DBSeerDataProfile
 	public DBSeerDataProfile()
 	{
 		id = getIdToAssign();
-		name = "Unnamed profile " + DBSeerGUI.profiles.getSize();
+		uniqueVariableName = "profile_" + id + "_" + UUID.randomUUID().toString().replace('-', '_');
+		name = "Unnamed profile " + id;
 		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
 		table = new JTable(tableModel);
 		table.setFillsViewportHeight(true);
 		table.getColumnModel().getColumn(0).setMaxWidth(400);
 		table.getColumnModel().getColumn(0).setPreferredWidth(300);
-		table.getColumnModel().getColumn(1).setPreferredWidth(800);
+		table.getColumnModel().getColumn(1).setPreferredWidth(600);
+		table.setRowHeight(20);
 
 		for (String header : tableHeaders)
 		{
 			tableModel.addRow(new Object[]{header, ""});
 		}
 		this.updateTable();
+		profileLoaded = false;
 	}
 
 	private static synchronized int getIdToAssign()
@@ -81,6 +89,34 @@ public class DBSeerDataProfile
 	public JTable getTable()
 	{
 		return table;
+	}
+
+	public void loadProfile()
+	{
+		if (profileLoaded == false)
+		{
+			MatlabProxy proxy = DBSeerGUI.proxy;
+
+			try
+			{
+				proxy.eval(this.uniqueVariableName + " = DataProfile;");
+				proxy.eval(this.uniqueVariableName + ".header_path = '" + this.headerPath + "';");
+				proxy.eval(this.uniqueVariableName + ".monitor_path = '" + this.monitoringDataPath + "';");
+				proxy.eval(this.uniqueVariableName + ".avg_latency_path = '" + this.averageLatencyPath + "';");
+				proxy.eval(this.uniqueVariableName + ".percentile_latency_path = '" +
+						this.percentileLatencyPath + "';");
+				proxy.eval(this.uniqueVariableName + ".trans_count_path = '" + this.transCountPath + "';");
+				proxy.eval(this.uniqueVariableName + ".startIdx = " + this.startIndex + ";");
+				proxy.eval(this.uniqueVariableName + ".endIdx = " + this.endIndex + ";");
+				proxy.eval(this.uniqueVariableName + ".loadStatistics;");
+			}
+			catch (MatlabInvocationException e)
+			{
+				e.printStackTrace();
+			}
+
+			profileLoaded = true;
+		}
 	}
 
 	public void setFromTable()
@@ -103,7 +139,7 @@ public class DBSeerDataProfile
 							this.averageLatencyPath = (String)tableModel.getValueAt(i, 1);
 							break;
 						case TYPE_END_INDEX:
-							this.endIndex = ((Integer)tableModel.getValueAt(i, 1)).intValue();
+							this.endIndex = Integer.parseInt((String)tableModel.getValueAt(i, 1));
 							break;
 						case TYPE_HEADER:
 							this.headerPath = (String)tableModel.getValueAt(i, 1);
@@ -115,19 +151,19 @@ public class DBSeerDataProfile
 							this.IOConfiguration = (String)tableModel.getValueAt(i, 1);
 							break;
 						case TYPE_MAX_THROUGHPUT_INDEX:
-							this.maxThroughputIndex = ((Integer)tableModel.getValueAt(i, 1)).intValue();
+							this.maxThroughputIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
 							break;
 						case TYPE_MONITORING_DATA:
 							this.monitoringDataPath = (String)tableModel.getValueAt(i, 1);
 							break;
 						case TYPE_NUM_TRANSACTION_TYPE:
-							this.numTransactionTypes = ((Integer)tableModel.getValueAt(i, 1)).intValue();
+							this.numTransactionTypes = Integer.parseInt((String)tableModel.getValueAt(i, 1));
 							break;
 						case TYPE_PERCENTILE_LATENCY:
 							this.percentileLatencyPath = (String)tableModel.getValueAt(i, 1);
 							break;
 						case TYPE_START_INDEX:
-							this.startIndex = ((Integer)tableModel.getValueAt(i, 1)).intValue();
+							this.startIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
 							break;
 						case TYPE_TRANSACTION_COUNT:
 							this.transCountPath = (String)tableModel.getValueAt(i, 1);
@@ -158,7 +194,7 @@ public class DBSeerDataProfile
 							tableModel.setValueAt(this.averageLatencyPath, i, 1);
 							break;
 						case TYPE_END_INDEX:
-							tableModel.setValueAt(this.endIndex, i, 1);
+							tableModel.setValueAt(String.valueOf(this.endIndex), i, 1);
 							break;
 						case TYPE_HEADER:
 							tableModel.setValueAt(this.headerPath, i, 1);
@@ -170,19 +206,19 @@ public class DBSeerDataProfile
 							tableModel.setValueAt(this.lockConfiguration, i, 1);
 							break;
 						case TYPE_MAX_THROUGHPUT_INDEX:
-							tableModel.setValueAt(this.maxThroughputIndex, i, 1);
+							tableModel.setValueAt(String.valueOf(this.maxThroughputIndex), i, 1);
 							break;
 						case TYPE_MONITORING_DATA:
 							tableModel.setValueAt(this.monitoringDataPath, i, 1);
 							break;
 						case TYPE_NUM_TRANSACTION_TYPE:
-							tableModel.setValueAt(this.numTransactionTypes, i, 1);
+							tableModel.setValueAt(String.valueOf(this.numTransactionTypes), i, 1);
 							break;
 						case TYPE_PERCENTILE_LATENCY:
 							tableModel.setValueAt(this.percentileLatencyPath, i, 1);
 							break;
 						case TYPE_START_INDEX:
-							tableModel.setValueAt(this.startIndex, i, 1);
+							tableModel.setValueAt(String.valueOf(this.startIndex), i, 1);
 							break;
 						case TYPE_TRANSACTION_COUNT:
 							tableModel.setValueAt(this.transCountPath, i, 1);
@@ -206,7 +242,7 @@ public class DBSeerDataProfile
 		this.name = name;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized int getNumTransactionTypes()
@@ -219,7 +255,7 @@ public class DBSeerDataProfile
 		this.numTransactionTypes = numTransactionTypes;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized int getStartIndex()
@@ -232,7 +268,7 @@ public class DBSeerDataProfile
 		this.startIndex = startIndex;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized int getEndIndex()
@@ -245,7 +281,7 @@ public class DBSeerDataProfile
 		this.endIndex = endIndex;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized int getMaxThroughputIndex()
@@ -258,7 +294,7 @@ public class DBSeerDataProfile
 		this.maxThroughputIndex = maxThroughputIndex;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized String getIOConfiguration()
@@ -271,7 +307,7 @@ public class DBSeerDataProfile
 		this.IOConfiguration = IOConfiguration;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized String getLockConfiguration()
@@ -284,10 +320,9 @@ public class DBSeerDataProfile
 		this.lockConfiguration = lockConfiguration;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
-
-
+	
 	public synchronized String getMonitoringDataPath()
 	{
 		return monitoringDataPath;
@@ -298,7 +333,7 @@ public class DBSeerDataProfile
 		this.monitoringDataPath = monitoringDataPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized String getTransCountPath()
@@ -311,7 +346,7 @@ public class DBSeerDataProfile
 		this.transCountPath = transCountPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized String getAverageLatencyPath()
@@ -324,7 +359,7 @@ public class DBSeerDataProfile
 		this.averageLatencyPath = averageLatencyPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized String getPercentileLatencyPath()
@@ -337,7 +372,7 @@ public class DBSeerDataProfile
 		this.percentileLatencyPath = percentileLatencyPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
 	public synchronized String getHeaderPath()
@@ -350,21 +385,26 @@ public class DBSeerDataProfile
 		this.headerPath = headerPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileChanged = true;
+		this.profileLoaded = false;
 	}
 
-	public synchronized boolean isProfileChanged()
+	public synchronized boolean isProfileLoaded()
 	{
-		return profileChanged;
+		return profileLoaded;
 	}
 
-	public synchronized void setProfileChanged(boolean profileChanged)
+	public synchronized void setProfileLoaded(boolean profileLoaded)
 	{
-		this.profileChanged = profileChanged;
+		this.profileLoaded = profileLoaded;
 	}
 
-	public int getId()
+	public synchronized int getId()
 	{
 		return id;
+	}
+
+	public synchronized String getUniqueVariableName()
+	{
+		return uniqueVariableName;
 	}
 }

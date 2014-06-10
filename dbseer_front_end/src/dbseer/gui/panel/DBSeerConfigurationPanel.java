@@ -1,11 +1,8 @@
 package dbseer.gui.panel;
 
-import dbseer.gui.DBSeerFileLoadDialog;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
-import javax.swing.text.NumberFormatter;
-import java.text.NumberFormat;
 
 /**
  * Created by dyoon on 2014. 6. 2..
@@ -26,7 +23,7 @@ public class DBSeerConfigurationPanel extends JPanel
 		this.setLayout(new MigLayout("fill"));
 
 		loginPanel = new DBSeerLoginPanel();
-		loginPanel.setBorder(BorderFactory.createTitledBorder("Middleware Login"));
+		loginPanel.setBorder(BorderFactory.createTitledBorder("Middleware"));
 		configListPanel = new DBSeerConfigListPanel();
 		configListPanel.setBorder(BorderFactory.createTitledBorder("Available Configs"));
 		profileListPanel = new DBSeerProfileListPanel();

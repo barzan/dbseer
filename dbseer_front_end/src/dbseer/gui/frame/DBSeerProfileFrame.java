@@ -49,6 +49,7 @@ public class DBSeerProfileFrame extends JFrame implements ActionListener
 		this.setLayout(new MigLayout("fill", "[fill,grow]"));
 		scrollPane = new JScrollPane(profile.getTable());
 		profile.getTable().setFillsViewportHeight(true);
+		profile.getTable().setFont(new Font("Verdana", Font.PLAIN, 14));
 		scrollPane.setPreferredSize(new Dimension(1000,400));
 
 		openDirectoryButton = new JButton(new OpenDirectoryAction(profile));

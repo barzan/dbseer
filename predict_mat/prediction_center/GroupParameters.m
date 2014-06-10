@@ -15,9 +15,9 @@ classdef GroupParameters < handle
     methods
         function set.allowedRelativeDiff(obj, value)
             if value < 0 || value > 1
-                error('allowsRelativeDiff must be between 0 and 1.');
+                error('allowedRelativeDiff must be between 0 and 1.');
             else
-                obj.allowsRelativeDiff = value;
+                obj.allowedRelativeDiff = value;
             end
         end
         

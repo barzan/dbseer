@@ -8,8 +8,6 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
 
 /**
@@ -28,7 +26,7 @@ public class DBSeerMainFrame extends JFrame
 	private DBSeerTaskDescriptionPanel taskDescPanel;
 	private DBSeerPlotControlPanel plotControlPanel;
 	private DBSeerConfigurationPanel configPanel;
-	private DBSeerPredictionPanel predictionPanel;
+	private DBSeerPredictionControlPanel predictionPanel;
 
 	public DBSeerMainFrame()
 	{
@@ -92,7 +90,7 @@ public class DBSeerMainFrame extends JFrame
 		taskDescPanel = new DBSeerTaskDescriptionPanel();
 		plotControlPanel = new DBSeerPlotControlPanel();
 		configPanel = new DBSeerConfigurationPanel();
-		predictionPanel = new DBSeerPredictionPanel();
+		predictionPanel = new DBSeerPredictionControlPanel();
 
 		DBSeerGUI.status.setHorizontalAlignment(JLabel.LEFT);
 		DBSeerGUI.status.setHorizontalTextPosition(JLabel.LEFT);
@@ -112,6 +110,7 @@ public class DBSeerMainFrame extends JFrame
 		this.add(mainTabbedPane, "cell 0 1, grow");
 		//this.add(configPane, "cell 0 2, grow");
 		//this.add(plotControlPanel, "cell 1 0");
+		DBSeerGUI.status.setPreferredSize(new Dimension(1000, 20));
 		this.add(DBSeerGUI.status, "dock south, grow");
 
 	}
