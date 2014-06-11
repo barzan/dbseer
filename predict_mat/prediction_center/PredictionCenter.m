@@ -182,34 +182,42 @@ classdef PredictionCenter < handle
             num_col = size(Xdata{1}, 2);
 
             if ~isempty(actualThr)
+                Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                 Ydata{end+1} = repmat(actualThr, num_row, num_col);
                 legends{end+1} = 'Actual Max Throughput';
             end
             if ~isempty(cpuCLThroughput)
+                Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                 Ydata{end+1} = repmat(cpuCLThroughput, num_row, num_col);
                 legends{end+1} = 'Max Throughput based on adjusted LR for CPU+classification';
             end
             if ~isempty(cpuCUThroughput)
+                Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                 Ydata{end+1} = repmat(cpuCUThroughput, num_row, num_col);
                 legends{end+1} = 'Max Throughput on LR for CPU+classification';
             end
             if ~isempty(cpuTLThroughput)
+                Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                 Ydata{end+1} = repmat(cpuTLThroughput, num_row, num_col);
                 legends{end+1} = 'Max Throughput on adjusted LR for CPU';
             end
             if ~isempty(cpuTUThroughput)
+                Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                 Ydata{end+1} = repmat(cpuTUThroughput, num_row, num_col);
                 legends{end+1} = 'Max Throughput based on LR for CPU';
             end
             if ~isempty(myFlushRateThroughput)
+                Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                 Ydata{end+1} = repmat(myFlushRateThroughput, num_row, num_col);
                 legends{end+1} = 'Max Throughput based on our flush rate model';
             end
             if ~isempty(linFlushRateThroughput)
+                Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                 Ydata{end+1} = repmat(linFlushRateThroughput, num_row, num_col);
                 legends{end+1} = 'Max Throughput based on LR for flush rate'; 
             end
             if ~isempty(concurrencyThroughput)
+                Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                 Ydata{end+1} = repmat(concurrencyThroughput, num_row, num_col);
                 legends{end+1} = 'Max Throughput based on our contention model';
             end
