@@ -27,7 +27,7 @@ public class DBSeerConfigurationPanel extends JPanel
 		configListPanel = new DBSeerConfigListPanel();
 		configListPanel.setBorder(BorderFactory.createTitledBorder("Available Configs"));
 		profileListPanel = new DBSeerProfileListPanel();
-		profileListPanel.setBorder(BorderFactory.createTitledBorder("Available Data Profiles"));
+		profileListPanel.setBorder(BorderFactory.createTitledBorder("Available Datasets"));
 
 		this.add(loginPanel, "dock west");
 		this.add(configListPanel, "grow");

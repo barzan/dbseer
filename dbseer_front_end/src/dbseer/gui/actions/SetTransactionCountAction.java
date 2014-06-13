@@ -1,7 +1,6 @@
 package dbseer.gui.actions;
 
-import dbseer.gui.DBSeerFileLoadDialog;
-import dbseer.gui.DBSeerGUI;
+import dbseer.gui.dialog.DBSeerFileLoadDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

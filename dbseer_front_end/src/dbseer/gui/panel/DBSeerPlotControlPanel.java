@@ -1,6 +1,7 @@
 package dbseer.gui.panel;
 
-import dbseer.gui.DBSeerDataProfile;
+import dbseer.gui.model.SharedComboBoxModel;
+import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.frame.DBSeerPlotFrame;
 import dbseer.gui.actions.CheckPlotTypeAction;
@@ -57,7 +58,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 		deselectAllButton.setText("Deselect All");
 		deselectAllButton.addActionListener(this);
 
-		profileComboBox = new JComboBox(DBSeerGUI.profiles);
+		profileComboBox = new JComboBox(new SharedComboBoxModel(DBSeerGUI.datasets));
 		profileComboBox.setBorder(BorderFactory.createTitledBorder("Choose a profile"));
 		profileComboBox.setPreferredSize(new Dimension(250,100));
 
@@ -90,7 +91,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 	{
 		if (actionEvent.getSource() == plotButton)
 		{
-			final DBSeerDataProfile profile = (DBSeerDataProfile)profileComboBox.getSelectedItem();
+			final DBSeerDataSet profile = (DBSeerDataSet)profileComboBox.getSelectedItem();
 
 			if (profile == null)
 			{
@@ -109,7 +110,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 				{
 					MatlabProxy proxy = DBSeerGUI.proxy;
 
-					String dbseerPath = DBSeerGUI.root;
+					String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
 
 					try
 					{

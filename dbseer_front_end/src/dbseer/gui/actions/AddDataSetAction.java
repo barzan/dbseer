@@ -1,6 +1,6 @@
 package dbseer.gui.actions;
 
-import dbseer.gui.DBSeerDataProfile;
+import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.DBSeerGUI;
 
 import javax.swing.*;
@@ -9,15 +9,15 @@ import java.awt.event.ActionEvent;
 /**
  * Created by dyoon on 2014. 6. 3..
  */
-public class AddProfileAction extends AbstractAction
+public class AddDataSetAction extends AbstractAction
 {
-	private DBSeerDataProfile profile;
+	private DBSeerDataSet profile;
 	private JFrame frame;
 	private JList list; // JList to update
 
-	public AddProfileAction(DBSeerDataProfile profile, JFrame frame, JList list)
+	public AddDataSetAction(DBSeerDataSet profile, JFrame frame, JList list)
 	{
-		super("Add Profile");
+		super("Add Dataset");
 		this.profile = profile;
 		this.frame = frame;
 		this.list = list;
@@ -32,8 +32,8 @@ public class AddProfileAction extends AbstractAction
 //			protected Void doInBackground() throws Exception
 //			{
 //				profile.setFromTable();
-//				DBSeerGUI.profiles.addElement(profile);
-//				list.setListData(DBSeerGUI.profiles.toArray());
+//				DBSeerGUI.datasets.addElement(profile);
+//				list.setListData(DBSeerGUI.datasets.toArray());
 //				list.invalidate();
 //				return null;
 //			}
@@ -54,8 +54,8 @@ public class AddProfileAction extends AbstractAction
 			{
 				profile.setFromTable();
 				//System.out.println(profile.getMonitoringDataPath());
-				DBSeerGUI.profiles.addElement(profile);
-				//list.setListData(DBSeerGUI.profiles.toArray());
+				DBSeerGUI.datasets.addElement(profile);
+				//list.setListData(DBSeerGUI.datasets.toArray());
 				frame.dispose();
 			}
 		});

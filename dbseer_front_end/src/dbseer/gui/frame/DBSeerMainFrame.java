@@ -46,39 +46,39 @@ public class DBSeerMainFrame extends JFrame
 		// and file menu.
 		menu = new JMenu("File");
 
-		// Open directory.
-//		menuItem = new JMenuItem(new OpenDirectoryAction());
-//		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.ALT_MASK));
-//		menu.add(menuItem);
+		// Save current setting
+		menuItem = new JMenuItem(new SaveSettingsAction());
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.ALT_MASK));
+		menu.add(menuItem);
 
 		// separator.
-		menu.addSeparator();
-
-		// and menu item.
-		// set header
-		menuItem = new JMenuItem(new SetHeaderAction());
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.ALT_MASK));
-		menu.add(menuItem);
-
-		// set monitoring data.
-		menuItem = new JMenuItem(new SetMonitoringDataAction());
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.ALT_MASK));
-		menu.add(menuItem);
-
-		// set transaction count
-		menuItem = new JMenuItem(new SetTransactionCountAction());
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.ALT_MASK));
-		menu.add(menuItem);
-
-		// set average latency
-		menuItem = new JMenuItem(new SetAverageLatencyAction());
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.ALT_MASK));
-		menu.add(menuItem);
-
-		// set percentile latency
-		menuItem = new JMenuItem(new SetPercentileLatencyAction());
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.ALT_MASK));
-		menu.add(menuItem);
+//		menu.addSeparator();
+//
+//		// and menu item.
+//		// set header
+//		menuItem = new JMenuItem(new SetHeaderAction());
+//		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.ALT_MASK));
+//		menu.add(menuItem);
+//
+//		// set monitoring data.
+//		menuItem = new JMenuItem(new SetMonitoringDataAction());
+//		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.ALT_MASK));
+//		menu.add(menuItem);
+//
+//		// set transaction count
+//		menuItem = new JMenuItem(new SetTransactionCountAction());
+//		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.ALT_MASK));
+//		menu.add(menuItem);
+//
+//		// set average latency
+//		menuItem = new JMenuItem(new SetAverageLatencyAction());
+//		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.ALT_MASK));
+//		menu.add(menuItem);
+//
+//		// set percentile latency
+//		menuItem = new JMenuItem(new SetPercentileLatencyAction());
+//		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.ALT_MASK));
+//		menu.add(menuItem);
 
 		menuBar.add(menu);
 		this.setJMenuBar(menuBar);

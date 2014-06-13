@@ -1,10 +1,8 @@
 package dbseer.gui.frame;
 
-import dbseer.gui.DBSeerDataProfile;
-import dbseer.gui.DBSeerGUI;
-import dbseer.gui.actions.AddProfileAction;
+import dbseer.gui.user.DBSeerDataSet;
+import dbseer.gui.actions.AddDataSetAction;
 import dbseer.gui.actions.OpenDirectoryAction;
-import dbseer.gui.panel.DBSeerProfileListPanel;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -15,10 +13,10 @@ import java.awt.event.ActionListener;
 /**
  * Created by dyoon on 2014. 6. 3..
  */
-public class DBSeerProfileFrame extends JFrame implements ActionListener
+public class DBSeerDataSetFrame extends JFrame implements ActionListener
 {
 	boolean isEditMode;
-	private DBSeerDataProfile profile;
+	private DBSeerDataSet profile;
 	private JScrollPane scrollPane;
 	private JButton openDirectoryButton;
 	private JButton addProfileButton;
@@ -26,7 +24,7 @@ public class DBSeerProfileFrame extends JFrame implements ActionListener
 	private JButton cancelButton;
 	private JList list;
 
-	public DBSeerProfileFrame(String title, DBSeerDataProfile profile, JList list)
+	public DBSeerDataSetFrame(String title, DBSeerDataSet profile, JList list)
 	{
 		this.setTitle(title);
 		this.profile = profile;
@@ -35,7 +33,7 @@ public class DBSeerProfileFrame extends JFrame implements ActionListener
 		initializeGUI();
 	}
 
-	public DBSeerProfileFrame(String title, DBSeerDataProfile profile, JList list, boolean isEditMode)
+	public DBSeerDataSetFrame(String title, DBSeerDataSet profile, JList list, boolean isEditMode)
 	{
 		this.setTitle(title);
 		this.profile = profile;
@@ -53,8 +51,8 @@ public class DBSeerProfileFrame extends JFrame implements ActionListener
 		scrollPane.setPreferredSize(new Dimension(1000,400));
 
 		openDirectoryButton = new JButton(new OpenDirectoryAction(profile));
-		addProfileButton = new JButton(new AddProfileAction(profile, this, list));
-		editProfileButton = new JButton("Edit Profile");
+		addProfileButton = new JButton(new AddDataSetAction(profile, this, list));
+		editProfileButton = new JButton("Edit Dataset");
 		editProfileButton.addActionListener(this);
 		cancelButton = new JButton("Cancel");
 		cancelButton.addActionListener(this);

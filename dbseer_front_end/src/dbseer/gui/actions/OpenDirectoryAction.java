@@ -1,9 +1,7 @@
 package dbseer.gui.actions;
 
-import dbseer.gui.DBSeerConfiguration;
-import dbseer.gui.DBSeerDataProfile;
-import dbseer.gui.DBSeerFileLoadDialog;
-import dbseer.gui.DBSeerGUI;
+import dbseer.gui.user.DBSeerDataSet;
+import dbseer.gui.dialog.DBSeerFileLoadDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -13,10 +11,10 @@ import java.awt.event.ActionEvent;
  */
 public class OpenDirectoryAction extends AbstractAction
 {
-	private DBSeerDataProfile profile;
+	private DBSeerDataSet profile;
 	private DBSeerFileLoadDialog loadDialog;
 
-	public OpenDirectoryAction(DBSeerDataProfile profile)
+	public OpenDirectoryAction(DBSeerDataSet profile)
 	{
 		super("Open Directory");
 

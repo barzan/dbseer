@@ -1,4 +1,4 @@
-package dbseer.gui;
+package dbseer.gui.dialog;
 
 import javax.swing.*;
 import java.awt.*;

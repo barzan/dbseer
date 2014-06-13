@@ -1,4 +1,4 @@
-package dbseer.gui;
+package dbseer.gui.user;
 
 import javax.swing.table.DefaultTableModel;
 

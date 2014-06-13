@@ -9,14 +9,19 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class DBSeerSplash extends JWindow
 {
+	private JLabel status;
 	public DBSeerSplash() throws InvocationTargetException, InterruptedException
 	{
 		Dimension screenSize =
 				Toolkit.getDefaultToolkit().getScreenSize();
-		JLabel status = new JLabel("initializing MATLAB...");
+
+		status = new JLabel("initializing MATLAB...");
+		status.setHorizontalAlignment(JLabel.CENTER);
+		status.setPreferredSize(new Dimension(500, 24));
+
 		Font labelFont = status.getFont();
 
-		status.setFont(new Font(labelFont.getName(), Font.PLAIN, 24));
+		status.setFont(new Font(labelFont.getName(), Font.PLAIN, 18));
 		Dimension labelSize = status.getPreferredSize();
 		this.setBounds(screenSize.width/2 - (labelSize.width/2),
 				screenSize.height/2 - (labelSize.height/2), 400,200);
@@ -26,5 +31,10 @@ public class DBSeerSplash extends JWindow
 		pack();
 		this.setLocationRelativeTo(null);
 		setVisible(true);
+	}
+
+	public void setText(String text)
+	{
+	    status.setText(text);
 	}
 }

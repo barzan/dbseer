@@ -1,16 +1,23 @@
-package dbseer.gui;
+package dbseer.gui.user;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamImplicit;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
+import dbseer.gui.DBSeerGUI;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * Created by dyoon on 2014. 6. 2..
  */
+@XStreamAlias("config")
 public class DBSeerConfiguration
 {
 	// Grouping Type Constants
@@ -46,16 +53,24 @@ public class DBSeerConfiguration
 
 	private static final String[] groupingTargets = {"Individual transactions", "TPS"};
 
-	private static int idToAssign = 0;
-
+	@XStreamOmitField
 	private JTable table;
+
+	@XStreamOmitField
 	private DefaultTableModel tableModel;
 
+	@XStreamOmitField
 	private JComboBox groupTypeComboBox;
+
+	@XStreamOmitField
 	private JComboBox groupTargetComboBox;
+
+	@XStreamOmitField
 	private JTextArea groupsTextArea;
 
+	@XStreamOmitField
 	private String uniqueVariableName = "";
+
 	private String name = ""; // table
 	private String ioConfiguration = "[]"; // table
 	private String lockConfiguration = "[]"; // table
@@ -63,9 +78,9 @@ public class DBSeerConfiguration
 	private String groupingRange = "[]"; // text area
 	private String whichTransTypeToGroup ="[]"; // table
 
+	@XStreamOmitField
 	private boolean isInitialized = false;
 
-	private int id = 0;
 	private int groupingType = GROUP_NONE; // combo box
 	private int groupingTarget = GROUP_TARGET_INDIVIDUAL_TRANS_COUNT; // combo box
 	private int numClusters = 0; // table
@@ -75,15 +90,19 @@ public class DBSeerConfiguration
 	private double maxTPS = 0; // table
 	private double allowedRelDiff = 0; // table
 
-	// Configuration consists of multiple profiles.
-	private DefaultComboBoxModel profileList;
+	// Configuration consists of multiple datasets.
+	@XStreamOmitField
+	private DefaultListModel datasetList;
+
+	@XStreamImplicit
+	private List<DBSeerDataSet> datasets;
 
 	public DBSeerConfiguration()
 	{
-		profileList = new DefaultComboBoxModel();
-		id = getIdToAssign();
-		uniqueVariableName = "config_" + id + "_" + UUID.randomUUID().toString().replace('-', '_');
-		name = "Unnamed config " + id;
+		datasetList = new DefaultListModel();
+		datasets = new ArrayList<DBSeerDataSet>();
+		uniqueVariableName = "config_" + UUID.randomUUID().toString().replace('-', '_');
+		name = "Unnamed config";
 		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
 		isInitialized = false;
 
@@ -105,8 +124,48 @@ public class DBSeerConfiguration
 		this.updateTable();
 	}
 
+	private Object readResolve()
+	{
+		if (datasets == null)
+		{
+			datasets = new ArrayList<DBSeerDataSet>();
+		}
+		datasetList = new DefaultListModel();
+		for (DBSeerDataSet dataset : datasets)
+		{
+			datasetList.addElement(dataset);
+		}
+		uniqueVariableName = "config_" + UUID.randomUUID().toString().replace('-', '_');
+		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
+		isInitialized = false;
+
+		table = new JTable(tableModel);
+		table.setFillsViewportHeight(true);
+		table.getColumnModel().getColumn(0).setMaxWidth(600);
+		table.getColumnModel().getColumn(0).setPreferredWidth(500);
+		table.getColumnModel().getColumn(1).setPreferredWidth(800);
+		table.setRowHeight(20);
+
+		groupTypeComboBox = new JComboBox(groupingTypes);
+		groupTargetComboBox = new JComboBox(groupingTargets);
+		groupsTextArea = new JTextArea();
+
+		for (String header : tableHeaders)
+		{
+			tableModel.addRow(new Object[]{header, ""});
+		}
+		this.updateTable();
+
+		return this;
+	}
+
 	public void initialize()
 	{
+		if (uniqueVariableName == "")
+		{
+			uniqueVariableName = "config_" + UUID.randomUUID().toString().replace('-', '_');
+		}
+
 		if (!isInitialized)
 		{
 			MatlabProxy proxy = DBSeerGUI.proxy;
@@ -115,9 +174,9 @@ public class DBSeerConfiguration
 			{
 				proxy.eval(this.uniqueVariableName + " = PredictionConfig;");
 				proxy.eval(this.uniqueVariableName + ".cleanProfile;");
-				for (int i = 0; i < profileList.getSize(); ++i)
+				for (int i = 0; i < datasetList.getSize(); ++i)
 				{
-					DBSeerDataProfile profile = (DBSeerDataProfile)profileList.getElementAt(i);
+					DBSeerDataSet profile = (DBSeerDataSet) datasetList.getElementAt(i);
 					profile.loadProfile();
 					proxy.eval(this.uniqueVariableName + ".addProfile(" + profile.getUniqueVariableName() + ");");
 				}
@@ -203,14 +262,20 @@ public class DBSeerConfiguration
 		return table;
 	}
 
-	public DefaultComboBoxModel getProfileList()
+	public DefaultListModel getDatasetList()
 	{
-		return profileList;
+		return datasetList;
 	}
 
-	public void setProfileList(DefaultComboBoxModel profileList)
+	public void setDatasetList(DefaultListModel datasetList)
 	{
-		this.profileList = profileList;
+		this.datasetList = datasetList;
+		datasets.clear();
+
+		for (int i = 0; i < datasetList.getSize(); ++i)
+		{
+			datasets.add((DBSeerDataSet) this.datasetList.get(i));
+		}
 	}
 
 	public void setFromTable()
@@ -314,25 +379,28 @@ public class DBSeerConfiguration
 		}
 	}
 
-	private static synchronized int getIdToAssign()
+	public void addDataset(DBSeerDataSet dataset)
 	{
-		return idToAssign++;
-	}
-
-	public void addProfile(DBSeerDataProfile profile)
-	{
-		profileList.addElement(profile);
+		datasetList.addElement(dataset);
+		datasets.add(dataset);
 		isInitialized = false;
 	}
 
-	public int getProfileCount()
+	public void removeDataset(DBSeerDataSet dataset)
 	{
-		return profileList.getSize();
+		datasetList.removeElement(dataset);
+		datasets.remove(dataset);
+		isInitialized = false;
 	}
 
-	public DBSeerDataProfile getProfile(int i)
+	public int getDatasetCount()
 	{
-		return (DBSeerDataProfile)profileList.getElementAt(i);
+		return datasetList.getSize();
+	}
+
+	public DBSeerDataSet getDataset(int i)
+	{
+		return (DBSeerDataSet) datasetList.getElementAt(i);
 	}
 
 	public String getName()

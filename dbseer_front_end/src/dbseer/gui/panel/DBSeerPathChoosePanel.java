@@ -1,10 +1,7 @@
 package dbseer.gui.panel;
 
-import dbseer.gui.DBSeerFileLoadDialog;
+import dbseer.gui.dialog.DBSeerFileLoadDialog;
 import dbseer.gui.DBSeerGUI;
-import dbseer.gui.frame.DBSeerPlotFrame;
-import matlabcontrol.MatlabInvocationException;
-import matlabcontrol.MatlabProxy;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -29,7 +26,7 @@ public class DBSeerPathChoosePanel extends JPanel implements ActionListener
 
 		openButton = new JButton("Browse");
 		pathToDBSeerLabel = new JLabel();
-		pathToDBSeerLabel.setText("Choose DBSeer Root Path");
+		pathToDBSeerLabel.setText("Current DBSeer Root Path: " + DBSeerGUI.userSettings.getDBSeerRootPath());
 		pathToDBSeerLabel.setPreferredSize(new Dimension(500, 10));
 		openButton.addActionListener(this);
 
@@ -49,7 +46,7 @@ public class DBSeerPathChoosePanel extends JPanel implements ActionListener
 			{
 				String rootPath = fileLoadDialog.getFile().getAbsolutePath();
 				pathToDBSeerLabel.setText("Current DBSeer Root Directory: " + rootPath);
-				DBSeerGUI.root = rootPath;
+				DBSeerGUI.userSettings.setDBSeerRootPath(rootPath);
 			}
 		}
 	}

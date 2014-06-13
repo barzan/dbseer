@@ -1,10 +1,8 @@
 package dbseer.gui.panel;
 
-import dbseer.gui.DBSeerConfiguration;
+import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.DBSeerGUI;
-import dbseer.gui.actions.CheckPlotTypeAction;
 import dbseer.gui.actions.CheckPredictionBoxAction;
-import dbseer.gui.frame.DBSeerPlotFrame;
 import dbseer.gui.frame.DBSeerPredictionFrame;
 import dbseer.gui.model.SharedComboBoxModel;
 import matlabcontrol.MatlabInvocationException;
@@ -123,7 +121,7 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 				protected Void doInBackground() throws Exception
 				{
 					MatlabProxy proxy = DBSeerGUI.proxy;
-					String dbseerPath = DBSeerGUI.root;
+					String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
 
 					try
 					{

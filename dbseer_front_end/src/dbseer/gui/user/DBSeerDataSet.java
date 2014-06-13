@@ -1,5 +1,8 @@
-package dbseer.gui;
+package dbseer.gui.user;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
+import dbseer.gui.DBSeerGUI;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
@@ -11,7 +14,8 @@ import java.util.UUID;
 /**
  * Created by dyoon on 2014. 5. 24..
  */
-public class DBSeerDataProfile
+@XStreamAlias("dataset")
+public class DBSeerDataSet
 {
 	private static final String[] tableHeaders = {"Name of profile", "Monitoring Data", "Transaction Count",
 			"Average Latency", "Percentile Latency", "Header", "Number of transaction types",
@@ -33,10 +37,12 @@ public class DBSeerDataProfile
 
 	private static int idToAssign = 0;
 
-	private boolean profileLoaded = false;
+	@XStreamOmitField
+	private boolean dataSetLoaded = false;
 
-	private int id = 0;
+	@XStreamOmitField
 	private String uniqueVariableName = "";
+
 	private String name = "";
 
 	private String monitoringDataPath = "";
@@ -52,14 +58,17 @@ public class DBSeerDataProfile
 	private String IOConfiguration = "[]";
 	private String lockConfiguration = "[]";
 
+	@XStreamOmitField
 	private JTable table;
+
+	@XStreamOmitField
 	private DefaultTableModel tableModel;
 
-	public DBSeerDataProfile()
+	public DBSeerDataSet()
 	{
-		id = getIdToAssign();
-		uniqueVariableName = "profile_" + id + "_" + UUID.randomUUID().toString().replace('-', '_');
-		name = "Unnamed profile " + id;
+		uniqueVariableName = "profile_" + UUID.randomUUID().toString().replace('-', '_');
+		name = "Unnamed profile";
+
 		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
 		table = new JTable(tableModel);
 		table.setFillsViewportHeight(true);
@@ -73,12 +82,28 @@ public class DBSeerDataProfile
 			tableModel.addRow(new Object[]{header, ""});
 		}
 		this.updateTable();
-		profileLoaded = false;
+		dataSetLoaded = false;
 	}
 
-	private static synchronized int getIdToAssign()
+	private Object readResolve()
 	{
-		return idToAssign++;
+		uniqueVariableName = "profile_" + UUID.randomUUID().toString().replace('-', '_');
+		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
+		table = new JTable(tableModel);
+		table.setFillsViewportHeight(true);
+		table.getColumnModel().getColumn(0).setMaxWidth(400);
+		table.getColumnModel().getColumn(0).setPreferredWidth(300);
+		table.getColumnModel().getColumn(1).setPreferredWidth(600);
+		table.setRowHeight(20);
+
+		for (String header : tableHeaders)
+		{
+			tableModel.addRow(new Object[]{header, ""});
+		}
+		this.updateTable();
+		dataSetLoaded = false;
+
+		return this;
 	}
 
 	public String toString()
@@ -93,7 +118,12 @@ public class DBSeerDataProfile
 
 	public void loadProfile()
 	{
-		if (profileLoaded == false)
+		if (uniqueVariableName == "")
+		{
+			uniqueVariableName = "profile_" + UUID.randomUUID().toString().replace('-', '_');
+		}
+
+		if (dataSetLoaded == false)
 		{
 			MatlabProxy proxy = DBSeerGUI.proxy;
 
@@ -115,7 +145,7 @@ public class DBSeerDataProfile
 				e.printStackTrace();
 			}
 
-			profileLoaded = true;
+			dataSetLoaded = true;
 		}
 	}
 
@@ -242,7 +272,7 @@ public class DBSeerDataProfile
 		this.name = name;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized int getNumTransactionTypes()
@@ -255,7 +285,7 @@ public class DBSeerDataProfile
 		this.numTransactionTypes = numTransactionTypes;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized int getStartIndex()
@@ -268,7 +298,7 @@ public class DBSeerDataProfile
 		this.startIndex = startIndex;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized int getEndIndex()
@@ -281,7 +311,7 @@ public class DBSeerDataProfile
 		this.endIndex = endIndex;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized int getMaxThroughputIndex()
@@ -294,7 +324,7 @@ public class DBSeerDataProfile
 		this.maxThroughputIndex = maxThroughputIndex;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized String getIOConfiguration()
@@ -307,7 +337,7 @@ public class DBSeerDataProfile
 		this.IOConfiguration = IOConfiguration;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized String getLockConfiguration()
@@ -320,7 +350,7 @@ public class DBSeerDataProfile
 		this.lockConfiguration = lockConfiguration;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 	
 	public synchronized String getMonitoringDataPath()
@@ -333,7 +363,7 @@ public class DBSeerDataProfile
 		this.monitoringDataPath = monitoringDataPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized String getTransCountPath()
@@ -346,7 +376,7 @@ public class DBSeerDataProfile
 		this.transCountPath = transCountPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized String getAverageLatencyPath()
@@ -359,7 +389,7 @@ public class DBSeerDataProfile
 		this.averageLatencyPath = averageLatencyPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized String getPercentileLatencyPath()
@@ -372,7 +402,7 @@ public class DBSeerDataProfile
 		this.percentileLatencyPath = percentileLatencyPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
 	public synchronized String getHeaderPath()
@@ -385,22 +415,17 @@ public class DBSeerDataProfile
 		this.headerPath = headerPath;
 		updateTable();
 		tableModel.fireTableDataChanged();
-		this.profileLoaded = false;
+		this.dataSetLoaded = false;
 	}
 
-	public synchronized boolean isProfileLoaded()
+	public synchronized boolean isDataSetLoaded()
 	{
-		return profileLoaded;
+		return dataSetLoaded;
 	}
 
-	public synchronized void setProfileLoaded(boolean profileLoaded)
+	public synchronized void setDataSetLoaded(boolean dataSetLoaded)
 	{
-		this.profileLoaded = profileLoaded;
-	}
-
-	public synchronized int getId()
-	{
-		return id;
+		this.dataSetLoaded = dataSetLoaded;
 	}
 
 	public synchronized String getUniqueVariableName()

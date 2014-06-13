@@ -1,6 +1,6 @@
 package dbseer.gui.panel;
 
-import dbseer.gui.DBSeerConfiguration;
+import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.frame.DBSeerConfigFrame;
 import net.miginfocom.swing.MigLayout;
