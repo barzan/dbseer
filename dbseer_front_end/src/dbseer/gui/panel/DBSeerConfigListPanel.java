@@ -27,14 +27,14 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("", "[align center, grow]", "[fill,grow] [align center]"));
+		this.setLayout(new MigLayout("ins 5 5 5 5", "[align center, grow]", "[fill,grow] [align center]"));
 
 		list = new JList(DBSeerGUI.configs);
-		list.setVisibleRowCount(15);
+		list.setVisibleRowCount(8);
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setViewportView(list);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		scrollPane.setPreferredSize(new Dimension(300,300));
+		scrollPane.setPreferredSize(new Dimension(100, 100));
 
 		addButton = new JButton("Add");
 		editButton = new JButton("Edit");

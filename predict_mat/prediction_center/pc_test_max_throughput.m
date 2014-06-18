@@ -1,8 +1,8 @@
 Dt12345_b0_orig_0_2128_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b0-orig', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'actualMaxThroughput', 1549, 'groupingStrategy', struct());
 Dt12345_b1_1_2175_conf = struct('dir', './tpcc4-redo', 'signature', 't12345-b1', 'tranTypes', [1  2  3  4  5], 'startIdx', 3600, 'endIdx', 7000, 'io_conf', [1004040     1100       10], 'lock_conf', [0.080645      0.0001           2         0.8], 'groupingStrategy', struct());
 
-train_config_desc = DataProfile;
-test_config_desc = DataProfile;
+train_config_desc = DataSet;
+test_config_desc = DataSet;
 
 train_config_desc.header_path = '/Users/dyoon/Work/dbseer/example_data/mysql5/tpcc4-redo/t12345_b0_orig_header.m';
 train_config_desc.monitor_path = '/Users/dyoon/Work/dbseer/example_data/mysql5/tpcc4-redo/monitor-t12345-b0-orig';

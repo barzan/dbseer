@@ -97,7 +97,10 @@ public class DBSeerGUI
 			"LockPrediction"
 	};
 
-
+	public static final String[] availablePredictionTestModes = {
+			"Dataset",
+			"Mixture + TPS"
+	};
 
 	private static DBSeerSplash splash;
 

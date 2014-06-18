@@ -26,6 +26,32 @@ public class DBSeerUserSettings
 	{
 	}
 
+	public void addDatasets(DefaultListModel datasetList)
+	{
+		if (datasets == null)
+		{
+			datasets = new ArrayList<DBSeerDataSet>();
+		}
+
+		for (int i = 0; i < datasetList.getSize(); ++i)
+		{
+			datasets.add((DBSeerDataSet) datasetList.get(i));
+		}
+	}
+
+	public void addConfigs(DefaultListModel configList)
+	{
+		if (configs == null)
+		{
+			configs = new ArrayList<DBSeerConfiguration>();
+		}
+
+		for (int i= 0; i < configList.getSize(); ++i)
+		{
+			configs.add((DBSeerConfiguration) configList.get(i));
+		}
+	}
+
 	public void setDatasets(DefaultListModel datasetList)
 	{
 		if (datasets == null)

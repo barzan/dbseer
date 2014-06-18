@@ -73,22 +73,22 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 		config.getTable().setFont(new Font("Verdana", Font.PLAIN, 14));
 		tableScrollPane.setPreferredSize(new Dimension(600, 300));
 
-		groupingTypeBox = config.getGroupTypeComboBox();
-		groupingTypeBox.setBorder(BorderFactory.createTitledBorder("Grouping Type"));
-		groupingTargetBox = config.getGroupTargetComboBox();
-		groupingTargetBox.setBorder(BorderFactory.createTitledBorder("Grouping Target"));
-		groupsTextArea = config.getGroupsTextArea();
+//		groupingTypeBox = config.getGroupTypeComboBox();
+//		groupingTypeBox.setBorder(BorderFactory.createTitledBorder("Grouping Type"));
+//		groupingTargetBox = config.getGroupTargetComboBox();
+//		groupingTargetBox.setBorder(BorderFactory.createTitledBorder("Grouping Target"));
+//		groupsTextArea = config.getGroupsTextArea();
 
-		if (groupingTypeBox.getSelectedIndex() != DBSeerConfiguration.GROUP_RANGE)
-		{
-			groupsTextArea.setEnabled(false);
-			groupsTextArea.setText("Disabled");
-		}
+//		if (groupingTypeBox.getSelectedIndex() != DBSeerConfiguration.GROUP_RANGE)
+//		{
+//			groupsTextArea.setEnabled(false);
+//			groupsTextArea.setText("Disabled");
+//		}
 
-		textScrollPane = new JScrollPane(groupsTextArea);
-		textScrollPane.setPreferredSize(new Dimension(300, 100));
-		textScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
-				"Specify groups manually here"));
+//		textScrollPane = new JScrollPane(groupsTextArea);
+//		textScrollPane.setPreferredSize(new Dimension(300, 100));
+//		textScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
+//				"Specify groups manually here"));
 
 		availableProfileList = new JList(DBSeerGUI.datasets);
 		selectedProfileList = new JList(config.getDatasetList());
@@ -105,9 +105,9 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 
 		this.add(tableScrollPane, "cell 0 0 2 2, grow");
 
-		groupComboBoxPanel = new JPanel(new MigLayout("fill" , "[fill][fill]"));
-		groupComboBoxPanel.add(groupingTypeBox, "grow");
-		groupComboBoxPanel.add(groupingTargetBox, "grow");
+//		groupComboBoxPanel = new JPanel(new MigLayout("fill" , "[fill][fill]"));
+//		groupComboBoxPanel.add(groupingTypeBox, "grow");
+//		groupComboBoxPanel.add(groupingTargetBox, "grow");
 
 		profileListPanel = new JPanel(new MigLayout("fill", "", "[grow][grow][grow]"));
 		profileListPanel.add(availableProfileListPane, "dock west, grow");
@@ -119,15 +119,15 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 		editConfigButton = new JButton("Edit Config");
 		cancelButton = new JButton("Cancel");
 
-		this.add(groupComboBoxPanel, "cell 2 0");
-		this.add(profileListPanel, "cell 2 1, grow");
-		this.add(textScrollPane, "cell 0 3 2 1, grow");
+//		this.add(groupComboBoxPanel, "cell 2 0");
+		this.add(profileListPanel, "cell 2 0, grow");
+//		this.add(textScrollPane, "cell 0 3 2 1, grow");
 
 		if (isEditMode)
 		{
 			this.add(editConfigButton, "cell 2 3, grow, split 2");
-			groupingTypeBox.setSelectedIndex(config.getGroupingType());
-			groupingTargetBox.setSelectedIndex(config.getGroupingTarget());
+//			groupingTypeBox.setSelectedIndex(config.getGroupingType());
+//			groupingTargetBox.setSelectedIndex(config.getGroupingTarget());
 		}
 		else
 		{
@@ -136,8 +136,8 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 		this.add(cancelButton, "grow");
 
 		// add action listeners to components in this frame.
-		groupingTypeBox.addActionListener(this);
-		groupingTargetBox.addActionListener(this);
+//		groupingTypeBox.addActionListener(this);
+//		groupingTargetBox.addActionListener(this);
 		addConfigButton.addActionListener(this);
 		editConfigButton.addActionListener(this);
 		cancelButton.addActionListener(this);
@@ -173,9 +173,9 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 				public void run()
 				{
 					config.setFromTable();
-					config.setGroupingRange(groupsTextArea.getText());
-					config.setGroupingType(groupingTypeBox.getSelectedIndex());
-					config.setGroupingTarget(groupingTargetBox.getSelectedIndex());
+//					config.setGroupingRange(groupsTextArea.getText());
+//					config.setGroupingType(groupingTypeBox.getSelectedIndex());
+//					config.setGroupingTarget(groupingTargetBox.getSelectedIndex());
 
 					DBSeerGUI.configs.addElement(config);
 					frame.dispose();
@@ -190,9 +190,9 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 				public void run()
 				{
 					config.setFromTable();
-					config.setGroupingRange(groupsTextArea.getText());
-					config.setGroupingType(groupingTypeBox.getSelectedIndex());
-					config.setGroupingTarget(groupingTargetBox.getSelectedIndex());
+//					config.setGroupingRange(groupsTextArea.getText());
+//					config.setGroupingType(groupingTypeBox.getSelectedIndex());
+//					config.setGroupingTarget(groupingTargetBox.getSelectedIndex());
 
 					frame.dispose();
 				}

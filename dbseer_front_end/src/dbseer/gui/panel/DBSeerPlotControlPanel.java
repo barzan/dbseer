@@ -127,7 +127,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 						proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
 						proxy.eval("plotter = Plotter;");
-						profile.loadProfile();
+						profile.loadDataset();
 //							proxy.eval("header_path = '" + profile.getHeaderPath() + "';");
 //							proxy.eval("monitor_path = '" + profile.getMonitoringDataPath() + "';");
 //							proxy.eval("trans_count_path = '" + profile.getTransCountPath() + "';");

@@ -1,129 +1,249 @@
 classdef PredictionCenter < handle
 
+    properties (Constant = true)
+        TEST_MODE_DATASET = 0;
+        TEST_MODE_MIXTURE_TPS = 1;
+    end
+
     properties
-        taskDescription
+        testVar
+        taskName
+        workloadName
+        lockType
+        learnLock
+        whichTransactionToPlot
+        ioConf
+
         trainConfig
+        testMode
         testConfig
+        testMixture
+        testMinTPS
+        testMaxTPS
     end
     
     methods
         function [title legends Xdata Ydata Xlabel Ylabel] = performPrediction(this)
-            if strcmp(this.taskDescription.taskName, 'FlushRatePredictionByTPS')
+            if ~this.trainConfig.isInitialized
+                this.trainConfig.initialize;
+            end
+            if this.testMode == PredictionCenter.TEST_MODE_DATASET
+                if ~this.testConfig.isInitialized
+                    this.testConfig.initialize;
+                end
+            end
+
+            if strcmp(this.taskName, 'FlushRatePredictionByTPS')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.flushRatePredictionByTPS;
-            elseif strcmp(this.taskDescription.taskName, 'FlushRatePredictionByCounts')
+            elseif strcmp(this.taskName, 'FlushRatePredictionByCounts')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.flushRatePredictionByCounts;
-            elseif strcmp(this.taskDescription.taskName, 'MaxThroughputPrediction')
+            elseif strcmp(this.taskName, 'MaxThroughputPrediction')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.maxThroughputPrediction;
-            elseif strcmp(this.taskDescription.taskName, 'TransactionCountsToCpuByTPS')
+            elseif strcmp(this.taskName, 'TransactionCountsToCpuByTPS')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsToCpuByTPS;
-            elseif strcmp(this.taskDescription.taskName, 'TransactionCountsToCpuByCounts')
+            elseif strcmp(this.taskName, 'TransactionCountsToCpuByCounts')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsToCpuByCounts;
-            elseif strcmp(this.taskDescription.taskName, 'TransactionCountsToIO')
+            elseif strcmp(this.taskName, 'TransactionCountsToIO')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsToIO;
-            elseif strcmp(this.taskDescription.taskName, 'TransactionCountsToLatency')
+            elseif strcmp(this.taskName, 'TransactionCountsToLatency')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsToLatency;
-            elseif strcmp(this.taskDescription.taskName, 'TransactionCountsWaitTimeToLatency')
+            elseif strcmp(this.taskName, 'TransactionCountsWaitTimeToLatency')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsWaitTimeToLatency;
-            elseif strcmp(this.taskDescription.taskName, 'BlownTransactionCountsToCpu')
+            elseif strcmp(this.taskName, 'BlownTransactionCountsToCpu')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.blownTransactionCountsToCpu;
-            elseif strcmp(this.taskDescription.taskName, 'BlownTransactionCountsToIO')
+            elseif strcmp(this.taskName, 'BlownTransactionCountsToIO')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.blownTransactionCountsToIO;
-            elseif strcmp(this.taskDescription.taskName, 'LinearPrediction')
+            elseif strcmp(this.taskName, 'LinearPrediction')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.linearPrediction;
-            elseif strcmp(this.taskDescription.taskName, 'PhysicalReadPrediction')
+            elseif strcmp(this.taskName, 'PhysicalReadPrediction')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.physicalReadPrediction;
-            elseif strcmp(this.taskDescription.taskName, 'LockPrediction')
+            elseif strcmp(this.taskName, 'LockPrediction')
                 [title legends Xdata Ydata Xlabel Ylabel] = this.lockPrediction;
             else
-                error(strcat('Unsupported task name: ', this.taskDescription.taskName));
+                error(strcat('Unsupported task name: ', this.taskName));
             end
         end
         
         function [title legends Xdata Ydata Xlabel Ylabel] = flushRatePredictionByTPS(this)
-            mv = this.testConfig.mv;
+            if this.testMode == PredictionCenter.TEST_MODE_DATASET
+                mv = this.testConfig.mv;
 
-            treeModel = barzanRegressTreeLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
-            treePred = barzanRegressTreeInvoke(treeModel, this.testConfig.transactionCount);
-            
-            naiveLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.TPS);
-            linPred = barzanLinInvoke(naiveLinModel, this.testConfig.TPS);
+                treeModel = barzanRegressTreeLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                treePred = barzanRegressTreeInvoke(treeModel, this.testConfig.transactionCount);
+                
+                naiveLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.TPS);
+                linPred = barzanLinInvoke(naiveLinModel, this.testConfig.TPS);
 
-            betterLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
-            classLinPred = barzanLinInvoke(betterLinModel, this.testConfig.transactionCount);
+                betterLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                classLinPred = barzanLinInvoke(betterLinModel, this.testConfig.transactionCount);
 
-            kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', this.testConfig.transactionType, 'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-            emp = zeros(size(this.trainConfig.transactionCount,1), 0);
-            %[emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
+                kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', this.testConfig.transactionType, 'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
+                emp = zeros(size(this.trainConfig.transactionCount,1), 0);
+                %[emp1 emp2 kccaTrainC kccaTrainCainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
 
-            %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
-            %kccaPred = barzanKccaInvoke(kccaModel, testC);
+                %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
+                %kccaPred = barzanKccaInvoke(kccaModel, testC);
 
-            nnModel = barzanNeuralNetLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
-            nnPred = barzanNeuralNetInvoke(nnModel, this.testConfig.transactionCount);
+                nnModel = barzanNeuralNetLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                nnPred = barzanNeuralNetInvoke(nnModel, this.testConfig.transactionCount);
+                
+                %config = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.workloadName);
+                config = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
+                myPred = cfFlushRateApprox(config, this.testConfig.transactionCount);
 
-            config = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.taskDescription.workloadName);
-            myPred = cfFlushRateApprox(config, this.testConfig.transactionCount);
+                temp = [this.testConfig.pagesFlushed linPred classLinPred myPred treePred nnPred]; % kccaPred is not included for now.
+                temp = [this.testConfig.TPS temp];
 
-            temp = [this.testConfig.pagesFlushed linPred classLinPred myPred treePred nnPred]; % kccaPred is not included for now.
-            temp = [this.testConfig.TPS temp];
+                temp = sortrows(temp,1);
 
-            temp = sortrows(temp,1);
+                Xdata = {temp(:,1)};
+                Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7)]};
 
-            Xdata = {temp(:,1)};
-            Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7)]};
+                legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
 
-            legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+                title = horzcat('Flush rate prediction with # test points = ', num2str(size(this.testConfig.TPS,1)));
+                Ylabel = 'Average # of page flush per seconds';
+                Xlabel = 'TPS';
+            elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
+                testTPS = [this.testMinTPS (this.testMinTPS+this.testMaxTPS)/2 this.testMaxTPS];
+                testTransactionCount(1,:) = this.testMixture * this.testMinTPS;
+                testTransactionCount(2,:) = this.testMixture * ((this.testMinTPS + this.testMaxTPS) / 2);
+                testTransactionCount(3,:) = this.testMixture * this.testMaxTPS;
 
-            title = horzcat('Flush rate prediction with # test points = ', num2str(size(this.testConfig.transactionCount),1));
-            Ylabel = 'Average # of page flush per seconds';
-            Xlabel = 'TPS';
+                treeModel = barzanRegressTreeLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                treePred = barzanRegressTreeInvoke(treeModel, testTransactionCount);
+                
+                naiveLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.TPS);
+                linPred = barzanLinInvoke(naiveLinModel, testTPS');
+
+                betterLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                classLinPred = barzanLinInvoke(betterLinModel, testTransactionCount);
+
+                % kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', this.testConfig.transactionType, 'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
+                emp = zeros(size(this.trainConfig.transactionCount,1), 0);
+                %[emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
+
+                %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
+                %kccaPred = barzanKccaInvoke(kccaModel, testC);
+
+                nnModel = barzanNeuralNetLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                nnPred = barzanNeuralNetInvoke(nnModel, testTransactionCount);
+
+                %config = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.workloadName);
+                config = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
+                myPred = cfFlushRateApprox(config, testTransactionCount);
+
+                temp = [linPred classLinPred myPred treePred nnPred]; % kccaPred is not included for now.
+                temp = [testTPS' temp];
+
+                temp = sortrows(temp,1);
+
+                Xdata = {temp(:,1)};
+                Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6)]};
+
+                legends = {'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+
+                title = horzcat('Flush rate prediction with transaction mixture = ', mat2str(this.testMixture), ', Min TPS = ', num2str(this.testMinTPS), ', Max TPS = ', num2str(this.testMaxTPS));
+                Ylabel = 'Average # of page flush per seconds';
+                Xlabel = 'TPS';
+            end
         end
 
         function [title legends Xdata Ydata Xlabel Ylabel] = flushRatePredictionByCounts(this)
-            mv = this.testConfig.mv;
+            if this.testMode == PredictionCenter.TEST_MODE_DATASET
+                mv = this.testConfig.mv;
 
-            treeModel = barzanRegressTreeLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
-            treePred = barzanRegressTreeInvoke(treeModel, this.testConfig.transactionCount);
-            
-            naiveLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.TPS);
-            linPred = barzanLinInvoke(naiveLinModel, this.testConfig.TPS);
+                treeModel = barzanRegressTreeLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                treePred = barzanRegressTreeInvoke(treeModel, this.testConfig.transactionCount);
+                
+                naiveLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.TPS);
+                linPred = barzanLinInvoke(naiveLinModel, this.testConfig.TPS);
 
-            betterLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
-            classLinPred = barzanLinInvoke(betterLinModel, this.testConfig.transactionCount);
+                betterLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                classLinPred = barzanLinInvoke(betterLinModel, this.testConfig.transactionCount);
 
-            kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', this.trainConfig.transactionType,  'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
-            emp = zeros(size(this.trainConfig.transactionCount,1), 0);
-            [emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
+                kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', this.trainConfig.transactionType,  'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
+                emp = zeros(size(this.trainConfig.transactionCount,1), 0);
+                [emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
 
-            %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
-            %kccaPred = barzanKccaInvoke(kccaModel, testC);
+                %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
+                %kccaPred = barzanKccaInvoke(kccaModel, testC);
 
-            nnModel = barzanNeuralNetLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
-            nnPred = barzanNeuralNetInvoke(nnModel, this.testConfig.transactionCount);
+                nnModel = barzanNeuralNetLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                nnPred = barzanNeuralNetInvoke(nnModel, this.testConfig.transactionCount);
 
-            config = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.taskDescription.workloadName);
-            myPred = cfFlushRateApprox(config, this.testConfig.transactionCount);
+                %config = struct('io_conf', this.ioConf, 'workloadName', this.workloadName);
+                config = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
 
-            temp = [this.testConfig.pagesFlushed linPred classLinPred myPred treePred nnPred]; % kccaPred is not included for now.
-            temp = [this.testConfig.transactionCount(:,this.taskDescription.whichTransactionToPlot)./this.testConfig.TPS temp];
+                myPred = cfFlushRateApprox(config, this.testConfig.transactionCount);
 
-            temp = sortrows(temp,1);
+                temp = [this.testConfig.pagesFlushed linPred classLinPred myPred treePred nnPred]; % kccaPred is not included for now.
+                temp = [this.testConfig.transactionCount(:,this.whichTransactionToPlot)./this.testConfig.TPS temp];
 
-            Xdata = {temp(:,1)};
-            Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7)]};
+                temp = sortrows(temp,1);
 
-            legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+                Xdata = {temp(:,1)};
+                Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7)]};
 
-            title = horzcat('Flush rate prediction with # test points = ', num2str(size(this.testConfig.transactionCount),1));
-            Ylabel = 'Average # of page flush per seconds';
-            Xlabel = ['Ratio of transaction ' num2str(this.taskDescription.whichTransactionToPlot)];
+                legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+
+                title = horzcat('Flush rate prediction with # test points = ', num2str(size(this.testConfig.transactionCount,1)));
+                Ylabel = 'Average # of page flush per seconds';
+                Xlabel = ['Ratio of transaction ' num2str(this.whichTransactionToPlot)];
+            elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
+                testTPS = [this.testMinTPS (this.testMinTPS+this.testMaxTPS)/2 this.testMaxTPS];
+                testTransactionCount(1,:) = this.testMixture * this.testMinTPS;
+                testTransactionCount(2,:) = this.testMixture * ((this.testMinTPS + this.testMaxTPS) / 2);
+                testTransactionCount(3,:) = this.testMixture * this.testMaxTPS;
+
+                treeModel = barzanRegressTreeLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                treePred = barzanRegressTreeInvoke(treeModel, testTransactionCount);
+                
+                naiveLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.TPS);
+                linPred = barzanLinInvoke(naiveLinModel, testTPS');
+
+                betterLinModel = barzanLinSolve(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                classLinPred = barzanLinInvoke(betterLinModel, testTransactionCount);
+
+                % kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', this.trainConfig.transactionType,  'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
+                % emp = zeros(size(this.trainConfig.transactionCount,1), 0);
+                % [emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
+
+                %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
+                %kccaPred = barzanKccaInvoke(kccaModel, testC);
+
+                nnModel = barzanNeuralNetLearn(this.trainConfig.pagesFlushed, this.trainConfig.transactionCount);
+                nnPred = barzanNeuralNetInvoke(nnModel, testTransactionCount);
+
+                %config = struct('io_conf', this.ioConf, 'workloadName', this.workloadName);
+                config = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
+
+                myPred = cfFlushRateApprox(config, testTransactionCount);
+
+                temp = [linPred classLinPred myPred treePred nnPred]; % kccaPred is not included for now.
+                temp = [testTransactionCount(:,this.whichTransactionToPlot) temp];
+
+                temp = sortrows(temp,1);
+
+                this.testVar = temp;
+
+                Xdata = {temp(:,1)};
+                Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6)]};
+
+                legends = {'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+
+                title = horzcat('Flush rate prediction with transaction mixture = ', mat2str(this.testMixture), ', Min TPS = ', num2str(this.testMinTPS), ', Max TPS = ', num2str(this.testMaxTPS));
+                Ylabel = 'Average # of page flush per seconds';
+                Xlabel = ['# of transaction ' num2str(this.whichTransactionToPlot)];
+                
+            end
         end
         
         function [title legends Xdata Ydata Xlabel Ylabel] = maxThroughputPrediction(this)
             range = (1:15000)';
             maxFlushRate = 1000;
             
-            cfFlushRateApprox_conf = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.taskDescription.workloadName);
+            cfFlushRateApprox_conf = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.workloadName);
             myFlushRateThroughput = findClosestValue(@cfFlushRateApprox, (1:6000)'*this.testConfig.transactionMixture, maxFlushRate, cfFlushRateApprox_conf);
             modelP = barzanLinSolve(this.trainConfig.averageCpuUsage, this.trainConfig.transactionCount);
             
@@ -158,11 +278,11 @@ classdef PredictionCenter < handle
             myCpuCUThroughput = find(myCpuC>59 & myCpuC<50, 1, 'last');
 
             %Our IO-based throughput
-            cfFlushRateApprox_conf = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.taskDescription.workloadName);
+            cfFlushRateApprox_conf = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.workloadName);
             myFlushRateThroughput = findClosestValue(@cfFlushRateApprox, (1:6000)'*this.testConfig.transactionMixture, maxFlushRate, cfFlushRateApprox_conf);
             
             %Lock-based throughput
-            getConcurrencyLebel_conf = struct('lock_conf', this.testConfig.lock_conf, 'workloadName', this.taskDescription.workloadName);
+            getConcurrencyLebel_conf = struct('lock_conf', this.testConfig.lock_conf, 'workloadName', this.workloadName);
             concurrencyThroughput = findClosestValue(@getConcurrencyLevel, (1:10000)'*this.testConfig.transactionMixture, 160, getConcurrencyLebel_conf);
 
             %Linear IO-based throughput
@@ -230,28 +350,28 @@ classdef PredictionCenter < handle
 
         function [title legends Xdata Ydata Xlabel Ylabel] = lockPrediction(this)
 
-            if strcmp(this.taskDescription.lockType, 'waitTime')
+            if strcmp(this.lockType, 'waitTime')
                 my_train_lock = this.trainConfig.lockWaitTime;
                 my_test_lock = this.testConfig.lockWaitTime;
-            elseif strcmp(this.taskDescription.lockType, 'numberOfLocks')
+            elseif strcmp(this.lockType, 'numberOfLocks')
                 my_train_lock = this.trainConfig.currentLockWait;
                 my_test_lock = this.testConfig.currentLockWait;
-            elseif strcmp(this.taskDescription.lockType, 'numberOfConflicts')
+            elseif strcmp(this.lockType, 'numberOfConflicts')
                 my_train_lock = this.trainConfig.lockWaitTime;
                 my_test_lock = this.testConfig.lockWaitTime;
             else
-                error(['Invalid lockType:' this.taskDescription.lockType]);
+                error(['Invalid lockType:' this.lockType]);
             end
 
-            if this.taskDescription.learnLock == true % re-learn it!
-                if strcmp(this.taskDescription.lockType, 'waitTime')
-                    f = @(conf2, data)(getfield(useLockModel([0.125 0.0001 conf2], data, this.taskDescription.workloadName), 'TimeSpentWaiting'));
-                elseif strcmp(this.taskDescription.lockType, 'numberOfLocks')
+            if this.learnLock == true % re-learn it!
+                if strcmp(this.lockType, 'waitTime')
+                    f = @(conf2, data)(getfield(useLockModel([0.125 0.0001 conf2], data, this.workloadName), 'TimeSpentWaiting'));
+                elseif strcmp(this.lockType, 'numberOfLocks')
                     f = @(conf2, data)(eval('useLockModel([0.125 0.0001 conf2], data, ''TPCC'').LocksBeingHeld'));
-                elseif strcmp(this.taskDescription.lockType, 'numberOfConflicts')
+                elseif strcmp(this.lockType, 'numberOfConflicts')
                     f = @(conf2, data)(eval('useLockModel([0.125 0.0001 conf2], data, ''TPCC'').totalWaits'));
                 else
-                    error(['Invalid lockType:' this.taskDescription.lockType]);
+                    error(['Invalid lockType:' this.lockType]);
                 end
                 
                 % taskDesc.emIters is hard-coded as 5 for now.
@@ -263,15 +383,15 @@ classdef PredictionCenter < handle
                 error('You should either let us re-learn or should give us the lock_conf to use!');
             end
          
-            allPreds = useLockModel(lock_conf, this.testConfig.transactionCount, this.taskDescription.workloadName);
-            if strcmp(this.taskDescription.lockType, 'waitTime')
+            allPreds = useLockModel(lock_conf, this.testConfig.transactionCount, this.workloadName);
+            if strcmp(this.lockType, 'waitTime')
                 myPredictedLock = sum(allPreds.TimeSpentWaiting, 2);        
-            elseif strcmp(this.taskDescription.lockType, 'numberOfLocks')
+            elseif strcmp(this.lockType, 'numberOfLocks')
                 myPredictedLock = sum(allPreds.LocksBeingHeld, 2);
-            elseif strcmp(this.taskDescription.lockType, 'numberOfConflicts')
+            elseif strcmp(this.lockType, 'numberOfConflicts')
                 myPredictedLock = sum(allPreds.totalWaits, 2);
             else
-                error(['Invalid lockType:' this.taskDescription.lockType]);
+                error(['Invalid lockType:' this.lockType]);
             end
 
             classifierLinModel = barzanLinSolve(my_train_lock, this.trainConfig.transactionCount);
@@ -288,16 +408,16 @@ classdef PredictionCenter < handle
             % kccaModel = barzanKccaLearn(my_train_lock, blownTrainC);
             % kccaPredictions = barzanKccaInvoke(kccaModel, blownTestC);
             
-            allPreds = useLockModel([1 1 1 1], this.testConfig.transactionCount, this.taskDescription.workloadName);
+            allPreds = useLockModel([1 1 1 1], this.testConfig.transactionCount, this.workloadName);
 
-            if strcmp(this.taskDescription.lockType, 'waitTime')
+            if strcmp(this.lockType, 'waitTime')
                 thomasianPreds = sum(allPreds.TimeSpentWaiting, 2);        
-            elseif strcmp(this.taskDescription.lockType, 'numberOfLocks')
+            elseif strcmp(this.lockType, 'numberOfLocks')
                 thomasianPreds = sum(allPreds.LocksBeingHeld, 2);
-            elseif strcmp(this.taskDescription.lockType, 'numberOfConflicts')
+            elseif strcmp(this.lockType, 'numberOfConflicts')
                 thomasianPreds = sum(allPreds.totalWaits, 2);
             else
-                error(['Invalid lockType:' this.taskDescription.lockType]);
+                error(['Invalid lockType:' this.lockType]);
             end
 
             temp = [my_test_lock myPredictedLock classifierLinPredictions classQuadPredictions treePredictions thomasianPreds]; % kccaPredictions omitted.
@@ -350,9 +470,9 @@ classdef PredictionCenter < handle
             myModelP = barzanLinSolve(this.trainConfig.averageCpuUsage(idx,:), this.trainConfig.transactionCount(idx,:));
             myCpuPred = barzanLinInvoke(myModelP, this.testConfig.transactionCount);
     
-            xValuesTest = this.testConfig.transactionCount(:,this.taskDescription.whichTransactionToPlot) ./ this.testConfig.TPS;
-            xValuesTrain = this.trainConfig.transactionCount(:,this.taskDescription.whichTransactionToPlot) ./ this.trainConfig.TPS;
-            Xlabel = ['Fraction of transaction ' num2str(this.taskDescription.whichTransactionToPlot)];
+            xValuesTest = this.testConfig.transactionCount(:,this.whichTransactionToPlot) ./ this.testConfig.TPS;
+            xValuesTrain = this.trainConfig.transactionCount(:,this.whichTransactionToPlot) ./ this.trainConfig.TPS;
+            Xlabel = ['Fraction of transaction ' num2str(this.whichTransactionToPlot)];
             
             modelP = barzanLinSolve(this.trainConfig.averageCpuUsage, this.trainConfig.transactionCount);
             predictionsP  = barzanLinInvoke(modelP, this.testConfig.transactionCount);

@@ -34,24 +34,24 @@ public class DBSeerConfiguration
 	// Table Header Constants
 	private static final int TYPE_NAME = 0;
 	private static final int TYPE_TRANSACTION_TYPE = 1;
-	private static final int TYPE_IO_CONFIGURATION = 2;
-	private static final int TYPE_LOCK_CONFIGURATION = 3;
-	private static final int TYPE_NUM_CLUSTERS = 4;
-	private static final int TYPE_WHICH_TRANSACTION = 5;
-	private static final int TYPE_MIN_FREQUENECY = 6;
-	private static final int TYPE_MIN_TPS = 7;
-	private static final int TYPE_MAX_TPS = 8;
-	private static final int TYPE_ALLOWED_RELATIVE_DIFF = 9;
+//	private static final int TYPE_IO_CONFIGURATION = 2;
+//	private static final int TYPE_LOCK_CONFIGURATION = 3;
+//	private static final int TYPE_NUM_CLUSTERS = 4;
+//	private static final int TYPE_WHICH_TRANSACTION = 5;
+//	private static final int TYPE_MIN_FREQUENECY = 6;
+//	private static final int TYPE_MIN_TPS = 7;
+//	private static final int TYPE_MAX_TPS = 8;
+//	private static final int TYPE_ALLOWED_RELATIVE_DIFF = 9;
 
-	private static final String[] tableHeaders = {"Name of configuration", "Transaction types", "IO configuration",
-			"Lock configuration", "# clusters for a group", "Which transaction type to group",
-			"Minimum frequency for a group", "Minimum TPS for a group", "Maximum TPS for a group",
-			"Allowed relative diff"};
+	private static final String[] tableHeaders = {"Name of configuration", "Transaction types"};//, "IO configuration",
+//			"Lock configuration", "# clusters for a group", "Which transaction type to group",
+//			"Minimum frequency for a group", "Minimum TPS for a group", "Maximum TPS for a group",
+//			"Allowed relative diff"};
 
-	private static final String[] groupingTypes = {"None", "Group by range", "Group by relative diff",
-			"Group by clustering"};
-
-	private static final String[] groupingTargets = {"Individual transactions", "TPS"};
+//	private static final String[] groupingTypes = {"None", "Group by range", "Group by relative diff",
+//			"Group by clustering"};
+//
+//	private static final String[] groupingTargets = {"Individual transactions", "TPS"};
 
 	@XStreamOmitField
 	private JTable table;
@@ -59,36 +59,36 @@ public class DBSeerConfiguration
 	@XStreamOmitField
 	private DefaultTableModel tableModel;
 
-	@XStreamOmitField
-	private JComboBox groupTypeComboBox;
-
-	@XStreamOmitField
-	private JComboBox groupTargetComboBox;
-
-	@XStreamOmitField
-	private JTextArea groupsTextArea;
+//	@XStreamOmitField
+//	private JComboBox groupTypeComboBox;
+//
+//	@XStreamOmitField
+//	private JComboBox groupTargetComboBox;
+//
+//	@XStreamOmitField
+//	private JTextArea groupsTextArea;
 
 	@XStreamOmitField
 	private String uniqueVariableName = "";
 
 	private String name = ""; // table
-	private String ioConfiguration = "[]"; // table
-	private String lockConfiguration = "[]"; // table
+//	private String ioConfiguration = "[]"; // table
+//	private String lockConfiguration = "[]"; // table
 	private String transactionTypes = "[]"; // table
-	private String groupingRange = "[]"; // text area
-	private String whichTransTypeToGroup ="[]"; // table
+//	private String groupingRange = "[]"; // text area
+//	private String whichTransTypeToGroup ="[]"; // table
 
 	@XStreamOmitField
 	private boolean isInitialized = false;
 
-	private int groupingType = GROUP_NONE; // combo box
-	private int groupingTarget = GROUP_TARGET_INDIVIDUAL_TRANS_COUNT; // combo box
-	private int numClusters = 0; // table
+//	private int groupingType = GROUP_NONE; // combo box
+//	private int groupingTarget = GROUP_TARGET_INDIVIDUAL_TRANS_COUNT; // combo box
+//	private int numClusters = 0; // table
 
-	private double minFrequency = 0; // table
-	private double minTPS = 0; // table
-	private double maxTPS = 0; // table
-	private double allowedRelDiff = 0; // table
+//	private double minFrequency = 0; // table
+//	private double minTPS = 0; // table
+//	private double maxTPS = 0; // table
+//	private double allowedRelDiff = 0; // table
 
 	// Configuration consists of multiple datasets.
 	@XStreamOmitField
@@ -113,9 +113,9 @@ public class DBSeerConfiguration
 		table.getColumnModel().getColumn(1).setPreferredWidth(800);
 		table.setRowHeight(20);
 
-		groupTypeComboBox = new JComboBox(groupingTypes);
-		groupTargetComboBox = new JComboBox(groupingTargets);
-		groupsTextArea = new JTextArea();
+//		groupTypeComboBox = new JComboBox(groupingTypes);
+//		groupTargetComboBox = new JComboBox(groupingTargets);
+//		groupsTextArea = new JTextArea();
 
 		for (String header : tableHeaders)
 		{
@@ -146,9 +146,9 @@ public class DBSeerConfiguration
 		table.getColumnModel().getColumn(1).setPreferredWidth(800);
 		table.setRowHeight(20);
 
-		groupTypeComboBox = new JComboBox(groupingTypes);
-		groupTargetComboBox = new JComboBox(groupingTargets);
-		groupsTextArea = new JTextArea();
+//		groupTypeComboBox = new JComboBox(groupingTypes);
+//		groupTargetComboBox = new JComboBox(groupingTargets);
+//		groupsTextArea = new JTextArea();
 
 		for (String header : tableHeaders)
 		{
@@ -173,19 +173,19 @@ public class DBSeerConfiguration
 			try
 			{
 				proxy.eval(this.uniqueVariableName + " = PredictionConfig;");
-				proxy.eval(this.uniqueVariableName + ".cleanProfile;");
+				proxy.eval(this.uniqueVariableName + ".cleanDataset;");
 				for (int i = 0; i < datasetList.getSize(); ++i)
 				{
 					DBSeerDataSet profile = (DBSeerDataSet) datasetList.getElementAt(i);
-					profile.loadProfile();
-					proxy.eval(this.uniqueVariableName + ".addProfile(" + profile.getUniqueVariableName() + ");");
+					profile.loadDataset();
+					proxy.eval(this.uniqueVariableName + ".addDataset(" + profile.getUniqueVariableName() + ");");
 				}
 
-				setGroupingStrategy();
+//				setGroupingStrategy();
 
 				proxy.eval(this.uniqueVariableName + ".setTransactionType(" + this.transactionTypes + ");");
-				proxy.eval(this.uniqueVariableName + ".setIOConfiguration(" + this.ioConfiguration + ");");
-				proxy.eval(this.uniqueVariableName + ".setLockConfiguration(" + this.lockConfiguration + ");");
+//				proxy.eval(this.uniqueVariableName + ".setIOConfiguration(" + this.ioConfiguration + ");");
+//				proxy.eval(this.uniqueVariableName + ".setLockConfiguration(" + this.lockConfiguration + ");");
 				proxy.eval(this.uniqueVariableName + ".initialize;");
 			}
 			catch (MatlabInvocationException e)
@@ -197,60 +197,60 @@ public class DBSeerConfiguration
 		}
 	}
 
-	private void setGroupingStrategy()
-	{
-		// no grouping.
-		if (this.groupingType == GROUP_NONE)
-		{
-			return;
-		}
-
-		MatlabProxy proxy = DBSeerGUI.proxy;
-
-		try
-		{
-		 	if (this.groupingType == GROUP_RANGE)
-		    {
-			    proxy.eval(this.uniqueVariableName + "_groups = " + this.groupingRange + ";");
-			    proxy.eval(this.uniqueVariableName + "_groupingStrategy = " +
-					    "struct('groups', " + this.uniqueVariableName + "_groups);");
-			    proxy.eval(this.uniqueVariableName + ".setGroupingStrategy(" +
-					    this.uniqueVariableName + "_groupingStrategy);");
-		    }
-			else
-		    {
-			    String groupStructString = "struct('minFreq', " + this.minFrequency + ", " +
-					    "'minTPS', " + this.minTPS + ", " +
-					    "'maxTPS', " + this.maxTPS + ", " +
-					    "'groupByTPSinsteadOfIndivCounts', " + (this.groupingTarget == GROUP_TARGET_TPS ? "true" : "false") + ", ";
-
-
-			    if (this.groupingType == GROUP_REL_DIFF)
-			    {
-				    groupStructString += "'allowedRelativeDiff', " + this.allowedRelDiff + ", ";
-			    }
-			    else if (this.groupingType == GROUP_NUM_CLUSTER)
-			    {
-				    groupStructString += "'nClusters', " + this.numClusters + ", ";
-			    }
-
-			    if (this.groupingTarget == GROUP_TARGET_INDIVIDUAL_TRANS_COUNT)
-			    {
-				    groupStructString += "'byWhichTranTypes', " + this.whichTransTypeToGroup + ")";
-			    }
-
-			    proxy.eval(this.uniqueVariableName + "_groupParams = " + groupStructString + ";");
-			    proxy.eval(this.uniqueVariableName + "_groupingStrategy = " +
-					    "struct('groupParams', " + this.uniqueVariableName + "_groupParams);");
-			    proxy.eval(this.uniqueVariableName + ".setGroupingStrategy(" +
-					    this.uniqueVariableName + "_groupingStrategy);");
-		    }
-		}
-		catch (MatlabInvocationException e)
-		{
-			e.printStackTrace();
-		}
-	}
+//	private void setGroupingStrategy()
+//	{
+//		// no grouping.
+//		if (this.groupingType == GROUP_NONE)
+//		{
+//			return;
+//		}
+//
+//		MatlabProxy proxy = DBSeerGUI.proxy;
+//
+//		try
+//		{
+//		 	if (this.groupingType == GROUP_RANGE)
+//		    {
+//			    proxy.eval(this.uniqueVariableName + "_groups = " + this.groupingRange + ";");
+//			    proxy.eval(this.uniqueVariableName + "_groupingStrategy = " +
+//					    "struct('groups', " + this.uniqueVariableName + "_groups);");
+//			    proxy.eval(this.uniqueVariableName + ".setGroupingStrategy(" +
+//					    this.uniqueVariableName + "_groupingStrategy);");
+//		    }
+//			else
+//		    {
+//			    String groupStructString = "struct('minFreq', " + this.minFrequency + ", " +
+//					    "'minTPS', " + this.minTPS + ", " +
+//					    "'maxTPS', " + this.maxTPS + ", " +
+//					    "'groupByTPSinsteadOfIndivCounts', " + (this.groupingTarget == GROUP_TARGET_TPS ? "true" : "false") + ", ";
+//
+//
+//			    if (this.groupingType == GROUP_REL_DIFF)
+//			    {
+//				    groupStructString += "'allowedRelativeDiff', " + this.allowedRelDiff + ", ";
+//			    }
+//			    else if (this.groupingType == GROUP_NUM_CLUSTER)
+//			    {
+//				    groupStructString += "'nClusters', " + this.numClusters + ", ";
+//			    }
+//
+//			    if (this.groupingTarget == GROUP_TARGET_INDIVIDUAL_TRANS_COUNT)
+//			    {
+//				    groupStructString += "'byWhichTranTypes', " + this.whichTransTypeToGroup + ")";
+//			    }
+//
+//			    proxy.eval(this.uniqueVariableName + "_groupParams = " + groupStructString + ";");
+//			    proxy.eval(this.uniqueVariableName + "_groupingStrategy = " +
+//					    "struct('groupParams', " + this.uniqueVariableName + "_groupParams);");
+//			    proxy.eval(this.uniqueVariableName + ".setGroupingStrategy(" +
+//					    this.uniqueVariableName + "_groupingStrategy);");
+//		    }
+//		}
+//		catch (MatlabInvocationException e)
+//		{
+//			e.printStackTrace();
+//		}
+//	}
 
 	public String toString()
 	{
@@ -297,30 +297,30 @@ public class DBSeerConfiguration
 						case TYPE_TRANSACTION_TYPE:
 							this.transactionTypes = (String)tableModel.getValueAt(i, 1);
 							break;
-						case TYPE_IO_CONFIGURATION:
-							this.ioConfiguration = (String)tableModel.getValueAt(i, 1);
-							break;
-						case TYPE_LOCK_CONFIGURATION:
-							this.lockConfiguration = (String)tableModel.getValueAt(i, 1);
-							break;
-						case TYPE_NUM_CLUSTERS:
-							this.numClusters = Integer.parseInt((String) tableModel.getValueAt(i, 1));
-							break;
-						case TYPE_WHICH_TRANSACTION:
-							this.whichTransTypeToGroup = (String)tableModel.getValueAt(i, 1);
-							break;
-						case TYPE_MIN_FREQUENECY:
-							this.minFrequency = Double.parseDouble((String) tableModel.getValueAt(i, 1));
-							break;
-						case TYPE_MIN_TPS:
-							this.minTPS = Double.parseDouble((String) tableModel.getValueAt(i, 1));
-							break;
-						case TYPE_MAX_TPS:
-							this.maxTPS = Double.parseDouble((String) tableModel.getValueAt(i, 1));
-							break;
-						case TYPE_ALLOWED_RELATIVE_DIFF:
-							this.allowedRelDiff = Double.parseDouble((String) tableModel.getValueAt(i, 1));
-							break;
+//						case TYPE_IO_CONFIGURATION:
+//							this.ioConfiguration = (String)tableModel.getValueAt(i, 1);
+//							break;
+//						case TYPE_LOCK_CONFIGURATION:
+//							this.lockConfiguration = (String)tableModel.getValueAt(i, 1);
+//							break;
+//						case TYPE_NUM_CLUSTERS:
+//							this.numClusters = Integer.parseInt((String) tableModel.getValueAt(i, 1));
+//							break;
+//						case TYPE_WHICH_TRANSACTION:
+//							this.whichTransTypeToGroup = (String)tableModel.getValueAt(i, 1);
+//							break;
+//						case TYPE_MIN_FREQUENECY:
+//							this.minFrequency = Double.parseDouble((String) tableModel.getValueAt(i, 1));
+//							break;
+//						case TYPE_MIN_TPS:
+//							this.minTPS = Double.parseDouble((String) tableModel.getValueAt(i, 1));
+//							break;
+//						case TYPE_MAX_TPS:
+//							this.maxTPS = Double.parseDouble((String) tableModel.getValueAt(i, 1));
+//							break;
+//						case TYPE_ALLOWED_RELATIVE_DIFF:
+//							this.allowedRelDiff = Double.parseDouble((String) tableModel.getValueAt(i, 1));
+//							break;
 						default:
 							break;
 					}
@@ -346,30 +346,30 @@ public class DBSeerConfiguration
 						case TYPE_TRANSACTION_TYPE:
 							tableModel.setValueAt(this.transactionTypes, i, 1);
 							break;
-						case TYPE_IO_CONFIGURATION:
-							tableModel.setValueAt(this.ioConfiguration, i, 1);
-							break;
-						case TYPE_LOCK_CONFIGURATION:
-							tableModel.setValueAt(this.lockConfiguration, i, 1);
-							break;
-						case TYPE_NUM_CLUSTERS:
-							tableModel.setValueAt(String.valueOf(this.numClusters), i, 1);
-							break;
-						case TYPE_WHICH_TRANSACTION:
-							tableModel.setValueAt(this.whichTransTypeToGroup, i, 1);
-							break;
-						case TYPE_MIN_FREQUENECY:
-							tableModel.setValueAt(String.valueOf(this.minFrequency), i, 1);
-							break;
-						case TYPE_MIN_TPS:
-							tableModel.setValueAt(String.valueOf(this.minTPS), i, 1);
-							break;
-						case TYPE_MAX_TPS:
-							tableModel.setValueAt(String.valueOf(this.maxTPS), i, 1);
-							break;
-						case TYPE_ALLOWED_RELATIVE_DIFF:
-							tableModel.setValueAt(String.valueOf(this.allowedRelDiff), i, 1);
-							break;
+//						case TYPE_IO_CONFIGURATION:
+//							tableModel.setValueAt(this.ioConfiguration, i, 1);
+//							break;
+//						case TYPE_LOCK_CONFIGURATION:
+//							tableModel.setValueAt(this.lockConfiguration, i, 1);
+//							break;
+//						case TYPE_NUM_CLUSTERS:
+//							tableModel.setValueAt(String.valueOf(this.numClusters), i, 1);
+//							break;
+//						case TYPE_WHICH_TRANSACTION:
+//							tableModel.setValueAt(this.whichTransTypeToGroup, i, 1);
+//							break;
+//						case TYPE_MIN_FREQUENECY:
+//							tableModel.setValueAt(String.valueOf(this.minFrequency), i, 1);
+//							break;
+//						case TYPE_MIN_TPS:
+//							tableModel.setValueAt(String.valueOf(this.minTPS), i, 1);
+//							break;
+//						case TYPE_MAX_TPS:
+//							tableModel.setValueAt(String.valueOf(this.maxTPS), i, 1);
+//							break;
+//						case TYPE_ALLOWED_RELATIVE_DIFF:
+//							tableModel.setValueAt(String.valueOf(this.allowedRelDiff), i, 1);
+//							break;
 						default:
 							break;
 					}
@@ -413,126 +413,126 @@ public class DBSeerConfiguration
 		this.name = name;
 	}
 
-	public String getIoConfiguration()
-	{
-		return ioConfiguration;
-	}
-
-	public void setIoConfiguration(String ioConfiguration)
-	{
-		this.ioConfiguration = ioConfiguration;
-		isInitialized = false;
-	}
-
-	public String getLockConfiguration()
-	{
-		return lockConfiguration;
-	}
-
-	public void setLockConfiguration(String lockConfiguration)
-	{
-		this.lockConfiguration = lockConfiguration;
-		isInitialized = false;
-	}
-
-	public String getGroupingRange()
-	{
-		return groupingRange;
-	}
-
-	public void setGroupingRange(String groupingRange)
-	{
-		this.groupingRange = groupingRange;
-		isInitialized = false;
-	}
-
-	public int getGroupingType()
-	{
-		return groupingType;
-	}
-
-	public void setGroupingType(int groupingType)
-	{
-		this.groupingType = groupingType;
-		isInitialized = false;
-	}
-
-	public int getGroupingTarget()
-	{
-		return groupingTarget;
-	}
-
-	public void setGroupingTarget(int groupingTarget)
-	{
-		this.groupingTarget = groupingTarget;
-		isInitialized = false;
-	}
-
-	public double getMinFrequency()
-	{
-		return minFrequency;
-	}
-
-	public void setMinFrequency(double minFrequency)
-	{
-		this.minFrequency = minFrequency;
-		isInitialized = false;
-	}
-
-	public double getMinTPS()
-	{
-		return minTPS;
-	}
-
-	public void setMinTPS(double minTPS)
-	{
-		this.minTPS = minTPS;
-		isInitialized = false;
-	}
-
-	public double getMaxTPS()
-	{
-		return maxTPS;
-	}
-
-	public void setMaxTPS(double maxTPS)
-	{
-		this.maxTPS = maxTPS;
-		isInitialized = false;
-	}
-
-	public int getNumClusters()
-	{
-		return numClusters;
-	}
-
-	public void setNumClusters(int numClusters)
-	{
-		this.numClusters = numClusters;
-		isInitialized = false;
-	}
-
-	public double getAllowedRelDiff()
-	{
-		return allowedRelDiff;
-	}
-
-	public void setAllowedRelDiff(double allowedRelDiff)
-	{
-		this.allowedRelDiff = allowedRelDiff;
-		isInitialized = false;
-	}
-
-	public String getWhichTransTypeToGroup()
-	{
-		return whichTransTypeToGroup;
-	}
-
-	public void setWhichTransTypeToGroup(String whichTransTypeToGroup)
-	{
-		this.whichTransTypeToGroup = whichTransTypeToGroup;
-		isInitialized = false;
-	}
+//	public String getIoConfiguration()
+//	{
+//		return ioConfiguration;
+//	}
+//
+//	public void setIoConfiguration(String ioConfiguration)
+//	{
+//		this.ioConfiguration = ioConfiguration;
+//		isInitialized = false;
+//	}
+//
+//	public String getLockConfiguration()
+//	{
+//		return lockConfiguration;
+//	}
+//
+//	public void setLockConfiguration(String lockConfiguration)
+//	{
+//		this.lockConfiguration = lockConfiguration;
+//		isInitialized = false;
+//	}
+//
+//	public String getGroupingRange()
+//	{
+//		return groupingRange;
+//	}
+//
+//	public void setGroupingRange(String groupingRange)
+//	{
+//		this.groupingRange = groupingRange;
+//		isInitialized = false;
+//	}
+//
+//	public int getGroupingType()
+//	{
+//		return groupingType;
+//	}
+//
+//	public void setGroupingType(int groupingType)
+//	{
+//		this.groupingType = groupingType;
+//		isInitialized = false;
+//	}
+//
+//	public int getGroupingTarget()
+//	{
+//		return groupingTarget;
+//	}
+//
+//	public void setGroupingTarget(int groupingTarget)
+//	{
+//		this.groupingTarget = groupingTarget;
+//		isInitialized = false;
+//	}
+//
+//	public double getMinFrequency()
+//	{
+//		return minFrequency;
+//	}
+//
+//	public void setMinFrequency(double minFrequency)
+//	{
+//		this.minFrequency = minFrequency;
+//		isInitialized = false;
+//	}
+//
+//	public double getMinTPS()
+//	{
+//		return minTPS;
+//	}
+//
+//	public void setMinTPS(double minTPS)
+//	{
+//		this.minTPS = minTPS;
+//		isInitialized = false;
+//	}
+//
+//	public double getMaxTPS()
+//	{
+//		return maxTPS;
+//	}
+//
+//	public void setMaxTPS(double maxTPS)
+//	{
+//		this.maxTPS = maxTPS;
+//		isInitialized = false;
+//	}
+//
+//	public int getNumClusters()
+//	{
+//		return numClusters;
+//	}
+//
+//	public void setNumClusters(int numClusters)
+//	{
+//		this.numClusters = numClusters;
+//		isInitialized = false;
+//	}
+//
+//	public double getAllowedRelDiff()
+//	{
+//		return allowedRelDiff;
+//	}
+//
+//	public void setAllowedRelDiff(double allowedRelDiff)
+//	{
+//		this.allowedRelDiff = allowedRelDiff;
+//		isInitialized = false;
+//	}
+//
+//	public String getWhichTransTypeToGroup()
+//	{
+//		return whichTransTypeToGroup;
+//	}
+//
+//	public void setWhichTransTypeToGroup(String whichTransTypeToGroup)
+//	{
+//		this.whichTransTypeToGroup = whichTransTypeToGroup;
+//		isInitialized = false;
+//	}
 
 	public String getTransactionTypes()
 	{
@@ -545,20 +545,20 @@ public class DBSeerConfiguration
 		isInitialized = false;
 	}
 
-	public JComboBox getGroupTypeComboBox()
-	{
-		return groupTypeComboBox;
-	}
-
-	public JComboBox getGroupTargetComboBox()
-	{
-		return groupTargetComboBox;
-	}
-
-	public JTextArea getGroupsTextArea()
-	{
-		return groupsTextArea;
-	}
+//	public JComboBox getGroupTypeComboBox()
+//	{
+//		return groupTypeComboBox;
+//	}
+//
+//	public JComboBox getGroupTargetComboBox()
+//	{
+//		return groupTargetComboBox;
+//	}
+//
+//	public JTextArea getGroupsTextArea()
+//	{
+//		return groupsTextArea;
+//	}
 
 	public String getUniqueVariableName()
 	{

@@ -1,6 +1,7 @@
 package dbseer.gui.chart;
 
 import dbseer.gui.DBSeerGUI;
+import dbseer.gui.comp.PredictionCenter;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 import matlabcontrol.extensions.MatlabNumericArray;
@@ -111,16 +112,18 @@ public class DBSeerChartFactory
 		return null;
 	}
 
-	public static JFreeChart createXYLinePredictionChart(String chartName, String workload)
+	public static JFreeChart createXYLinePredictionChart(PredictionCenter center)
 	{
 		MatlabProxy proxy = DBSeerGUI.proxy;
 		try
 		{
-			proxy.eval("task = TaskDescription;");
-			proxy.eval("task.workloadName = '" + workload + "';");
-			proxy.eval("task.taskName = '" + chartName + "';");
-			proxy.eval("pc.taskDescription = task");
-			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel] = pc.performPrediction;");
+//			proxy.eval("task = TaskDescription;");
+//			proxy.eval("task.workloadName = '" + workload + "';");
+//			proxy.eval("task.taskName = '" + chartName + "';");
+//			proxy.eval("pc.taskDescription = task");
+//			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel] = pc.performPrediction;");
+
+			center.run();
 
 			String title = (String)proxy.getVariable("title");
 			String[] legends = (String[])proxy.getVariable("legends");

@@ -17,9 +17,9 @@ import java.util.UUID;
 @XStreamAlias("dataset")
 public class DBSeerDataSet
 {
-	private static final String[] tableHeaders = {"Name of profile", "Monitoring Data", "Transaction Count",
-			"Average Latency", "Percentile Latency", "Header", "Number of transaction types",
-			"Start Index", "End Index", "Max Throughput Index"}; //"I/O Configuration", "Lock Configuration"
+	private static final String[] tableHeaders = {"Name of dataset", "Monitoring Data", "Transaction Count",
+			"Average Latency", "Percentile Latency", "Header", // "Number of transaction types",
+			"Start Index", "End Index"}; //, "Max Throughput Index"}; //"I/O Configuration", "Lock Configuration"
 		//};
 
 	private static final int TYPE_NAME = 0;
@@ -28,12 +28,12 @@ public class DBSeerDataSet
 	private static final int TYPE_AVERAGE_LATENCY = 3;
 	private static final int TYPE_PERCENTILE_LATENCY = 4;
 	private static final int TYPE_HEADER = 5;
-	private static final int TYPE_NUM_TRANSACTION_TYPE = 6;
-	private static final int TYPE_START_INDEX = 7;
-	private static final int TYPE_END_INDEX = 8;
-	private static final int TYPE_MAX_THROUGHPUT_INDEX = 9;
-	private static final int TYPE_IO_CONFIG = 10;
-	private static final int TYPE_LOCK_CONFIG =11;
+//	private static final int TYPE_NUM_TRANSACTION_TYPE = 6;
+	private static final int TYPE_START_INDEX = 6;
+	private static final int TYPE_END_INDEX = 7;
+//	private static final int TYPE_MAX_THROUGHPUT_INDEX = 9;
+//	private static final int TYPE_IO_CONFIG = 10;
+//	private static final int TYPE_LOCK_CONFIG =11;
 
 	private static int idToAssign = 0;
 
@@ -51,12 +51,11 @@ public class DBSeerDataSet
 	private String percentileLatencyPath = "";
 	private String headerPath = "";
 
-	private int numTransactionTypes = 0;
 	private int startIndex = 0;
 	private int endIndex = 0;
-	private int maxThroughputIndex = 0;
-	private String IOConfiguration = "[]";
-	private String lockConfiguration = "[]";
+
+//	private String IOConfiguration = "[]";
+//	private String lockConfiguration = "[]";
 
 	@XStreamOmitField
 	private JTable table;
@@ -66,9 +65,8 @@ public class DBSeerDataSet
 
 	public DBSeerDataSet()
 	{
-		uniqueVariableName = "profile_" + UUID.randomUUID().toString().replace('-', '_');
-		name = "Unnamed profile";
-
+		uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
+		name = "Unnamed dataset";
 		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
 		table = new JTable(tableModel);
 		table.setFillsViewportHeight(true);
@@ -87,7 +85,7 @@ public class DBSeerDataSet
 
 	private Object readResolve()
 	{
-		uniqueVariableName = "profile_" + UUID.randomUUID().toString().replace('-', '_');
+		uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
 		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
 		table = new JTable(tableModel);
 		table.setFillsViewportHeight(true);
@@ -116,11 +114,11 @@ public class DBSeerDataSet
 		return table;
 	}
 
-	public void loadProfile()
+	public void loadDataset()
 	{
 		if (uniqueVariableName == "")
 		{
-			uniqueVariableName = "profile_" + UUID.randomUUID().toString().replace('-', '_');
+			uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
 		}
 
 		if (dataSetLoaded == false)
@@ -129,7 +127,7 @@ public class DBSeerDataSet
 
 			try
 			{
-				proxy.eval(this.uniqueVariableName + " = DataProfile;");
+				proxy.eval(this.uniqueVariableName + " = DataSet;");
 				proxy.eval(this.uniqueVariableName + ".header_path = '" + this.headerPath + "';");
 				proxy.eval(this.uniqueVariableName + ".monitor_path = '" + this.monitoringDataPath + "';");
 				proxy.eval(this.uniqueVariableName + ".avg_latency_path = '" + this.averageLatencyPath + "';");
@@ -174,21 +172,21 @@ public class DBSeerDataSet
 						case TYPE_HEADER:
 							this.headerPath = (String)tableModel.getValueAt(i, 1);
 							break;
-						case TYPE_IO_CONFIG:
-							this.IOConfiguration = (String)tableModel.getValueAt(i, 1);
-							break;
-						case TYPE_LOCK_CONFIG:
-							this.IOConfiguration = (String)tableModel.getValueAt(i, 1);
-							break;
-						case TYPE_MAX_THROUGHPUT_INDEX:
-							this.maxThroughputIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
-							break;
+//						case TYPE_IO_CONFIG:
+//							this.IOConfiguration = (String)tableModel.getValueAt(i, 1);
+//							break;
+//						case TYPE_LOCK_CONFIG:
+//							this.IOConfiguration = (String)tableModel.getValueAt(i, 1);
+//							break;
+//						case TYPE_MAX_THROUGHPUT_INDEX:
+//							this.maxThroughputIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
+//							break;
 						case TYPE_MONITORING_DATA:
 							this.monitoringDataPath = (String)tableModel.getValueAt(i, 1);
 							break;
-						case TYPE_NUM_TRANSACTION_TYPE:
-							this.numTransactionTypes = Integer.parseInt((String)tableModel.getValueAt(i, 1));
-							break;
+//						case TYPE_NUM_TRANSACTION_TYPE:
+//							this.numTransactionTypes = Integer.parseInt((String)tableModel.getValueAt(i, 1));
+//							break;
 						case TYPE_PERCENTILE_LATENCY:
 							this.percentileLatencyPath = (String)tableModel.getValueAt(i, 1);
 							break;
@@ -229,21 +227,21 @@ public class DBSeerDataSet
 						case TYPE_HEADER:
 							tableModel.setValueAt(this.headerPath, i, 1);
 							break;
-						case TYPE_IO_CONFIG:
-							tableModel.setValueAt(this.IOConfiguration, i, 1);
-							break;
-						case TYPE_LOCK_CONFIG:
-							tableModel.setValueAt(this.lockConfiguration, i, 1);
-							break;
-						case TYPE_MAX_THROUGHPUT_INDEX:
-							tableModel.setValueAt(String.valueOf(this.maxThroughputIndex), i, 1);
-							break;
+//						case TYPE_IO_CONFIG:
+//							tableModel.setValueAt(this.IOConfiguration, i, 1);
+//							break;
+//						case TYPE_LOCK_CONFIG:
+//							tableModel.setValueAt(this.lockConfiguration, i, 1);
+//							break;
+//						case TYPE_MAX_THROUGHPUT_INDEX:
+//							tableModel.setValueAt(String.valueOf(this.maxThroughputIndex), i, 1);
+//							break;
 						case TYPE_MONITORING_DATA:
 							tableModel.setValueAt(this.monitoringDataPath, i, 1);
 							break;
-						case TYPE_NUM_TRANSACTION_TYPE:
-							tableModel.setValueAt(String.valueOf(this.numTransactionTypes), i, 1);
-							break;
+//						case TYPE_NUM_TRANSACTION_TYPE:
+//							tableModel.setValueAt(String.valueOf(this.numTransactionTypes), i, 1);
+//							break;
 						case TYPE_PERCENTILE_LATENCY:
 							tableModel.setValueAt(this.percentileLatencyPath, i, 1);
 							break;
@@ -275,18 +273,18 @@ public class DBSeerDataSet
 		this.dataSetLoaded = false;
 	}
 
-	public synchronized int getNumTransactionTypes()
-	{
-		return numTransactionTypes;
-	}
-
-	public synchronized void setNumTransactionTypes(int numTransactionTypes)
-	{
-		this.numTransactionTypes = numTransactionTypes;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
+//	public synchronized int getNumTransactionTypes()
+//	{
+//		return numTransactionTypes;
+//	}
+//
+//	public synchronized void setNumTransactionTypes(int numTransactionTypes)
+//	{
+//		this.numTransactionTypes = numTransactionTypes;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
 
 	public synchronized int getStartIndex()
 	{
@@ -314,44 +312,44 @@ public class DBSeerDataSet
 		this.dataSetLoaded = false;
 	}
 
-	public synchronized int getMaxThroughputIndex()
-	{
-		return maxThroughputIndex;
-	}
+//	public synchronized int getMaxThroughputIndex()
+//	{
+//		return maxThroughputIndex;
+//	}
+//
+//	public synchronized void setMaxThroughputIndex(int maxThroughputIndex)
+//	{
+//		this.maxThroughputIndex = maxThroughputIndex;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
+//
+//	public synchronized String getIOConfiguration()
+//	{
+//		return IOConfiguration;
+//	}
+//
+//	public synchronized void setIOConfiguration(String IOConfiguration)
+//	{
+//		this.IOConfiguration = IOConfiguration;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
 
-	public synchronized void setMaxThroughputIndex(int maxThroughputIndex)
-	{
-		this.maxThroughputIndex = maxThroughputIndex;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
-
-	public synchronized String getIOConfiguration()
-	{
-		return IOConfiguration;
-	}
-
-	public synchronized void setIOConfiguration(String IOConfiguration)
-	{
-		this.IOConfiguration = IOConfiguration;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
-
-	public synchronized String getLockConfiguration()
-	{
-		return lockConfiguration;
-	}
-
-	public synchronized void setLockConfiguration(String lockConfiguration)
-	{
-		this.lockConfiguration = lockConfiguration;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
+//	public synchronized String getLockConfiguration()
+//	{
+//		return lockConfiguration;
+//	}
+//
+//	public synchronized void setLockConfiguration(String lockConfiguration)
+//	{
+//		this.lockConfiguration = lockConfiguration;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
 	
 	public synchronized String getMonitoringDataPath()
 	{

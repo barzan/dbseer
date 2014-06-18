@@ -1,4 +1,4 @@
-classdef DataProfile < handle
+classdef DataSet < handle
 
     properties
         header_path 

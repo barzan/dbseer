@@ -38,7 +38,7 @@ public class DBSeerMainFrame extends JFrame
 		this.setTitle("DBSeer GUI Frontend");
 		System.setProperty("apple.laf.useScreenMenuBar", "true"); // for mac os
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "DBSeer"); // for mac os
-		layout = new MigLayout("", "[grow,fill]", "[][grow,fill]push[fill]");
+		layout = new MigLayout("ins 5 5 5 5", "[grow,fill]", "[][grow,fill]push[fill]");
 
 		// create Menubar.
 		menuBar = new JMenuBar();
@@ -48,11 +48,16 @@ public class DBSeerMainFrame extends JFrame
 
 		// Save current setting
 		menuItem = new JMenuItem(new SaveSettingsAction());
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.ALT_MASK));
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		menu.add(menuItem);
 
 		// separator.
-//		menu.addSeparator();
+		menu.addSeparator();
+
+		menuItem = new JMenuItem(new AddConfigDatasetFromXMLAction());
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		menu.add(menuItem);
+
 //
 //		// and menu item.
 //		// set header

@@ -14,7 +14,7 @@ public class SaveSettingsAction extends AbstractAction
 {
 	public SaveSettingsAction()
 	{
-		super("Save Setting");
+		super("Save Current Settings");
 	}
 
 	@Override

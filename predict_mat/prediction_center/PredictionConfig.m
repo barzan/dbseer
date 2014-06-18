@@ -3,13 +3,13 @@ classdef PredictionConfig < handle
     properties
         io_conf
         lock_conf
+        transactionType
+        groupingStrategy
     end
   
     properties (SetAccess='private', GetAccess='public')
-        profileList = {};
+        datasetList = {};
         initialized = false;
-        transactionType
-        groupingStrategy
     end
     
     properties (SetAccess='private', GetAccess='public')
@@ -78,20 +78,20 @@ classdef PredictionConfig < handle
             this.lock_conf = lock_conf;
             this.initialized = false;
         end
-        function addProfile(this, data_profile)
-            this.profileList{end+1} = data_profile;
+        function addDataset(this, data_profile)
+            this.datasetList{end+1} = data_profile;
             this.initialized = false;
         end
-        function cleanProfile(this)
-            this.profileList = {};
+        function cleanDataset(this)
+            this.datasetList = {};
             this.initialized = false;
         end
-        function mergeProfile(this)
+        function mergeDataset(this)
             this.configSummary = '{';
-            howManyDesc = length(this.profileList);
+            howManyDesc = length(this.datasetList);
             for i=1:howManyDesc
-                this.profileList{i}.loadStatistics;
-                conf = this.profileList{i}.getStruct;
+                this.datasetList{i}.loadStatistics;
+                conf = this.datasetList{i}.getStruct;
                 if ~isempty(this.groupingStrategy)
                     [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, this.groupingStrategy);
                 else
@@ -122,7 +122,7 @@ classdef PredictionConfig < handle
         
         function initialize(this)
             this.transactionType = this.transactionType;
-            this.mergeProfile;
+            this.mergeDataset;
             mv = this.mv;
             
             this.transactionCount = mv.clientIndividualSubmittedTrans(:,this.transactionType);

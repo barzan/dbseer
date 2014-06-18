@@ -15,29 +15,29 @@ import java.awt.event.ActionListener;
 /**
  * Created by dyoon on 2014. 6. 3..
  */
-public class DBSeerProfileListPanel extends JPanel implements ActionListener
+public class DBSeerDatasetListPanel extends JPanel implements ActionListener
 {
 	private JList list;
 	private JButton addButton;
 	private JButton editButton;
 	private JButton removeButton;
 
-	public DBSeerProfileListPanel()
+	public DBSeerDatasetListPanel()
 	{
 		initializeGUI();
 	}
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("", "[align center, grow]", "[fill, grow] [align center]"));
+		this.setLayout(new MigLayout("ins 5 5 5 5", "[align center, grow]", "[fill, grow] [align center]"));
 
 		JScrollPane scrollPane = new JScrollPane();
 		list = new JList(DBSeerGUI.datasets);
-		list.setVisibleRowCount(15);
+		list.setVisibleRowCount(8);
 
 		scrollPane.setViewportView(list);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		scrollPane.setPreferredSize(new Dimension(300,300));
+		scrollPane.setPreferredSize(new Dimension(100, 100));
 
 		addButton = new JButton("Add");
 		editButton = new JButton("Edit");
