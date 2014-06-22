@@ -64,7 +64,7 @@ public class PredictionCenter
 		}
 	}
 
-	public void initialize()
+	public boolean initialize()
 	{
 		try
 		{
@@ -172,7 +172,11 @@ public class PredictionCenter
 		{
 			JOptionPane.showMessageDialog(null, this.getLastError(), "Error",
 					JOptionPane.ERROR_MESSAGE);
+
+			return false;
 		}
+
+		return true;
 	}
 
 	public String getLastError()

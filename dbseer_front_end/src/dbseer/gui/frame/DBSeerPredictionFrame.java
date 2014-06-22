@@ -30,7 +30,7 @@ public class DBSeerPredictionFrame extends JFrame
 
 		JFreeChart chart = DBSeerChartFactory.createXYLinePredictionChart(center);
 		ChartPanel chartPanel = new ChartPanel(chart);
-		chartPanel.setPreferredSize(new Dimension(800, 600));
+		chartPanel.setPreferredSize(new Dimension(1024, 768));
 		String title = center.getPrediction();
 		if (center.getTestMode() == DBSeerConstants.TEST_MODE_DATASET)
 		{

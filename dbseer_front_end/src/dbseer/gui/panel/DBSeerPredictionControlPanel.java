@@ -2,6 +2,7 @@ package dbseer.gui.panel;
 
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.comp.PredictionCenter;
+import dbseer.gui.comp.UserInputValidator;
 import dbseer.gui.panel.prediction.*;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.DBSeerGUI;
@@ -279,6 +280,22 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		}
 	}
 
+	private boolean validateUserInput()
+	{
+		if (!UserInputValidator.validateSingleRowMatrix(testMixtureTextField.getText().trim(), "Test Mixture", testMixtureTextField.isEnabled()) ||
+				!UserInputValidator.validateSingleRowMatrix(transactionTypeToGroupTextField.getText().trim(), "Transactions to group", transactionTypeToGroupTextField.isEnabled()) ||
+				!UserInputValidator.validateNumber(minFrequencyTextField.getText().trim(), "Min Freq", minFrequencyTextField.isEnabled()) ||
+				!UserInputValidator.validateNumber(minTPSTextField.getText().trim(), "Min TPS", minTPSTextField.isEnabled()) ||
+				!UserInputValidator.validateNumber(maxTPSTextField.getText().trim(), "Max TPS", maxTPSTextField.isEnabled()) ||
+				!UserInputValidator.validateNumber(allowedRelativeDiffTextField.getText().trim(), "Allowed Relative diff", allowedRelativeDiffTextField.isEnabled()) ||
+				!UserInputValidator.validateNumber(numClusterTextField.getText().trim(), "Number of clusters", numClusterTextField.isEnabled())
+				)
+		{
+			return false;
+		}
+		return true;
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
@@ -287,6 +304,11 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 			final DBSeerConfiguration trainConfig = (DBSeerConfiguration)trainConfigComboBox.getSelectedItem();
 
 			if (trainConfig == null)
+			{
+				return;
+			}
+
+			if (!validateUserInput())
 			{
 				return;
 			}
@@ -308,23 +330,23 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 			center.setGroupingTarget(groupingTargetBox.getSelectedIndex());
 			center.setGroupingType(groupingTypeBox.getSelectedIndex());
 			center.setGroupRange(groupingRangeTextArea.getText());
-			String minFreqString = minFrequencyTextField.getText();
+			String minFreqString = minFrequencyTextField.getText().trim();
 			center.setTestMinFrequency(!minFreqString.isEmpty() ? Double.parseDouble(minFreqString) : 0.0);
-			String minTPS = minTPSTextField.getText();
+			String minTPS = minTPSTextField.getText().trim();
 			center.setTestMinTPS(!minTPS.isEmpty() ? Double.parseDouble(minTPS) : 0.0);
-			String maxTPS = maxTPSTextField.getText();
+			String maxTPS = maxTPSTextField.getText().trim();
 			center.setTestMaxTPS(!maxTPS.isEmpty() ? Double.parseDouble(maxTPS) : 0.0);
-			String allowedRelDiff = allowedRelativeDiffTextField.getText();
+			String allowedRelDiff = allowedRelativeDiffTextField.getText().trim();
 			center.setAllowedRelativeDiff(!allowedRelDiff.isEmpty() ? Double.parseDouble(allowedRelDiff) : 0.0);
-			String numCluster = numClusterTextField.getText();
+			String numCluster = numClusterTextField.getText().trim();
 			center.setNumClusters(!numCluster.isEmpty() ? Integer.parseInt(numCluster) : 0);
 			center.setTransactionTypesToGroup(transactionTypeToGroupTextField.getText());
 
-			String testManualMinTPS = testMinTPSTextField.getText();
+			String testManualMinTPS = testMinTPSTextField.getText().trim();
 			center.setTestManualMinTPS(!testManualMinTPS.isEmpty() ? Double.parseDouble(testManualMinTPS) : 0.0);
-			String testManualMaxTPS = testMaxTPSTextField.getText();
+			String testManualMaxTPS = testMaxTPSTextField.getText().trim();
 			center.setTestManualMaxTPS(!testManualMaxTPS.isEmpty() ? Double.parseDouble(testManualMaxTPS) : 0.0);
-			String testMixture = testMixtureTextField.getText();
+			String testMixture = testMixtureTextField.getText().trim();
 			center.setTestMixture(testMixture);
 
 			// Prediction-specific options
@@ -332,10 +354,11 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 
 			SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
 			{
+				boolean isInitialized = false;
 				@Override
 				protected Void doInBackground() throws Exception
 				{
-					center.initialize();
+					isInitialized = center.initialize();
 
 					return null;
 				}
@@ -343,19 +366,28 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 				@Override
 				protected void done()
 				{
-					SwingUtilities.invokeLater(new Runnable()
+					if (isInitialized)
 					{
-						@Override
-						public void run()
+						SwingUtilities.invokeLater(new Runnable()
 						{
-							DBSeerPredictionFrame predictionFrame = new DBSeerPredictionFrame(center);
-							predictionFrame.pack();
-							predictionFrame.setVisible(true);
-							predictionButton.setEnabled(true);
-							predictionButton.requestFocus();
-							DBSeerGUI.status.setText("");
-						}
-					});
+							@Override
+							public void run()
+							{
+								DBSeerPredictionFrame predictionFrame = new DBSeerPredictionFrame(center);
+								predictionFrame.pack();
+								predictionFrame.setVisible(true);
+								predictionButton.setEnabled(true);
+								predictionButton.requestFocus();
+								DBSeerGUI.status.setText("");
+								}
+						});
+					}
+					else
+					{
+						predictionButton.setEnabled(true);
+						predictionButton.requestFocus();
+						DBSeerGUI.status.setText("");
+					}
 				}
 			};
 
