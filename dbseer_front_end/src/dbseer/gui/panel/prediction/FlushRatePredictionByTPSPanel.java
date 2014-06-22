@@ -31,4 +31,9 @@ public class FlushRatePredictionByTPSPanel extends JPanel
 	{
 		return ioConfTextField.getText();
 	}
+
+	public void setIOConf(String conf)
+	{
+		ioConfTextField.setText(conf);
+	}
 }

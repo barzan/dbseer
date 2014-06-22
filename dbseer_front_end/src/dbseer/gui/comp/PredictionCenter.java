@@ -25,11 +25,14 @@ public class PredictionCenter
 	private String groupRange = "[]";
 	private String transactionTypesToGroup = "[]";
 	private String ioConfiguration = "[]";
-	private String transactionTypeToPlot = "";
+	private String lockConfiguration = "[]";
+	private String transactionTypeToPlot = "1";
+
+	private boolean learnLock = true;
 
 	private int testMode = DBSeerConstants.TEST_MODE_DATASET;
 	private int groupingType = DBSeerConstants.GROUP_NONE;
-
+	private int lockType = DBSeerConstants.LOCK_WAITTIME;
 
 	private int groupingTarget = DBSeerConstants.GROUP_TARGET_INDIVIDUAL_TRANS_COUNT;
 	private int numClusters = 1;
@@ -38,7 +41,6 @@ public class PredictionCenter
 	private double testMinFrequency = 0.0;
 	private double testMinTPS = 0.0;
 	private double testMaxTPS = 0.0;
-
 	private double testManualMinTPS = 0.0;
 	private double testManualMaxTPS = 0.0;
 
@@ -136,14 +138,35 @@ public class PredictionCenter
 				proxy.eval("pc.testMaxTPS = " + testManualMaxTPS + ";");
 			}
 			proxy.eval("pc.ioConf = " + ioConfiguration + ";");
+			proxy.eval("pc.lockConf = " + lockConfiguration + ";");
+			proxy.eval("pc.whichTransactionToPlot = " + transactionTypeToPlot + ";");
+			if (learnLock)
+			{
+				proxy.eval("pc.learnLock = true;");
+			}
+			else
+			{
+				proxy.eval("pc.learnLock = false;");
+			}
+			String lockTypeString = "";
+			switch(lockType)
+			{
+				case DBSeerConstants.LOCK_WAITTIME:
+					lockTypeString = "'waitTime'";
+					break;
+				case DBSeerConstants.LOCK_NUMLOCKS:
+					lockTypeString = "'numberOfLocks'";
+					break;
+				case DBSeerConstants.LOCK_NUMCONFLICTS:
+					lockTypeString = "'numberOfConflicts'";
+					break;
+				default:
+					lockTypeString = "'waitTime'";
+					break;
+			}
+			proxy.eval("pc.lockType = " + lockTypeString + ";");
 			proxy.eval("pc.testMode = " + testMode + ";" );
 			proxy.eval("pc.taskName = '" + prediction + "';");
-
-			if (prediction == "FlushRatePredictionByCounts")
-			{
-				proxy.eval("pc.whichTransactionToPlot = " + transactionTypeToPlot + ";");
-			}
-
 		}
 		catch (MatlabInvocationException e)
 		{
@@ -284,6 +307,8 @@ public class PredictionCenter
 		this.ioConfiguration = ioConfiguration;
 	}
 
+	public void setLockConfiguration(String lockConfiguration) { this.lockConfiguration = lockConfiguration; }
+
 	public void setTestManualMinTPS(double testManualMinTPS)
 	{
 		this.testManualMinTPS = testManualMinTPS;
@@ -302,5 +327,25 @@ public class PredictionCenter
 	public void setTransactionTypeToPlot(String transactionTypeToPlot)
 	{
 		this.transactionTypeToPlot = transactionTypeToPlot;
+	}
+
+	public boolean isLearnLock()
+	{
+		return learnLock;
+	}
+
+	public void setLearnLock(boolean learnLock)
+	{
+		this.learnLock = learnLock;
+	}
+
+	public int getLockType()
+	{
+		return lockType;
+	}
+
+	public void setLockType(int lockType)
+	{
+		this.lockType = lockType;
 	}
 }

@@ -34,8 +34,8 @@ public class DBSeerConfiguration
 	// Table Header Constants
 	private static final int TYPE_NAME = 0;
 	private static final int TYPE_TRANSACTION_TYPE = 1;
-//	private static final int TYPE_IO_CONFIGURATION = 2;
-//	private static final int TYPE_LOCK_CONFIGURATION = 3;
+	private static final int TYPE_IO_CONFIGURATION = 2;
+	private static final int TYPE_LOCK_CONFIGURATION = 3;
 //	private static final int TYPE_NUM_CLUSTERS = 4;
 //	private static final int TYPE_WHICH_TRANSACTION = 5;
 //	private static final int TYPE_MIN_FREQUENECY = 6;
@@ -43,7 +43,10 @@ public class DBSeerConfiguration
 //	private static final int TYPE_MAX_TPS = 8;
 //	private static final int TYPE_ALLOWED_RELATIVE_DIFF = 9;
 
-	private static final String[] tableHeaders = {"Name of configuration", "Transaction types"};//, "IO configuration",
+	private static final String[] tableHeaders = {"Name of configuration", "Transaction types", "IO Configuration",
+			"Lock Configuration"
+	};
+	//, "IO configuration",
 //			"Lock configuration", "# clusters for a group", "Which transaction type to group",
 //			"Minimum frequency for a group", "Minimum TPS for a group", "Maximum TPS for a group",
 //			"Allowed relative diff"};
@@ -72,8 +75,8 @@ public class DBSeerConfiguration
 	private String uniqueVariableName = "";
 
 	private String name = ""; // table
-//	private String ioConfiguration = "[]"; // table
-//	private String lockConfiguration = "[]"; // table
+	private String ioConfiguration = "[]"; // table
+	private String lockConfiguration = "[]"; // table
 	private String transactionTypes = "[]"; // table
 //	private String groupingRange = "[]"; // text area
 //	private String whichTransTypeToGroup ="[]"; // table
@@ -297,12 +300,12 @@ public class DBSeerConfiguration
 						case TYPE_TRANSACTION_TYPE:
 							this.transactionTypes = (String)tableModel.getValueAt(i, 1);
 							break;
-//						case TYPE_IO_CONFIGURATION:
-//							this.ioConfiguration = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_LOCK_CONFIGURATION:
-//							this.lockConfiguration = (String)tableModel.getValueAt(i, 1);
-//							break;
+						case TYPE_IO_CONFIGURATION:
+							this.ioConfiguration = (String)tableModel.getValueAt(i, 1);
+							break;
+						case TYPE_LOCK_CONFIGURATION:
+							this.lockConfiguration = (String)tableModel.getValueAt(i, 1);
+							break;
 //						case TYPE_NUM_CLUSTERS:
 //							this.numClusters = Integer.parseInt((String) tableModel.getValueAt(i, 1));
 //							break;
@@ -346,12 +349,12 @@ public class DBSeerConfiguration
 						case TYPE_TRANSACTION_TYPE:
 							tableModel.setValueAt(this.transactionTypes, i, 1);
 							break;
-//						case TYPE_IO_CONFIGURATION:
-//							tableModel.setValueAt(this.ioConfiguration, i, 1);
-//							break;
-//						case TYPE_LOCK_CONFIGURATION:
-//							tableModel.setValueAt(this.lockConfiguration, i, 1);
-//							break;
+						case TYPE_IO_CONFIGURATION:
+							tableModel.setValueAt(this.ioConfiguration, i, 1);
+							break;
+						case TYPE_LOCK_CONFIGURATION:
+							tableModel.setValueAt(this.lockConfiguration, i, 1);
+							break;
 //						case TYPE_NUM_CLUSTERS:
 //							tableModel.setValueAt(String.valueOf(this.numClusters), i, 1);
 //							break;
@@ -413,27 +416,27 @@ public class DBSeerConfiguration
 		this.name = name;
 	}
 
-//	public String getIoConfiguration()
-//	{
-//		return ioConfiguration;
-//	}
-//
-//	public void setIoConfiguration(String ioConfiguration)
-//	{
-//		this.ioConfiguration = ioConfiguration;
-//		isInitialized = false;
-//	}
-//
-//	public String getLockConfiguration()
-//	{
-//		return lockConfiguration;
-//	}
-//
-//	public void setLockConfiguration(String lockConfiguration)
-//	{
-//		this.lockConfiguration = lockConfiguration;
-//		isInitialized = false;
-//	}
+	public String getIoConfiguration()
+	{
+		return ioConfiguration;
+	}
+
+	public void setIoConfiguration(String ioConfiguration)
+	{
+		this.ioConfiguration = ioConfiguration;
+		isInitialized = false;
+	}
+
+	public String getLockConfiguration()
+	{
+		return lockConfiguration;
+	}
+
+	public void setLockConfiguration(String lockConfiguration)
+	{
+		this.lockConfiguration = lockConfiguration;
+		isInitialized = false;
+	}
 //
 //	public String getGroupingRange()
 //	{

@@ -22,4 +22,11 @@ public class DBSeerConstants
 	public static final int GROUP_TARGET_TPS = 1;
 	public static final String[] GROUP_TARGETS = {"Individual transactions", "TPS"};
 
+	// lock types
+	public static final int LOCK_WAITTIME = 0;
+	public static final int LOCK_NUMLOCKS = 1;
+	public static final int LOCK_NUMCONFLICTS = 2;
+	public static final String[] LOCK_TYPES = {"Wait Time", "Number of Locks", "Number of Conflicts"};
+	public static final String[] LEARN_LOCK = {"True", "False"};
+
 }

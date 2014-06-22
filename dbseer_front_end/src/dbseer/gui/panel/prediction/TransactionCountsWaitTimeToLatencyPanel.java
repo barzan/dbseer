@@ -5,16 +5,14 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.*;
 
 /**
- * Created by dyoon on 2014. 6. 18..
+ * Created by dyoon on 2014. 6. 22..
  */
-public class FlushRatePredictionByCountsPanel extends JPanel
+public class TransactionCountsWaitTimeToLatencyPanel extends JPanel
 {
-	private JLabel ioConfLabel;
-	private JTextField ioConfTextField;
 	private JLabel whichTransactionToPlotLabel;
 	private JTextField whichTransactionToPlotTextField;
 
-	public FlushRatePredictionByCountsPanel()
+	public TransactionCountsWaitTimeToLatencyPanel()
 	{
 		initializeGUI();
 	}
@@ -22,26 +20,12 @@ public class FlushRatePredictionByCountsPanel extends JPanel
 	private void initializeGUI()
 	{
 		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: FlushRatePredictionByCounts"), "wrap");
-		ioConfLabel = new JLabel("IO Configuration: ");
-		ioConfTextField = new JTextField();
-		this.add(ioConfLabel, "wrap");
-		this.add(ioConfTextField, "growx, wrap");
+		this.add(new JLabel("Prediction: TransactionCountsWaitTimeToLatency"), "wrap");
 
 		whichTransactionToPlotLabel = new JLabel("Which transaction type to plot:");
 		whichTransactionToPlotTextField = new JTextField();
 		this.add(whichTransactionToPlotLabel, "wrap");
 		this.add(whichTransactionToPlotTextField, "growx");
-	}
-
-	public String getIOConf()
-	{
-		return ioConfTextField.getText();
-	}
-
-	public void setIOConf(String conf)
-	{
-		ioConfTextField.setText(conf);
 	}
 
 	public String getWhichTransactiontoPlot()
