@@ -811,7 +811,7 @@ classdef PredictionCenter < handle
 
                 for i=3:4
                     meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
-                    meanRelError{i-2} = mre(temp(:,i). temp(:,2));
+                    meanRelError{i-2} = mre(temp(:,i), temp(:,2));
                 end
                 
                 legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions', 'Training data'}; 
@@ -1006,7 +1006,7 @@ classdef PredictionCenter < handle
                 
                 Xdata = {[1:size(this.testConfig.averageCpuUsage, 1)]'};
                 Ydata = {[this.testConfig.averageCpuUsage blownPredictionsP]};
-                legends = {'Actual CPU usage', 'Predicted CPU usage]'};
+                legends = {'Actual CPU usage', 'Predicted CPU usage'};
                 title = 'Quadratic Model: Average CPU';
                 meanAbsError{1} = mae(blownPredictionsP, this.testConfig.averageCpuUsage);
                 meanRelError{1} = mre(blownPredictionsP, this.testConfig.averageCpuUsage);

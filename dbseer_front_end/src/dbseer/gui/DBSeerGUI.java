@@ -147,7 +147,7 @@ public class DBSeerGUI
 
 				MatlabProxyFactoryOptions options = new MatlabProxyFactoryOptions.Builder()
 						.setUsePreviouslyControlledSession(true)
-						.setHidden(false).build();
+						.setHidden(true).build();
 				MatlabProxyFactory factory = new MatlabProxyFactory(options);
 
 				try {

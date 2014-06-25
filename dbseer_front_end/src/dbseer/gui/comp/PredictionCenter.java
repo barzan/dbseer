@@ -190,7 +190,7 @@ public class PredictionCenter
 		}
 		catch (MatlabInvocationException e)
 		{
-			JOptionPane.showMessageDialog(null, "Error", "Failed to retrieve the last error from MATLAB",
+			JOptionPane.showMessageDialog(null, "Failed to retrieve the last error from MATLAB", "Error",
 					JOptionPane.ERROR_MESSAGE);
 		}
 		return errorMessage;
