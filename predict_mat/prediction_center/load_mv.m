@@ -122,15 +122,15 @@ if strcmpi(header.dbms, 'mysql')
     %mvUngrouped.dbmsCurrentLockWaits=monitor(:,header.columns.Innodb_row_lock_current_waits);
     %mvUngrouped.dbmsLockWaits=dM(:,header.columns.Innodb_row_lock_waits);
     %mvUngrouped.dbmsLockWaitTime=dM(:,header.columns.Innodb_row_lock_time) / 1000; % to turn it into seconds!
-    if exist('OCTAVE_VERSION')
-        save('dbmsCurrentLockWaits_Octave.mat', '-v6', '-struct', 'mvUngrouped', 'dbmsCurrentLockWaits');
-        save('dbmsLockWaits_Octave.mat', '-v6', '-struct', 'mvUngrouped', 'dbmsLockWaits');
-        save('dbmsLockWaitTime_Octave.mat', '-v6', '-struct', 'mvUngrouped', 'dbmsLockWaitTime');
-    else
-        save('dbmsCurrentLockWaits_Matlab', '-v6', '-struct', 'mvUngrouped', 'dbmsCurrentLockWaits');
-        save('dbmsLockWaits_Matlab', '-v6', '-struct', 'mvUngrouped', 'dbmsLockWaits');
-        save('dbmsLockWaitTime_Matlab', '-v6', '-struct', 'mvUngrouped', 'dbmsLockWaitTime');
-    end
+    % if exist('OCTAVE_VERSION')
+    %     save('dbmsCurrentLockWaits_Octave.mat', '-v6', '-struct', 'mvUngrouped', 'dbmsCurrentLockWaits');
+    %     save('dbmsLockWaits_Octave.mat', '-v6', '-struct', 'mvUngrouped', 'dbmsLockWaits');
+    %     save('dbmsLockWaitTime_Octave.mat', '-v6', '-struct', 'mvUngrouped', 'dbmsLockWaitTime');
+    % else
+    %     save('dbmsCurrentLockWaits_Matlab', '-v6', '-struct', 'mvUngrouped', 'dbmsCurrentLockWaits');
+    %     save('dbmsLockWaits_Matlab', '-v6', '-struct', 'mvUngrouped', 'dbmsLockWaits');
+    %     save('dbmsLockWaitTime_Matlab', '-v6', '-struct', 'mvUngrouped', 'dbmsLockWaitTime');
+    % end
 
     mvUngrouped.dbmsReadRequests = dM(:, header.columns.Innodb_buffer_pool_read_requests);
     mvUngrouped.dbmsReads = dM(:, header.columns.Innodb_buffer_pool_reads);
@@ -260,15 +260,15 @@ if strcmpi(header.dbms, 'mysql')
     %mvGrouped.dbmsCurrentLockWaits=monitor_grouped(:,header.columns.Innodb_row_lock_current_waits);
     %mvGrouped.dbmsLockWaits=dM_grouped(:,header.columns.Innodb_row_lock_waits);
     %mvGrouped.dbmsLockWaitTime=dM_grouped(:,header.columns.Innodb_row_lock_time) / 1000; % to turn it into seconds!
-    if exist('OCTAVE_VERSION')
-        save('dbmsCurrentLockWaits_Octave.mat', '-v6', '-struct', 'mvGrouped', 'dbmsCurrentLockWaits');
-        save('dbmsLockWaits_Octave.mat', '-v6', '-struct', 'mvGrouped', 'dbmsLockWaits');
-        save('dbmsLockWaitTime_Octave.mat', '-v6', '-struct', 'mvGrouped', 'dbmsLockWaitTime');
-    else
-        save('dbmsCurrentLockWaits_Matlab', '-v6', '-struct', 'mvGrouped', 'dbmsCurrentLockWaits');
-        save('dbmsLockWaits_Matlab', '-v6', '-struct', 'mvGrouped', 'dbmsLockWaits');
-        save('dbmsLockWaitTime_Matlab', '-v6', '-struct', 'mvGrouped', 'dbmsLockWaitTime');
-    end
+    % if exist('OCTAVE_VERSION')
+    %     save('dbmsCurrentLockWaits_Octave.mat', '-v6', '-struct', 'mvGrouped', 'dbmsCurrentLockWaits');
+    %     save('dbmsLockWaits_Octave.mat', '-v6', '-struct', 'mvGrouped', 'dbmsLockWaits');
+    %     save('dbmsLockWaitTime_Octave.mat', '-v6', '-struct', 'mvGrouped', 'dbmsLockWaitTime');
+    % else
+    %     save('dbmsCurrentLockWaits_Matlab', '-v6', '-struct', 'mvGrouped', 'dbmsCurrentLockWaits');
+    %     save('dbmsLockWaits_Matlab', '-v6', '-struct', 'mvGrouped', 'dbmsLockWaits');
+    %     save('dbmsLockWaitTime_Matlab', '-v6', '-struct', 'mvGrouped', 'dbmsLockWaitTime');
+    % end
 
     mvGrouped.dbmsReadRequests = dM_grouped(:, header.columns.Innodb_buffer_pool_read_requests);
     mvGrouped.dbmsReads = dM_grouped(:, header.columns.Innodb_buffer_pool_reads);
