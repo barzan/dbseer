@@ -26,9 +26,11 @@ public class DBSeerPredictionFrame extends JFrame
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout());
+		this.setLayout(new MigLayout("fill"));
+		this.setPreferredSize(new Dimension(1024, 768));
 
 		JFreeChart chart = DBSeerChartFactory.createXYLinePredictionChart(center);
+		JTable errorTable = DBSeerChartFactory.createErrorTable();
 		ChartPanel chartPanel = new ChartPanel(chart);
 		chartPanel.setPreferredSize(new Dimension(1024, 768));
 		String title = center.getPrediction();
@@ -69,6 +71,14 @@ public class DBSeerPredictionFrame extends JFrame
 				break;
 		}
 		this.setTitle(title);
-		this.add(chartPanel);
+		if (errorTable != null)
+		{
+			this.add(chartPanel, "grow, wrap");
+			this.add(errorTable, "growx");
+		}
+		else
+		{
+			this.add(chartPanel, "grow");
+		}
 	}
 }

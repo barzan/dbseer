@@ -12,6 +12,7 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 /**
  * Created by dyoon on 2014. 5. 25..
@@ -195,5 +196,51 @@ public class DBSeerChartFactory
 		}
 
 		return null;
+	}
+
+	public static JTable createErrorTable()
+	{
+		JTable errorTable = null;
+		DefaultTableModel errorTableModel = null;
+		MatlabProxy proxy = DBSeerGUI.proxy;
+
+		try
+		{
+			Object[] maeList = (Object[]) proxy.getVariable("meanAbsError");
+			Object[] mreList = (Object[]) proxy.getVariable("meanRelError");
+			String[] legends = (String[]) proxy.getVariable("legends");
+
+			if (maeList.length > 0 || mreList.length > 0)
+			{
+				errorTableModel = new DefaultTableModel()
+				{
+					@Override
+					public boolean isCellEditable(int row, int column)
+					{
+						return false;
+					}
+				};
+				//errorTable = new JTable();
+				errorTableModel.addColumn(null, new String[]{"", "MAE", "MRE"}); // first empty column
+
+				for (int i = 0; i < maeList.length; ++i)
+				{
+					Object maeObj = maeList[i];
+					Object mreObj = mreList[i];
+
+					double[] mae = (double[])maeObj;
+					double[] mre = (double[])mreObj;
+
+					errorTableModel.addColumn(null, new Object[]{legends[i+1], mae[0], mre[0]});
+				}
+				errorTable = new JTable(errorTableModel);
+			}
+		}
+		catch (MatlabInvocationException e)
+		{
+			JOptionPane.showMessageDialog(null, e.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
+
+		return errorTable;
 	}
 }

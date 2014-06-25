@@ -16,9 +16,10 @@ public class UserInputValidator
 	{
 		if (!isEnabled) return true;
 
-		boolean matchRegex = input.matches("\\[\\s*\\d*(\\s+\\d+)*\\s*\\]");
+		boolean matchRegex = input.matches("\\[\\s*(\\d+(.\\d+)?)*(\\s+(\\d+(.\\d+)?)+)*\\s*\\]");
 		if (!matchRegex)
 		{
+			System.out.println(input);
 			JOptionPane.showMessageDialog(null, "Data validation error at " + fieldName + ".\n" +
 							"It is not a valid single row matrix.", "Error",
 					JOptionPane.ERROR_MESSAGE);

@@ -55,7 +55,7 @@ public class PredictionCenter
 	{
 		try
 		{
-			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel] = pc.performPrediction;");
+			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = pc.performPrediction;");
 		}
 		catch (MatlabInvocationException e)
 		{

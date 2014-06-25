@@ -37,7 +37,8 @@ classdef PredictionCenter < handle
             end
         end
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = performPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = performPrediction(this)
+
             if ~this.trainConfig.isInitialized
                 this.trainConfig.initialize;
             end
@@ -50,37 +51,40 @@ classdef PredictionCenter < handle
             end
 
             if strcmp(this.taskName, 'FlushRatePredictionByTPS')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.flushRatePredictionByTPS;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.flushRatePredictionByTPS;
             elseif strcmp(this.taskName, 'FlushRatePredictionByCounts')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.flushRatePredictionByCounts;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.flushRatePredictionByCounts;
             elseif strcmp(this.taskName, 'MaxThroughputPrediction')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.maxThroughputPrediction;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.maxThroughputPrediction;
             elseif strcmp(this.taskName, 'TransactionCountsToCpuByTPS')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsToCpuByTPS;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsToCpuByTPS;
             elseif strcmp(this.taskName, 'TransactionCountsToCpuByCounts')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsToCpuByCounts;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsToCpuByCounts;
             elseif strcmp(this.taskName, 'TransactionCountsToIO')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsToIO;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsToIO;
             elseif strcmp(this.taskName, 'TransactionCountsToLatency')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsToLatency;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsToLatency;
             elseif strcmp(this.taskName, 'TransactionCountsWaitTimeToLatency')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.transactionCountsWaitTimeToLatency;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsWaitTimeToLatency;
             elseif strcmp(this.taskName, 'BlownTransactionCountsToCpu')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.blownTransactionCountsToCpu;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.blownTransactionCountsToCpu;
             elseif strcmp(this.taskName, 'BlownTransactionCountsToIO')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.blownTransactionCountsToIO;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.blownTransactionCountsToIO;
             elseif strcmp(this.taskName, 'LinearPrediction')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.linearPrediction;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.linearPrediction;
             elseif strcmp(this.taskName, 'PhysicalReadPrediction')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.physicalReadPrediction;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.physicalReadPrediction;
             elseif strcmp(this.taskName, 'LockPrediction')
-                [title legends Xdata Ydata Xlabel Ylabel] = this.lockPrediction;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.lockPrediction;
             else
                 error(strcat('Unsupported task name: ', this.taskName));
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = flushRatePredictionByTPS(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = flushRatePredictionByTPS(this)
+            meanAbsError = {};
+            meanRelError = {};
+            
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 mv = this.testConfig.mv;
 
@@ -114,6 +118,11 @@ classdef PredictionCenter < handle
 
                 Xdata = {temp(:,1)};
                 Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7)]};
+
+                for i=3:7
+                    meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
+                    meanRelError{i-2} = mre(temp(:,i), temp(:,2));
+                end
 
                 legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
 
@@ -167,7 +176,11 @@ classdef PredictionCenter < handle
             end
         end
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = flushRatePredictionByCounts(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = flushRatePredictionByCounts(this)
+            
+            meanAbsError = {};
+            meanRelError = {};
+
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 mv = this.testConfig.mv;
 
@@ -202,6 +215,11 @@ classdef PredictionCenter < handle
 
                 Xdata = {temp(:,1)};
                 Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7)]};
+
+                for i=3:7
+                    meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
+                    meanRelError{i-2} = mre(temp(:,i), temp(:,2));
+                end
 
                 legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
 
@@ -259,7 +277,11 @@ classdef PredictionCenter < handle
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = maxThroughputPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = maxThroughputPrediction(this)
+
+            meanAbsError = {};
+            meanRelError = {};
+
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 range = (1:15000)';
                 maxFlushRate = 1000;
@@ -334,36 +356,50 @@ classdef PredictionCenter < handle
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(cpuCLThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on adjusted LR for CPU+classification';
+                    meanAbsError{end+1} = mae(cpuCLThroughput, actualThr);
+                    meanRelError{end+1} = mre(cpuCLThroughput, actualThr);
                 end
                 if ~isempty(cpuCUThroughput)
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(cpuCUThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput on LR for CPU+classification';
+                    meanAbsError{end+1} = mae(cpuCUThroughput, actualThr);
+                    meanRelError{end+1} = mre(cpuCUThroughput, actualThr);
                 end
                 if ~isempty(cpuTLThroughput)
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(cpuTLThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput on adjusted LR for CPU';
+                    meanAbsError{end+1} = mae(cpuTLThroughput, actualThr);
+                    meanRelError{end+1} = mre(cpuTLThroughput, actualThr);
                 end
                 if ~isempty(cpuTUThroughput)
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(cpuTUThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on LR for CPU';
+                    meanAbsError{end+1} = mae(cpuTUThroughput, actualThr);
+                    meanRelError{end+1} = mre(cpuTUThroughput, actualThr);
                 end
                 if ~isempty(myFlushRateThroughput)
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(myFlushRateThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on our flush rate model';
+                    meanAbsError{end+1} = mae(myFlushRateThroughput, actualThr);
+                    meanRelError{end+1} = mre(myFlushRateThroughput, actualThr);
                 end
                 if ~isempty(linFlushRateThroughput)
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(linFlushRateThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on LR for flush rate'; 
+                    meanAbsError{end+1} = mae(linFlushRateThroughput, actualThr);
+                    meanRelError{end+1} = mre(linFlushRateThroughput, actualThr);
                 end
                 if ~isempty(concurrencyThroughput)
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(concurrencyThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on our contention model';
+                    meanAbsError{end+1} = mae(concurrencyThroughput, actualThr);
+                    meanRelError{end+1} = mre(concurrencyThroughput, actualThr);
                 end
 
                 title = 'Max Throughput Prediction';
@@ -490,7 +526,9 @@ classdef PredictionCenter < handle
 
         end % end function
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = lockPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = lockPrediction(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 if strcmp(this.lockType, 'waitTime')
                     my_train_lock = this.trainConfig.lockWaitTime;
@@ -579,6 +617,11 @@ classdef PredictionCenter < handle
 
                 Xdata = {temp(:,1)};
                 Ydata = {temp(:,2:end)};
+
+                for i=3:7
+                    meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
+                    meanRelError{i-2} = mre(temp(:,i), temp(:,2));
+                end
 
                 Xlabel = 'TPS';
                 Ylabel = 'Total time spent acquiring row locks (seconds)';
@@ -680,7 +723,9 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = transactionCountsToCpuByTPS(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsToCpuByTPS(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
                 [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(this.testConfig.TPSUngrouped);
@@ -701,6 +746,11 @@ classdef PredictionCenter < handle
                 Ydata = {[temp(:,2) temp(:,3) temp(:,4)]}
                 Xdata{end+1} = xValuesTrain;
                 Ydata{end+1} = this.trainConfig.averageCpuUsage;
+
+                for i=3:4
+                    meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
+                    meanRelError{i-2} = mre(temp(:,i), temp(:,2));
+                end
                 
                 legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions', 'Training data'};
                 Ylabel = 'Average CPU (%)';
@@ -735,7 +785,9 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = transactionCountsToCpuByCounts(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsToCpuByCounts(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
                 [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(this.testConfig.TPSUngrouped);
@@ -756,6 +808,11 @@ classdef PredictionCenter < handle
                 Ydata = {[temp(:,2) temp(:,3) temp(:,4)]}
                 Xdata{end+1} = xValuesTrain;
                 Ydata{end+1} = this.trainConfig.averageCpuUsage;
+
+                for i=3:4
+                    meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
+                    meanRelError{i-2} = mre(temp(:,i). temp(:,2));
+                end
                 
                 legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions', 'Training data'}; 
                 Ylabel = 'Average CPU (%)';
@@ -791,7 +848,9 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = transactionCountsToIO(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsToIO(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 modelIO = barzanLinSolve(this.trainConfig.diskWrite, this.trainConfig.transactionCount);
                 predictionsIO = barzanLinInvoke(modelIO, this.testConfig.transactionCount);
@@ -800,6 +859,8 @@ classdef PredictionCenter < handle
                 Ydata = {[this.testConfig.diskWrite predictionsIO]};
                 title = 'Linear model: Avg Physical Writes';
                 legends = {'actual writes', 'predicted writes'};
+                meanAbsError{1} = mae(predictionsIO, this.testConfig.diskWrite);
+                meanRelError{1} = mre(predictionsIO, this.testConfig.diskWrite);
                 Ylabel = 'Written data (MB)';
                 Xlabel = 'TPS';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
@@ -818,7 +879,9 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = transactionCountsToLatency(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsToLatency(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 modelL = barzanLinSolve(this.trainConfig.transactionLatency, this.trainConfig.transactionCount);
                 predictionsL  = barzanLinInvoke(modelL, this.testConfig.transactionCount);
@@ -833,6 +896,8 @@ classdef PredictionCenter < handle
                 end
                 for i = 1:size(predictionsL, 2)
                     legends{end+1} = ['predicted latency of transaction ' num2str(i)];
+                    meanAbsError{i} = mae(predictionsL(:,i), this.testConfig.transactionLatency(:,i));
+                    meanRelError{i} = mre(predictionsL(:,i), this.testConfig.transactionLatency(:,i));
                 end
                 Ylabel = 'Time (seconds)';
                 Xlabel = '';
@@ -857,7 +922,9 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = transactionCountsWaitTimeToLatency(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsWaitTimeToLatency(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 modelLw = barzanLinSolve(this.trainConfig.transactionLatency, [this.trainConfig.transactionCount this.trainConfig.lockWaitTime]);
                 predictionsLw  = barzanLinInvoke(modelLw, [this.testConfig.transactionCount this.testConfig.lockWaitTime]);
@@ -879,6 +946,8 @@ classdef PredictionCenter < handle
                 end
                 for i = 2:size(tempPred, 2)
                     legends{end+1} = ['predicted latency of transaction ' num2str(i-1)];
+                    meanAbsError{i-1} = mae(tempPred(:,i), tempActual(:,i));
+                    meanRelError{i-1} = mre(tempPred(:,i), tempActual(:,i));
                 end
 
                 Xlabel = horzcat('Transaction counts of type ', num2str(this.whichTransactionToPlot));
@@ -920,7 +989,9 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = blownTransactionCountsToCpu(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = blownTransactionCountsToCpu(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 range=1:1:size(this.trainConfig.transactionCount, 2);
                 combs = combnk(range, 2);
@@ -937,6 +1008,8 @@ classdef PredictionCenter < handle
                 Ydata = {[this.testConfig.averageCpuUsage blownPredictionsP]};
                 legends = {'Actual CPU usage', 'Predicted CPU usage]'};
                 title = 'Quadratic Model: Average CPU';
+                meanAbsError{1} = mae(blownPredictionsP, this.testConfig.averageCpuUsage);
+                meanRelError{1} = mre(blownPredictionsP, this.testConfig.averageCpuUsage);
                 Xlabel = 'Time';
                 Ylabel = 'Average CPU (%)';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
@@ -963,7 +1036,9 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = blownTransactionCountsToIO(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = blownTransactionCountsToIO(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 range=1:1:size(this.trainConfig.transactionCount,2);
                 combs = combnk(range, 2);
@@ -978,6 +1053,9 @@ classdef PredictionCenter < handle
 
                 Xdata = {[1:size(this.testConfig.diskWrite, 1)]'};
                 Ydata = {[this.testConfig.diskWrite blownPredictionsIO] ./ 1024 ./ 1024};
+
+                meanAbsError{1} = mae(blownPredictionsIO, this.testConfig.diskWrite) ./ 1024 ./ 1024;
+                meanRelError{1} = mre(blownPredictionsIO, this.testConfig.diskWrite);
 
                 title = 'Quadratic Model: Average Physical Writes';
                 legends = {'Actual Writes', 'Predicted Writes'};
@@ -1008,7 +1086,9 @@ classdef PredictionCenter < handle
             end
         end % end function
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = linearPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = linearPrediction(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 trainY = this.trainConfig.logWriteMB;
                 testY = this.testConfig.logWriteMB;
@@ -1027,6 +1107,9 @@ classdef PredictionCenter < handle
 
                 Xdata = {temp(:,1)};
                 Ydata = {[temp(:,2) temp(:,3)]};
+
+                meanAbsError{1} = mae(pred, testY);
+                meanRelError{1} = mre(pred, testY);
 
                 Xdata{end+1} = xValuesTrain;
                 Ydata{end+1} = trainY;
@@ -1064,7 +1147,9 @@ classdef PredictionCenter < handle
 
         end % end function
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = physicalReadPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = physicalReadPrediction(this)
+            meanAbsError = {};
+            meanRelError = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 cacheMissRate = this.testConfig.logicalReads ./ this.testConfig.physicalReads;
                 normalization = mean(this.testConfig.physicalReadsMB) ./ mean(cacheMissRate);
@@ -1076,6 +1161,9 @@ classdef PredictionCenter < handle
 
                 Xdata = {temp(:,1)};
                 Ydata = {[temp(:,2) temp(:,3)]};
+
+                meanAbsError{1} = mae(cacheMissRate*normalization, this.testConfig.physicalReadsMB);
+                meanRelError{1} = mre(cacheMissRate*normalization, this.testConfig.physicalReadsMB);
 
                 title = 'Physical read volume and cache miss rate';
                 legends = {'Physical Read Volume', 'Cache Miss Rate'};
