@@ -29,4 +29,5 @@ public class DBSeerConstants
 	public static final String[] LOCK_TYPES = {"Wait Time", "Number of Locks", "Number of Conflicts"};
 	public static final String[] LEARN_LOCK = {"True", "False"};
 
+	public static final String RAW_DATASET_PATH = "./dataset/raw";
 }

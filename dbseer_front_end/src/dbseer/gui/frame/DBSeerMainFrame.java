@@ -27,6 +27,7 @@ public class DBSeerMainFrame extends JFrame
 	private DBSeerPlotControlPanel plotControlPanel;
 	private DBSeerConfigurationPanel configPanel;
 	private DBSeerPredictionControlPanel predictionPanel;
+	private JPanel statusPanel;
 
 	public DBSeerMainFrame()
 	{
@@ -97,12 +98,22 @@ public class DBSeerMainFrame extends JFrame
 		configPanel = new DBSeerConfigurationPanel();
 		predictionPanel = new DBSeerPredictionControlPanel();
 
+		statusPanel = new JPanel();
+		statusPanel.setLayout(new MigLayout("fill, insets 0 0 0 0", "[grow 25][grow 75]"));
+
 		DBSeerGUI.status.setHorizontalAlignment(JLabel.LEFT);
 		DBSeerGUI.status.setHorizontalTextPosition(JLabel.LEFT);
-		DBSeerGUI.status.setPreferredSize(new Dimension(1000,16));
-
-		//DBSeerGUI.status.setMaximumSize(new Dimension(9000,16));
 		DBSeerGUI.status.setBorder(BorderFactory.createLoweredBevelBorder());
+		DBSeerGUI.status.setPreferredSize(new Dimension(500, 20));
+
+		DBSeerGUI.middlewareStatus.setHorizontalAlignment(JLabel.LEFT);
+		DBSeerGUI.middlewareStatus.setHorizontalTextPosition(JLabel.LEFT);
+		DBSeerGUI.middlewareStatus.setBorder(BorderFactory.createLoweredBevelBorder());
+		DBSeerGUI.middlewareStatus.setPreferredSize(new Dimension(500, 20));
+		DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
+
+		statusPanel.add(DBSeerGUI.middlewareStatus, "growx");
+		statusPanel.add(DBSeerGUI.status, "growx");
 
 		mainTabbedPane.addTab("Settings", null, configPanel, "Set-up configurations for DBSeer");
 		mainTabbedPane.addTab("Plot/Graph", null, plotControlPanel, "Displays plot/graphs from DB statistics");
@@ -116,8 +127,8 @@ public class DBSeerMainFrame extends JFrame
 		this.add(mainTabbedPane, "cell 0 1, grow");
 		//this.add(configPane, "cell 0 2, grow");
 		//this.add(plotControlPanel, "cell 1 0");
-		DBSeerGUI.status.setPreferredSize(new Dimension(1000, 20));
-		this.add(DBSeerGUI.status, "dock south, grow");
+
+		this.add(statusPanel, "dock south, grow");
 
 		// disable frame resizing
 		this.setResizable(false);

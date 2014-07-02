@@ -16,6 +16,12 @@ public class DBSeerUserSettings
 	@XStreamAlias("path")
 	private String DBSeerRootPath = "";
 
+	private String lastMiddlewareIP = "";
+
+	private int lastMiddlewarePort = 0;
+
+	private String lastMiddlewareID = "";
+
 	@XStreamImplicit
 	private List<DBSeerDataSet> datasets = new ArrayList<DBSeerDataSet>();
 
@@ -127,5 +133,35 @@ public class DBSeerUserSettings
 			datasets = new ArrayList<DBSeerDataSet>();
 		}
 		return this;
+	}
+
+	public String getLastMiddlewareIP()
+	{
+		return lastMiddlewareIP;
+	}
+
+	public void setLastMiddlewareIP(String lastMiddlewareIP)
+	{
+		this.lastMiddlewareIP = lastMiddlewareIP;
+	}
+
+	public int getLastMiddlewarePort()
+	{
+		return lastMiddlewarePort;
+	}
+
+	public void setLastMiddlewarePort(int lastMiddlewarePort)
+	{
+		this.lastMiddlewarePort = lastMiddlewarePort;
+	}
+
+	public String getLastMiddlewareID()
+	{
+		return lastMiddlewareID;
+	}
+
+	public void setLastMiddlewareID(String lastMiddlewareID)
+	{
+		this.lastMiddlewareID = lastMiddlewareID;
 	}
 }

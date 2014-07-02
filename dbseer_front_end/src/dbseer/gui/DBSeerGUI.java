@@ -7,10 +7,12 @@ import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.user.DBSeerUserSettings;
 import dbseer.gui.xml.XStreamHelper;
+import dbseer.middleware.MiddlewareSocket;
 import matlabcontrol.*;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
+import java.net.Socket;
 
 /**
  * Created by dyoon on 2014. 5. 17..
@@ -37,6 +39,10 @@ public class DBSeerGUI
 	public static MatlabProxy proxy;
 
 	public static JLabel status = new JLabel();
+
+	public static JLabel middlewareStatus = new JLabel();
+
+	public static MiddlewareSocket middlewareSocket = new MiddlewareSocket();
 
 	public static String[] getProfileNames()
 	{

@@ -9,7 +9,7 @@ import javax.swing.*;
  */
 public class DBSeerConfigurationPanel extends JPanel
 {
-	private DBSeerLoginPanel loginPanel;
+	private DBSeerMiddlewarePanel loginPanel;
 	private DBSeerConfigListPanel configListPanel;
 	private DBSeerDatasetListPanel profileListPanel;
 
@@ -22,7 +22,7 @@ public class DBSeerConfigurationPanel extends JPanel
 	{
 		this.setLayout(new MigLayout("fill"));
 
-		loginPanel = new DBSeerLoginPanel();
+		loginPanel = new DBSeerMiddlewarePanel();
 		loginPanel.setBorder(BorderFactory.createTitledBorder("Middleware"));
 		configListPanel = new DBSeerConfigListPanel();
 		configListPanel.setBorder(BorderFactory.createTitledBorder("Available Configs"));

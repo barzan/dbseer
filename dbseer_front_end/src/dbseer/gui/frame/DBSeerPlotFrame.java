@@ -28,7 +28,7 @@ public class DBSeerPlotFrame extends JFrame
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout());
+		this.setLayout(new MigLayout("fill"));
 		int count = 0;
 		for (String chartName : chartNames)
 		{
@@ -36,12 +36,12 @@ public class DBSeerPlotFrame extends JFrame
 			DBSeerSelectableChartPanel chartPanel = new DBSeerSelectableChartPanel(chart);
 			if (++count == numChartInRow)
 			{
-				this.add(chartPanel, "wrap");
+				this.add(chartPanel, "grow, wrap");
 				count = 0;
 			}
 			else
 			{
-				this.add(chartPanel);
+				this.add(chartPanel, "grow");
 			}
 		}
 	}
