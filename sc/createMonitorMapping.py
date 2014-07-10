@@ -116,7 +116,7 @@ if __name__=='__main__':
 
   formatted_columns = format_columns(columns,sequence_no)
   metadata = format_metadata(columns,sequence_no)
-  header = format_header(columns)  
+  header = format_header(columns)
 
   print formatted_columns
   print metadata

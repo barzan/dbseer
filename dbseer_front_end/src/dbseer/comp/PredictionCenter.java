@@ -1,4 +1,4 @@
-package dbseer.gui.comp;
+package dbseer.comp;
 
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.user.DBSeerConfiguration;

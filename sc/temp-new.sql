@@ -16,3 +16,5 @@ drop table if exists coefs;
 drop table if exists rawlog;
 
 
+18 1 20 20 20 20 20 0 0 0 0 0 0
+18 1 20 20 20 20 20 0 0 0 0 0 0

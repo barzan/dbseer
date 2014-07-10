@@ -2,8 +2,7 @@ package dbseer.gui.frame;
 
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.chart.DBSeerChartFactory;
-import dbseer.gui.comp.PredictionCenter;
-import dbseer.gui.dialog.DBSeerFileLoadDialog;
+import dbseer.comp.PredictionCenter;
 import net.miginfocom.swing.MigLayout;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;

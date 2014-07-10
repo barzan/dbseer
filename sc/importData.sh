@@ -17,4 +17,3 @@ cat ~/tables/iotableSmallrow.ctl | mysql -u root -h 127.0.0.1 -P 3400 -D tpcc
 echo inserting locktable data
 cat ~/tables/locktable.ctl | mysql -u root -h 127.0.0.1 -P 3400 -D tpcc
 
-

@@ -40,3 +40,5 @@ done
 
 # run all experiments
 #/home/alekh/sc/runExperimentPg.sh /home/alekh/tpcc_output /home/alekh/tpcc_profile/postgres_experiments
+18 1 20 20 20 20 20 0 0 0 0 0 0
+18 1 20 20 20 20 20 0 0 0 0 0 0

@@ -1,6 +1,6 @@
 echo "------------------- MONITORING TOOl --------------"
 
-#. setenv
+. setenv
 
 if [ ""$DSTAT_CONFIGURED != "true" ]
 then

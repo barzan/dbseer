@@ -1,26 +1,20 @@
 package dbseer.gui.panel;
 
 import dbseer.gui.DBSeerConstants;
-import dbseer.gui.comp.PredictionCenter;
-import dbseer.gui.comp.UserInputValidator;
+import dbseer.comp.PredictionCenter;
+import dbseer.comp.UserInputValidator;
 import dbseer.gui.panel.prediction.*;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.DBSeerGUI;
-import dbseer.gui.actions.CheckPredictionBoxAction;
 import dbseer.gui.frame.DBSeerPredictionFrame;
 import dbseer.gui.model.SharedComboBoxModel;
 import dbseer.gui.user.DBSeerDataSet;
-import matlabcontrol.MatlabInvocationException;
-import matlabcontrol.MatlabProxy;
 import net.miginfocom.swing.MigLayout;
 
-import javax.smartcardio.Card;
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 

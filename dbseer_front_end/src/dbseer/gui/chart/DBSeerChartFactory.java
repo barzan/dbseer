@@ -1,7 +1,7 @@
 package dbseer.gui.chart;
 
 import dbseer.gui.DBSeerGUI;
-import dbseer.gui.comp.PredictionCenter;
+import dbseer.comp.PredictionCenter;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 import matlabcontrol.extensions.MatlabNumericArray;

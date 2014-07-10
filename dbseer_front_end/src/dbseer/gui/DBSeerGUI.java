@@ -8,6 +8,7 @@ import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.user.DBSeerUserSettings;
 import dbseer.gui.xml.XStreamHelper;
 import dbseer.middleware.MiddlewareSocket;
+import dbseer.comp.DataCenter;
 import matlabcontrol.*;
 
 import javax.swing.*;
@@ -112,6 +113,18 @@ public class DBSeerGUI
 
 	public static void main(String[] args)
 	{
+		// Temp: testing data center;
+		DataCenter dc = new DataCenter("/Users/dyoon/Work/dbseer/dbseer_front_end/dataset/raw/tpcc_sample_60s");
+		dc.parseMonitorLogs();
+		dc.parseTransactionLogs();
+		dc.parseStatementLogs();
+		dc.parseQueryLogs();
+		dc.prepareTransactionClustering();
+		dc.performDBSCAN();
+
+		if (true)
+			return;
+
 		try
 		{
 			SwingUtilities.invokeAndWait(new Runnable()

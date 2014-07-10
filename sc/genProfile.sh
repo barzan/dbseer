@@ -16,7 +16,7 @@ echo "580 10000 0 0 50 50 0 0 0 0 0 0 0" > t34-dist
 echo "580 10000 0 0 50 0 50 0 0 0 0 0 0" > t35-dist
 echo "580 10000 0 0 0 50 50 0 0 0 0 0 0" > t45-dist
 
-for i in `ls`
+for i in `ls t*-dist`
 do
 echo "18 1 20 20 20 20 20 0 0 0 0 0 0" >> $i
 done
@@ -39,3 +39,5 @@ echo "$episode $tps 0 0 0 $i $share2 0 0 0 0 0 0" >> t45-dist
 #share1=0$(echo "scale=9; $share1 + 100.00000000000/$win" | bc)
 done
 
+#18 1 20 20 20 20 20 0 0 0 0 0 0
+#18 1 20 20 20 20 20 0 0 0 0 0 0

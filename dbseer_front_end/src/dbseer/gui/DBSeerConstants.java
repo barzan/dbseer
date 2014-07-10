@@ -30,4 +30,11 @@ public class DBSeerConstants
 	public static final String[] LEARN_LOCK = {"True", "False"};
 
 	public static final String RAW_DATASET_PATH = "./dataset/raw";
+
+	// Statement types
+	public static final int STATEMENT_NONE = 0;
+	public static final int STATEMENT_READ = 1;
+	public static final int STATEMENT_INSERT = 2;
+	public static final int STATEMENT_UPDATE = 3;
+	public static final int STATEMENT_DELETE = 4;
 }

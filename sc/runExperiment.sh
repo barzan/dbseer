@@ -126,4 +126,3 @@ done
 echo "Experiments done." 	
 
 # c=0; for i in `ps -C mysqld -m -o tid`; do echo $i $c; taskset -c -p $c $i; let c=c+1; let c=c%16; done
- 

@@ -37,3 +37,5 @@ done
 echo "Memory experiment done!"
 
 
+18 1 20 20 20 20 20 0 0 0 0 0 0
+18 1 20 20 20 20 20 0 0 0 0 0 0

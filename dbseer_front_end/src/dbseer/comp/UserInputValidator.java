@@ -1,4 +1,4 @@
-package dbseer.gui.comp;
+package dbseer.comp;
 
 import javax.swing.*;
 
