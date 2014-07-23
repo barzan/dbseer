@@ -14,7 +14,7 @@ public class Transaction
 	public static final int NOISE = 1;
 	public static final int CLASSIFIED = 2;
 	
-	public static final double DIFF_SCALE = 10.0;
+	public static final double DIFF_SCALE = 10000.0;
 
 	private int id;
 	private int classification;
@@ -22,7 +22,7 @@ public class Transaction
 
 	private long startTime;
 	private long endTime;
-	private long latency;
+	private long latency; // in milliseconds
 	private int port;
 	private String user;
 	private List<Statement> statements;

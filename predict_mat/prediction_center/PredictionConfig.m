@@ -50,6 +50,9 @@ classdef PredictionConfig < handle
         networkSendKBUngrouped
         networkRecvKBUngrouped
         logWriteMBUngrouped % LogIOw
+
+        clusteredPageFreq
+        clusteredPageMix
     end
     
     methods
@@ -88,6 +91,8 @@ classdef PredictionConfig < handle
         end
         function mergeDataset(this)
             this.configSummary = '{';
+            this.clusteredPageMix = [];
+            this.clusteredPageFreq = [];
             howManyDesc = length(this.datasetList);
             for i=1:howManyDesc
                 this.datasetList{i}.loadStatistics;
@@ -114,10 +119,19 @@ classdef PredictionConfig < handle
     
                 tps = sum(this.mv.clientIndividualSubmittedTrans(:,this.transactionType), 2);
                 this.configSummary = [this.configSummary num2str(min(tps)) '-' num2str(max(tps))];
+                if i == 1
+                    this.clusteredPageMix = conf.clusteredPageMix;
+                    this.clusteredPageFreq = conf.clusteredPageFreq;
+                else
+                    this.clusteredPageMix = this.clusteredPageMix + conf.clusteredPageMix;
+                    this.clusteredPageFreq = this.clusteredPageFreq + conf.clusteredPageFreq;
+                end
                 if i < howManyDesc
                     this.configSummary = [this.configSummary ',' ];
                 end
             end
+            this.clusteredPageMix = this.clusteredPageMix ./ howManyDesc;
+            this.clusteredPageFreq = this.clusteredPageFreq ./ howManyDesc;
         end
         
         function initialize(this)

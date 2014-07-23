@@ -43,11 +43,13 @@ classdef Plotter < handle
         function [title legends Xdata Ydata Xlabel Ylabel] = plotAvgCpuUsage(this)
             mv = this.mv;
             Xdata = {this.Xdata}
-            Ydata = {[mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq mv.measuredCPU mv.AvgCpuIdle]};
+            % Ydata = {[mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq mv.measuredCPU mv.AvgCpuIdle]};
+            Ydata = {[mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq mv.AvgCpuIdle]};
             Xlabel = this.Xlabel;
             Ylabel = 'Average cpu usage (%)';
             title = 'Average CPU Usage';
-            legends = {'Usr', 'Sys', 'AvgCpuWai', 'AvgCpuHiq', 'AvgCpuSiq', 'MySQL Usage', 'Idle'};
+            % legends = {'Usr', 'Sys', 'AvgCpuWai', 'AvgCpuHiq', 'AvgCpuSiq', 'MySQL Usage', 'Idle'};
+            legends = {'Usr', 'Sys', 'AvgCpuWai', 'AvgCpuHiq', 'AvgCpuSiq', 'Idle'};
         end
         
         function [title legends Xdata Ydata Xlabel Ylabel] = plotTPSCommitRollback(this)
@@ -131,11 +133,15 @@ classdef Plotter < handle
             mv = this.mv;
             Xdata = {this.Xdata};
             if isfield(mv, 'dbmsDoublePageWritesMB')
-                Ydata = {[mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.dbmsDoublePageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB]};
-                legends = {'DB Total Writes','DB Log Writes','DB Page Writes', 'DB Double Page Writes','OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
+                Ydata = {[mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.dbmsDoublePageWritesMB mv.osNumberOfSectorWrites]};
+                % Ydata = {[mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.dbmsDoublePageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB]};
+                legends = {'DB Total Writes','DB Log Writes','DB Page Writes', 'DB Double Page Writes','OS No. Sector Writes'};
+                % legends = {'DB Total Writes','DB Log Writes','DB Page Writes', 'DB Double Page Writes','OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
             else
-                Ydata = {[mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB]};
-                legends = {'DB Log Writes','DB Page Writes', 'OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
+                Ydata = {[mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites]};
+                % Ydata = {[mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB]};
+                legends = {'DB Log Writes','DB Page Writes', 'OS No. Sector Writes'};
+                % legends = {'DB Log Writes','DB Page Writes', 'OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
             end
             
             Xlabel = this.Xlabel;

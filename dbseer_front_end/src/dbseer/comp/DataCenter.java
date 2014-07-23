@@ -1,12 +1,15 @@
 package dbseer.comp;
 
-import com.foundationdb.sql.parser.StatementNode;
 import dbseer.comp.data.*;
 import dbseer.gui.DBSeerConstants;
+import dbseer.gui.DBSeerGUI;
+import matlabcontrol.MatlabInvocationException;
+import matlabcontrol.MatlabProxy;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by dyoon on 2014. 7. 4..
@@ -16,7 +19,9 @@ import java.util.*;
  */
 public class DataCenter
 {
-	private String path;
+	private String rawPath;
+	private String processedPath;
+	private String datasetName;
 
 	private SystemMonitor monitor;
 
@@ -28,9 +33,31 @@ public class DataCenter
 	private ArrayList<Cluster> clusters;
 	private ArrayList<Transaction> actualTransactions;
 
-	public DataCenter(String path)
+	public DataCenter(String path, String name)
 	{
-		this.path = path;
+		this.rawPath = path + File.separator + name;
+		this.processedPath = this.rawPath + File.separator + "processed";
+		this.datasetName = name;
+		monitor = new SystemMonitor();
+		transactionMap = new HashMap<Integer, Transaction>();
+		statementMap = new HashMap<Integer, Statement>();
+		globalTableSet = new HashSet<String>();
+		globalTableMap = new HashMap<String, Integer>();
+		clusters = new ArrayList<Cluster>();
+		actualTransactions = new ArrayList<Transaction>();
+	}
+
+	public DataCenter(String fullPath)
+	{
+		this.rawPath = fullPath;
+		this.processedPath = this.rawPath + File.separator + "processed";
+
+		File rawPathFile = new File(fullPath);
+		if (rawPathFile.getName() != null)
+			this.datasetName = rawPathFile.getName();
+		else
+			this.datasetName ="";
+
 		monitor = new SystemMonitor();
 		transactionMap = new HashMap<Integer, Transaction>();
 		statementMap = new HashMap<Integer, Statement>();
@@ -58,9 +85,558 @@ public class DataCenter
 		}
 	}
 
-	public boolean parseMonitorLogs()
+	public boolean parseLogs()
 	{
-		File monitorPath = new File(this.path);
+		if (!parseMonitorLogs()) return false;
+		if (!parseTransactionLogs()) return false;
+		if (!parseStatementLogs()) return false;
+		if (!parseQueryLogs()) return false;
+
+		System.out.println("Log parsing completed.");
+		return true;
+	}
+
+	public boolean processDataset()
+	{
+		writeHeader();
+		writeTransactionInfo();
+		writePageInfo();
+		return true;
+	}
+
+	private boolean writeTransactionInfo()
+	{
+		System.out.println("Writing transaction info...");
+		List<MonitorLog> monitorLogs = monitor.getLogs();
+		long startTime = monitor.getStartTimestamp();
+		long endTime = monitor.getEndTimestamp();
+
+		long[][] counts = new long[monitorLogs.size()+60][clusters.size()];
+		double[][] latencies = new double[monitorLogs.size()+60][clusters.size()];
+		ArrayList<Double>[][] latenciesAtTime = (ArrayList<Double>[][])new ArrayList[monitorLogs.size()+60][clusters.size()];
+
+		for (Transaction t : actualTransactions)
+		{
+			for (long i = t.getStartTime(); i <= t.getEndTime(); ++i)
+			{
+				int clusterId = t.getCluster().getId();
+				counts[(int)(i - startTime)][clusterId]++;
+				latencies[(int)(i - startTime)][clusterId] += t.getLatency();
+				if (latenciesAtTime[(int)(i - startTime)][clusterId] == null)
+				{
+					latenciesAtTime[(int)(i - startTime)][clusterId] = new ArrayList<Double>();
+				}
+				latenciesAtTime[(int)(i - startTime)][clusterId].add((double) t.getLatency());
+			}
+		}
+
+		File countFile = new File(processedPath + File.separator + "trans_count");
+		File avgLatencyFile = new File(processedPath + File.separator + "avg_latency");
+
+		PrintWriter countWriter = null;
+		PrintWriter avgLatencyWriter = null;
+
+		try
+		{
+			if (!countFile.getParentFile().exists())
+			{
+				countFile.getParentFile().mkdirs();
+			}
+			if (!countFile.exists())
+			{
+				countFile.createNewFile();
+			}
+
+			if (!avgLatencyFile.getParentFile().exists())
+			{
+				avgLatencyFile.getParentFile().mkdirs();
+			}
+			if (!avgLatencyFile.exists())
+			{
+				avgLatencyFile.createNewFile();
+			}
+
+			countWriter = new PrintWriter(new BufferedWriter(new FileWriter(countFile)));
+			avgLatencyWriter = new PrintWriter(new BufferedWriter(new FileWriter(avgLatencyFile)));
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+
+		String gap = "   "; // three whitespaces
+
+		for (int i = 0; i < monitorLogs.size(); ++i)
+		{
+			MonitorLog log = monitorLogs.get(i);
+
+			countWriter.print(gap);
+			avgLatencyWriter.print(gap);
+
+			countWriter.printf("%.16e", (double)log.getTimestamp());
+			avgLatencyWriter.printf("%.16e", (double)log.getTimestamp());
+
+			for (int j = 0;j < clusters.size();j++)
+			{
+				countWriter.print(gap);
+				countWriter.printf("%.16e", (double) counts[i][j]);
+				avgLatencyWriter.print(gap);
+				if (counts[i][j] == 0)
+					avgLatencyWriter.printf("%.16e", 0.0);
+				else
+					// divide by 1000 to convert into seconds.
+					avgLatencyWriter.printf("%.16e", (latencies[i][j] / (double) counts[i][j]) / 1000.0);
+			}
+			countWriter.println();
+			avgLatencyWriter.println();
+		}
+
+		countWriter.flush();
+		countWriter.close();
+		avgLatencyWriter.flush();
+		avgLatencyWriter.close();
+
+		if (!writeLatencyPercentile(latenciesAtTime, monitorLogs.size(), clusters.size()))
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	private boolean writeLatencyPercentile(ArrayList<Double>[][] latencies, int logSize, int varSize)
+	{
+		System.out.println("Writing latency percentile...");
+		MatlabProxy      proxy                 = DBSeerGUI.proxy;
+		List<MonitorLog> monitorLogs           = monitor.getLogs();
+		File             percentileLatencyFile = new File(processedPath + File.separator + "prctile_latencies.mat");
+
+		if (proxy == null)
+		{
+			System.out.println("MatlabProxy uninitialized.");
+			return false;
+		}
+
+		if (!percentileLatencyFile.getParentFile().exists())
+		{
+			percentileLatencyFile.getParentFile().mkdirs();
+		}
+
+		try
+		{
+			proxy.eval("latenciesPCtile = zeros(" + logSize + "," + (varSize+1) + ",8);");
+
+			for (int i = 0; i < logSize; ++i)
+			{
+				proxy.eval("latenciesPCtile(" + (i+1) + ",1) = " + monitorLogs.get(i).getTimestamp() + ";");
+				for (int j = 0; j < varSize; ++j)
+				{
+					if (latencies[i][j] == null)
+					{
+						proxy.eval("latenciesPCtile(" + (i+1) + "," + (j+2) + ",:) = prctile([], [10, 25, 50, 75, 90, 95, 99, 99.9]);");
+					}
+					else
+					{
+						int index = 0;
+						double[] latencyValues = new double[latencies[i][j].size()];
+						for (Double d : latencies[i][j])
+						{
+							latencyValues[index] = d.doubleValue() / 1000.0; // converting to seconds...
+							++index;
+						}
+						proxy.setVariable("latencies", latencyValues);
+						proxy.eval("latenciesPCtile(" + (i + 1) + "," + (j + 2) + ",:) = prctile(latencies, [10, 25, 50, 75, 90, 95, 99, 99.9]);");
+					}
+				}
+			}
+			proxy.eval("save('" + percentileLatencyFile.getAbsolutePath() + "', 'latenciesPCtile');");
+		}
+		catch (MatlabInvocationException e)
+		{
+			e.printStackTrace();
+		}
+
+		return true;
+	}
+
+	private boolean writeHeader()
+	{
+		int         interruptIndex   = 0;
+		int         memoryUsageIndex = 0;
+		int         swapFreeIndex    = 0;
+		int         memoryFreeIndex  = 0;
+		int         virtualIndex     = 0;
+		int         fileSystemIndex  = 0;
+		int         swapIndex        = 0;
+		int         pagingIndex      = 0;
+		int         procsIndex       = 0;
+		int         diskReadCount    = 0;
+		int         diskWriteCount   = 0;
+		int         ioReadCount      = 0;
+		int         ioWriteCount     = 0;
+		int         netRecvCount     = 0;
+		int         netSendCount     = 0;
+		int         utilCount        = 0;
+		PrintWriter writer           = null;
+		File        file             = new File(processedPath + File.separator + "dataset_header.m");
+
+		List<Integer>        diskIndexes  = new ArrayList<Integer>();
+		List<Integer>        ioIndexes    = new ArrayList<Integer>();
+		List<Integer>        utilIndexes  = new ArrayList<Integer>();
+		List<Integer>        netIndexes   = new ArrayList<Integer>();
+
+		Set<Integer>         cpuUsrSet    = new LinkedHashSet<Integer>();
+		Set<Integer>         cpuSysSet    = new LinkedHashSet<Integer>();
+		Set<Integer>         cpuWaiSet    = new LinkedHashSet<Integer>();
+		Set<Integer>         cpuIdlSet    = new LinkedHashSet<Integer>();
+		Set<Integer>         cpuSiqSet    = new LinkedHashSet<Integer>();
+		Set<Integer>         cpuHiqSet    = new LinkedHashSet<Integer>();
+
+		Set<Integer>         netSendSet   = new LinkedHashSet<Integer>();
+		Set<Integer>         netRecvSet   = new LinkedHashSet<Integer>();
+		Map<String, Integer> interruptMap = new TreeMap<String, Integer>();
+
+		System.out.println("Writing header...");
+		try
+		{
+			if (!file.getParentFile().exists())
+			{
+				file.getParentFile().mkdirs();
+			}
+			if (!file.exists())
+			{
+				file.createNewFile();
+			}
+			writer = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+
+		// write columns
+		writer.print("columns = struct(");
+		String[] headers = monitor.getHeaders();
+		String[] metaHeaders = monitor.getMetaHeaders();
+
+		// get location of interrupt/dsk/io/util columns
+		for (int i = 0; i < metaHeaders.length; ++i)
+		{
+			if (metaHeaders[i].equalsIgnoreCase("interrupts"))
+			{
+				interruptIndex = i;
+			}
+			else if (metaHeaders[i].contains("dsk"))
+			{
+				diskIndexes.add(i);
+			}
+			else if (metaHeaders[i].contains("io"))
+			{
+				ioIndexes.add(i);
+			}
+			else if (metaHeaders[i].contains("net"))
+			{
+				netIndexes.add(i);
+			}
+			else if (metaHeaders[i].matches("[a-z]d[a-z][0-9]*"))
+			{
+				utilIndexes.add(i);
+			}
+			else if (metaHeaders[i].equalsIgnoreCase("memory usage"))
+			{
+				memoryUsageIndex = i;
+			}
+			else if (metaHeaders[i].equalsIgnoreCase("swap"))
+			{
+				swapIndex = i;
+			}
+			else if (metaHeaders[i].equalsIgnoreCase("virtual memory"))
+			{
+				virtualIndex = i;
+			}
+			else if (metaHeaders[i].equalsIgnoreCase("filesystem"))
+			{
+				fileSystemIndex = i;
+			}
+			else if (metaHeaders[i].equalsIgnoreCase("paging"))
+			{
+				pagingIndex = i;
+			}
+			else if (metaHeaders[i].equalsIgnoreCase("procs"))
+			{
+				procsIndex = i;
+			}
+		}
+
+		// get interrupt columns.
+		while (interruptIndex < headers.length)
+		{
+			if (headers[interruptIndex].matches("[0-9]+"))
+			{
+				interruptMap.put(headers[interruptIndex], interruptIndex+1);
+				++interruptIndex;
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		// write 'columns' variable.
+		for (int i = 0; i < headers.length; ++i)
+		{
+			String header = headers[i];
+
+			// store cpu & network info separately
+			if (header.equalsIgnoreCase("usr"))
+			{
+				writer.print("'cpu" + cpuUsrSet.size() + "_usr'," + (i + 1));
+				cpuUsrSet.add(i + 1);
+			}
+			else if (header.equalsIgnoreCase("sys"))
+			{
+				writer.print("'cpu" + cpuUsrSet.size() + "_sys'," + (i + 1));
+				cpuSysSet.add(i + 1);
+			}
+			else if (header.equalsIgnoreCase("idl"))
+			{
+				writer.print("'cpu" + cpuUsrSet.size() + "_idl'," + (i + 1));
+				cpuIdlSet.add(i + 1);
+			}
+			else if (header.equalsIgnoreCase("wai"))
+			{
+				writer.print("'cpu" + cpuUsrSet.size() + "_wai'," + (i + 1));
+				cpuWaiSet.add(i + 1);
+			}
+			else if (header.equalsIgnoreCase("hiq"))
+			{
+				writer.print("'cpu" + cpuUsrSet.size() + "_hiq'," + (i + 1));
+				cpuHiqSet.add(i + 1);
+			}
+			else if (header.equalsIgnoreCase("siq"))
+			{
+				writer.print("'cpu" + cpuUsrSet.size() + "_siq'," + (i + 1));
+				cpuSiqSet.add(i + 1);
+			}
+			else if (header.equalsIgnoreCase("send"))
+			{
+				writer.print("'net" + netSendSet.size() + "_send'," + (i + 1));
+				netSendSet.add(i + 1);
+			}
+			else if (header.equalsIgnoreCase("recv"))
+			{
+				writer.print("'net" + netRecvSet.size() + "_recv'," + (i + 1));
+				netRecvSet.add(i+1);
+			}
+			else if (header.matches("[0-9]+")) // interrupts
+			{
+				writer.print("'interrupts_" + header + "'," + (i + 1));
+			}
+			else if (header.matches("[0-9]+m")) // 1m, 5m, 15m..
+			{
+				writer.print("'load_" + header + "'," + (i + 1));
+			}
+			else if (header.equalsIgnoreCase("#aio"))
+			{
+				writer.print("'aio'," + (i+1));
+			}
+			else if (i >= memoryUsageIndex && i <= memoryUsageIndex + 3)
+			{
+				writer.print("'memory_" + header + "'," + (i + 1));
+			}
+			else if (i >= swapIndex && i <= swapIndex + 1)
+			{
+				writer.print("'swap_" + header + "'," + (i + 1));
+			}
+			else if (i >= virtualIndex && i <= virtualIndex + 3)
+			{
+				writer.print("'virtual_" + header + "'," + (i + 1));
+			}
+			else if (i >= fileSystemIndex && i <= fileSystemIndex + 1)
+			{
+				writer.print("'filesystem_" + header + "'," + (i + 1));
+			}
+			else if (i >= pagingIndex && i <= pagingIndex + 1)
+			{
+				writer.print("'paging_" + header + "'," + (i + 1));
+			}
+			else if (i >= procsIndex && i <= procsIndex + 2)
+			{
+				writer.print("'procs_" + header + "'," + (i + 1));
+			}
+//			else if (header.equalsIgnoreCase("recv"))
+//			{
+//				if (netIndexes.contains(i))
+//				{
+//					writer.print("'net_" + header);
+//					if (netRecvCount > 0) writer.print(netRecvCount + "',");
+//					else writer.print("',");
+//					writer.print(i+1);
+//					++netRecvCount;
+//				}
+//				else
+//				{
+//					writer.print("'" + headers[i].replaceAll("\\.","").replaceAll(" ", "_") + "'," + (i + 1)); // remove dots & spaces
+//				}
+//			}
+//			else if (header.equalsIgnoreCase("send"))
+//			{
+//				if (netIndexes.contains(i))
+//				{
+//					writer.print("'net_" + header);
+//					if (netSendCount > 0) writer.print(netSendCount + "',");
+//					else writer.print("',");
+//					writer.print(i+1);
+//					++netSendCount;
+//				}
+//				else
+//				{
+//					writer.print("'" + headers[i].replaceAll("\\.","").replaceAll(" ", "_") + "'," + (i + 1)); // remove dots & spaces
+//				}
+//			}
+			else if (header.equalsIgnoreCase("read"))
+			{
+				if (diskIndexes.contains(i))
+				{
+					writer.print("'dsk_" + header);
+					if (diskReadCount > 0) writer.print(diskReadCount + "',");
+					else writer.print("',");
+					writer.print(i+1);
+					++diskReadCount;
+				}
+				else if (ioIndexes.contains(i))
+				{
+					writer.print("'io_" + header);
+					if (ioReadCount > 0) writer.print(ioReadCount + "',");
+					else writer.print("',");
+					writer.print(i+1);
+					++ioReadCount;
+				}
+			}
+			else if (header.equalsIgnoreCase("writ"))
+			{
+				if (diskIndexes.contains(i-1))
+				{
+					writer.print("'dsk_" + header);
+					if (diskWriteCount > 0) writer.print(diskWriteCount + "',");
+					else writer.print("',");
+					writer.print(i+1);
+					++diskWriteCount;
+				}
+				else if (ioIndexes.contains(i-1))
+				{
+					writer.print("'io_" + header);
+					if (ioWriteCount > 0) writer.print(ioWriteCount + "',");
+					else writer.print("',");
+					writer.print(i+1);
+					++ioWriteCount;
+				}
+			}
+			else if (header.equalsIgnoreCase("util"))
+			{
+				writer.print("'" + header);
+				if (utilCount > 0) writer.print(utilCount + "',");
+				else writer.print("',");
+				writer.print(i+1);
+				++utilCount;
+			}
+			else
+			{
+				writer.print("'" + headers[i].replaceAll("\\.","").replaceAll(" ", "_") + "'," + (i + 1)); // remove dots & spaces
+			}
+
+			if (i == headers.length - 1) writer.println(");");
+			else writer.print(",");
+		}
+
+		// write 'interrupts' variable
+		writer.print("interrupts = struct(");
+		Iterator<Map.Entry<String,Integer>> it = interruptMap.entrySet().iterator();
+		while (it.hasNext())
+		{
+			Map.Entry<String, Integer> entry = it.next();
+			writer.print("'i" + entry.getKey() + "'," + entry.getValue());
+
+			if (it.hasNext()) writer.print(",");
+			else writer.println(");");
+		}
+
+		// write 'metadata' variable
+		writer.print("metadata = struct(");
+		writer.print("'cpu_siq',[");
+		writeMetadataVector(writer, cpuSiqSet.iterator());
+
+		writer.print("'cpu_usr',[");
+		writeMetadataVector(writer, cpuUsrSet.iterator());
+
+		writer.print("'cpu_idl',[");
+		writeMetadataVector(writer, cpuIdlSet.iterator());
+
+		writer.print("'cpu_wai',[");
+		writeMetadataVector(writer, cpuWaiSet.iterator());
+
+		writer.print("'cpu_sys',[");
+		writeMetadataVector(writer, cpuSysSet.iterator());
+
+		writer.print("'cpu_hiq',[");
+		writeMetadataVector(writer, cpuHiqSet.iterator());
+
+		writer.print("'net_send',[");
+		writeMetadataVector(writer, netSendSet.iterator());
+
+		writer.print("'net_recv',[");
+		writeMetadataVector(writer, netRecvSet.iterator());
+
+		writer.println("'interrupts',interrupts, 'num_net'," + netRecvSet.size() + ",'num_cpu'," +
+				cpuUsrSet.size() + ");");
+
+		writer.println("header = struct('dbms','mysql','columns',columns,'metadata',metadata);");
+
+		writer.print("extra  = struct('disk',[");
+		for (int i = 0; i < diskIndexes.size(); ++i)
+		{
+			writer.print(diskIndexes.get(i) + 1);
+			if (i == diskIndexes.size() - 1) writer.print("],");
+			else writer.print(" ");
+		}
+		writer.print("'io',[");
+		for (int i = 0; i < ioIndexes.size(); ++i)
+		{
+			writer.print(ioIndexes.get(i) + 1);
+			if (i == ioIndexes.size() - 1) writer.print("],");
+			else writer.print(" ");
+		}
+		writer.print("'util',[");
+		for (int i = 0; i < utilIndexes.size(); ++i)
+		{
+			writer.print(utilIndexes.get(i) + 1);
+			if (i == utilIndexes.size() - 1) writer.print("]");
+			else writer.print(" ");
+		}
+		writer.println(");");
+
+		writer.flush();
+		writer.close();
+
+		return true;
+	}
+
+	private void writeMetadataVector(PrintWriter writer, Iterator<Integer> it)
+	{
+		while (it.hasNext())
+		{
+			int value = it.next().intValue();
+			writer.print(value);
+
+			if (it.hasNext()) writer.print(" ");
+			else writer.print("],");
+		}
+	}
+
+	private boolean parseMonitorLogs()
+	{
+		System.out.println("Parsing monitor logs...");
+		File monitorPath = new File(this.rawPath);
 		File monitorFile = null;
 
 		File[] files = monitorPath.listFiles();
@@ -70,13 +646,32 @@ public class DataCenter
 			if (file.getName().contains(".csv") && file.getName().contains("log_exp"))
 			{
 				monitorFile = file;
+				break;
+			}
+		}
+
+		File processFile = new File(processedPath + File.separator + "monitor");
+		if (!processFile.getParentFile().exists())
+		{
+			processFile.getParentFile().mkdirs();
+		}
+		if (!processFile.exists())
+		{
+			try
+			{
+				processFile.createNewFile();
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
 			}
 		}
 
 		if (monitorFile != null)
 		{
-			if (!monitor.parseMonitorFile(monitorFile))
+			if (!monitor.parseMonitorFile(monitorFile, processFile))
 			{
+				System.out.println("parse monitor file failed");
 			    return false;
 			}
 		}
@@ -84,9 +679,10 @@ public class DataCenter
 		return true;
 	}
 
-	public boolean parseTransactionLogs()
+	private boolean parseTransactionLogs()
 	{
-		File file = new File(this.path + File.separator + "allLogs-t.txt");
+		System.out.println("parsing transaction logs...");
+		File file = new File(this.rawPath + File.separator + "allLogs-t.txt");
 
 		if (!file.exists())
 		{
@@ -131,9 +727,10 @@ public class DataCenter
 		return true;
 	}
 
-	public boolean parseStatementLogs()
+	private boolean parseStatementLogs()
 	{
-		File file = new File(this.path + File.separator + "allLogs-s.txt");
+		System.out.println("parsing statement logs...");
+		File file = new File(this.rawPath + File.separator + "allLogs-s.txt");
 
 		if (!file.exists())
 		{
@@ -163,8 +760,8 @@ public class DataCenter
 
 				if (transaction == null)
 				{
-					System.out.println("No mapping transaction for statement");
-					return false;
+				//	System.out.println("No mapping transaction id: " + transactionId + " for statement - ignoring...");
+					continue;
 				}
 				transaction.addStatement(stmt);
 
@@ -186,15 +783,18 @@ public class DataCenter
 		return true;
 	}
 
-	public boolean parseQueryLogs()
+	private boolean parseQueryLogs()
 	{
-		File file = new File(this.path + File.separator + "allLogs-q.txt");
+		System.out.println("parsing query logs...");
+		File file = new File(this.rawPath + File.separator + "allLogs-q.txt");
+
 		if (!file.exists())
 		{
 			System.out.println("query log does not exist.");
 			return false;
 		}
 
+		long count = 0;
 		SQLStatementParser parser = new SQLStatementParser();
 
 		try
@@ -214,8 +814,9 @@ public class DataCenter
 
 				if (stmt == null)
 				{
-					System.out.println("Statement with id: " + id + " is unavailable.");
-					return false;
+//					System.out.println("Statement with id: " + id + " is unavailable.");
+					continue;
+					//return false;
 				}
 
 				List<MonitorLog> logs = monitor.getLogs(stmt.getStartTime(), stmt.getEndTime() + 1);
@@ -244,6 +845,11 @@ public class DataCenter
 					globalTableSet.add(table);
 				}
 
+				if (logs == null)
+				{
+					continue;
+				}
+
 				for (MonitorLog log : logs)
 				{
 					if (log != null)
@@ -266,6 +872,12 @@ public class DataCenter
 						}
 					}
 				}
+
+				++count;
+				if (count % 10000 == 0)
+				{
+					System.out.println (count + " queries processed.");
+				}
 			}
 		}
 		catch (FileNotFoundException e)
@@ -276,8 +888,9 @@ public class DataCenter
 		return true;
 	}
 
-	public boolean prepareTransactionClustering()
+	private void prepareTransactionClustering()
 	{
+		System.out.println("Preparing for transaction clustering.");
 		globalTableList = globalTableSet.toArray(new String[globalTableSet.size()]);
 		for (int i = 0; i < globalTableList.length; ++i)
 		{
@@ -289,124 +902,49 @@ public class DataCenter
 			transaction.setNumTable(globalTableList.length);
 			List<Statement> statements = transaction.getStatements();
 
-			long numRead = 0;
-			long numInserted = 0;
-			long numUpdated = 0;
-			long numDeleted = 0;
-			long numRows = 0;
-			long numStatements = 0;
-
 			for (Statement statement : statements)
 			{
-				numRead = 0;
-				numInserted = 0;
-				numUpdated = 0;
-				numDeleted = 0;
-
-				List<MonitorLog> logs = monitor.getLogs(statement.getStartTime() - 1, statement.getEndTime() + 1);
-				if (logs != null)
+				Set<String> tables = statement.getTables();
+				for (String table : tables)
 				{
-					MonitorLog currentLog = null;
-					MonitorLog previousLog = null;
-					for (int i = 1; i < logs.size(); ++i)
+					int idx = globalTableMap.get(table);
+					switch (statement.getMode())
 					{
-						currentLog = logs.get(i);
-						previousLog = logs.get(i-1);
-
-						if (statement.getMode() == DBSeerConstants.STATEMENT_READ)
-						{
-							numRows = (long)(currentLog.get("Innodb_rows_read").doubleValue() -
-									previousLog.get("Innodb_rows_read").doubleValue());
-							numStatements = currentLog.getNumReadStatements();
-							if (numRows < numStatements)
-							{
-								numRows = 1; // at least 1 row is read/inserted/updated/deleted...
-							}
-							else
-							{
-								numRows = numRows / numStatements;
-							}
-							numRead += numRows;
-						}
-						else if (statement.getMode() == DBSeerConstants.STATEMENT_INSERT)
-						{
-							numInserted++;
-						}
-						else if (statement.getMode() == DBSeerConstants.STATEMENT_UPDATE)
-						{
-							numRows = (long)(currentLog.get("Innodb_rows_updated").doubleValue() -
-									previousLog.get("Innodb_rows_updated").doubleValue());
-							numStatements = currentLog.getNumUpdateStatements();
-							if (numRows < numStatements)
-							{
-								numRows = 1;
-							}
-							else
-							{
-								numRows = numRows / numStatements;
-							}
-							numUpdated += numRows;
-						}
-						else if (statement.getMode() == DBSeerConstants.STATEMENT_DELETE)
-						{
-							numRows = (long)(currentLog.get("Innodb_rows_deleted").doubleValue() -
-									previousLog.get("Innodb_rows_deleted").doubleValue());
-							numStatements = currentLog.getNumDeleteStatements();
-							if (numRows < numStatements)
-							{
-								numRows = 1;
-							}
-							else
-							{
-								numRows = numRows / numStatements;
-							}
-							numDeleted += numRows;
-						}
-						//System.out.println(numRead + " : " + numWritten);
-					}
-
-					Set<String> tables = statement.getTables();
-					for (String table : tables)
-					{
-						int idx = globalTableMap.get(table);
-						transaction.addRows(idx, numRead, numInserted, numUpdated, numDeleted);
-						switch (statement.getMode())
-						{
-							case DBSeerConstants.STATEMENT_READ:
-								transaction.addSelect(idx);
-								break;
-							case DBSeerConstants.STATEMENT_INSERT:
-								transaction.addInsert(idx);
-								break;
-							case DBSeerConstants.STATEMENT_UPDATE:
-								transaction.addUpdate(idx);
-								break;
-							case DBSeerConstants.STATEMENT_DELETE:
-								transaction.addDelete(idx);
-								break;
-							default:
-								break;
-						}
+						case DBSeerConstants.STATEMENT_READ:
+							transaction.addSelect(idx);
+							break;
+						case DBSeerConstants.STATEMENT_INSERT:
+							transaction.addInsert(idx);
+							break;
+						case DBSeerConstants.STATEMENT_UPDATE:
+							transaction.addUpdate(idx);
+							break;
+						case DBSeerConstants.STATEMENT_DELETE:
+							transaction.addDelete(idx);
+							break;
+						default:
+							break;
 					}
 				}
 			}
-//			System.out.print(transaction.getId() + ": ");
-//			transaction.printRowsReadWritten();
 		}
-		for (String table : globalTableList)
-		{
-			System.out.print(table + " ");
-		}
-		System.out.println();
-		return true;
 	}
 
 	public void performDBSCAN()
 	{
+		System.out.println("Staring DBSCAN");
+		prepareTransactionClustering();
+
 		clusters.clear();
 		actualTransactions.clear();
 
 		Transaction[] transactions = transactionMap.values().toArray(new Transaction[transactionMap.values().size()]);
+
+		if (transactions.length == 0)
+		{
+			System.out.println("DBSCAN terminates: no transactions.");
+			return;
+		}
 
 		for (Transaction transaction : transactions)
 		{
@@ -416,7 +954,8 @@ public class DataCenter
 			}
 		}
 
-		double eps = Transaction.DIFF_SCALE / 2;
+		double eps = Math.sqrt(Transaction.DIFF_SCALE);
+		//double eps = Transaction.DIFF_SCALE / 10;
 		int minTransactions = globalTableList.length + 1;
 
 //		System.out.println("transaction count = " + transactions.length);
@@ -449,6 +988,11 @@ public class DataCenter
 			}
 		}
 
+		// Sort clusters in descending order in # of transactions.
+		Collections.sort(clusters, Collections.reverseOrder(new ClusterSizeComparator()));
+
+		System.out.println("DBSCAN complete");
+//		printClusterAccAnalysisTPCC();
 	}
 
 	private Transaction[] findNeighbors(Transaction[] transactions, Transaction source, double eps)
@@ -510,7 +1054,6 @@ public class DataCenter
 					}
 				}
 			}
-
 			return cluster;
 		}
 	}
@@ -556,6 +1099,82 @@ public class DataCenter
 
 		Cluster clusterToAssign = clusters.get(maxClusterIdx);
 		clusterToAssign.addTransaction(source);
+	}
+
+	private void writePageInfo()
+	{
+		System.out.println("Writing Page Info...");
+		File pageFile = new File(processedPath + File.separator + "page_info.m");
+
+		double[] transactionMix = new double[clusters.size()];
+		int[][] allOperationCount = new int[clusters.size()][globalTableList.length];
+		double[] allOperationAvg = new double[globalTableList.length];
+		int[][] writeOperationCount = new int[clusters.size()][globalTableList.length];
+		double[] writeOperationAvg = new double[globalTableList.length];
+		double sum = 0;
+
+		PrintWriter pageWriter = null;
+
+		try
+		{
+			pageWriter = new PrintWriter(new BufferedWriter(new FileWriter(pageFile)));
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+
+		for (int i = 0; i < clusters.size(); ++i)
+		{
+			Cluster c = clusters.get(i);
+			transactionMix[i] = c.getTransactions().size();
+			sum += transactionMix[i];
+
+			for (Transaction t : c.getTransactions())
+			{
+				long[] numSelect = t.getNumSelect();
+				long[] numInsert = t.getNumInsert();
+				long[] numUpdate = t.getNumUpdate();
+				long[] numDelete = t.getNumDelete();
+
+				for (int j = 0; j < globalTableList.length; ++j)
+				{
+					writeOperationCount[i][j] += (int)(numInsert[j] + numUpdate[j] + numDelete[j]);
+					allOperationCount[i][j] += (int)(numSelect[j] + numInsert[j] + numUpdate[j] + numDelete[j]);
+				}
+			}
+		}
+
+		for (int i = 0; i < clusters.size(); ++i)
+		{
+			transactionMix[i] = transactionMix[i] / sum;
+		}
+
+		pageWriter.print("clusteredPageFreq = [");
+		for (int i = 0; i < clusters.size(); ++i)
+		{
+			for (int j = 0; j < globalTableList.length; ++j)
+			{
+				allOperationAvg[j] += (double)allOperationCount[i][j] * transactionMix[i];
+				writeOperationAvg[j] += (double)writeOperationCount[i][j] * transactionMix[i];
+				pageWriter.print((double) writeOperationCount[i][j] / (double) actualTransactions.size() + " ");
+			}
+			if (i != clusters.size()-1)
+			{
+				pageWriter.print(";");
+			}
+		}
+		pageWriter.println("];");
+
+		pageWriter.print("clusteredPageMix = [");
+		for (int j = 0; j < globalTableList.length; ++j)
+		{
+			pageWriter.print(allOperationAvg[j] / actualTransactions.size() + " ");
+		}
+		pageWriter.println("];");
+
+		pageWriter.flush();
+		pageWriter.close();
 	}
 
 	private void printClusterAccAnalysisTPCC()
@@ -627,7 +1246,7 @@ public class DataCenter
 				}
 
 				if (match) ++matchCount;
-				else System.out.println("\nmisclassification = " + t.getId());
+				//else System.out.println("\nmisclassification = " + t.getId());
 			}
 			System.out.println();
 			System.out.println("Correct Classification = " + matchCount);
@@ -650,3 +1269,4 @@ public class DataCenter
 		System.out.println("# noises = " + noiseCount);
 	}
 }
+

@@ -37,7 +37,7 @@ public class DBSeerGUI
 
 	public static DBSeerConfiguration trainConfig = null;
 
-	public static MatlabProxy proxy;
+	public static MatlabProxy proxy = null;
 
 	public static JLabel status = new JLabel();
 
@@ -113,18 +113,7 @@ public class DBSeerGUI
 
 	public static void main(String[] args)
 	{
-		// Temp: testing data center;
-//		DataCenter dc = new DataCenter("/Users/dyoon/Work/dbseer/dbseer_front_end/dataset/raw/tpcc_sample_60s");
-//		dc.parseMonitorLogs();
-//		dc.parseTransactionLogs();
-//		dc.parseStatementLogs();
-//		dc.parseQueryLogs();
-//		dc.prepareTransactionClustering();
-//		dc.performDBSCAN();
-//
-//		if (true)
-//			return;
-
+//		Temp: testing data center;
 		try
 		{
 			SwingUtilities.invokeAndWait(new Runnable()
@@ -152,31 +141,46 @@ public class DBSeerGUI
 			@Override
 			public void run()
 			{
-				try {
+				try
+				{
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-				} catch (ClassNotFoundException e) {
+				}
+				catch (ClassNotFoundException e)
+				{
 					e.printStackTrace();
-				} catch (InstantiationException e) {
+				}
+				catch (InstantiationException e)
+				{
 					e.printStackTrace();
-				} catch (IllegalAccessException e) {
+				}
+				catch (IllegalAccessException e)
+				{
 					e.printStackTrace();
-				} catch (UnsupportedLookAndFeelException e) {
+				}
+				catch (UnsupportedLookAndFeelException e)
+				{
 					e.printStackTrace();
 				}
 
 				MatlabProxyFactoryOptions options = new MatlabProxyFactoryOptions.Builder()
 						.setUsePreviouslyControlledSession(true)
-						.setHidden(true).build();
+						.setHidden(false).build();
 				MatlabProxyFactory factory = new MatlabProxyFactory(options);
 
-				try {
+				try
+				{
 					proxy = factory.getProxy();
 					proxy.eval("clear all");
-				} catch (MatlabConnectionException e) {
-					JOptionPane.showMessageDialog(null, e.toString(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
-				} catch (MatlabInvocationException e) {
+				}
+				catch (MatlabConnectionException e)
+				{
 					JOptionPane.showMessageDialog(null, e.toString(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
 				}
+				catch (MatlabInvocationException e)
+				{
+					JOptionPane.showMessageDialog(null, e.toString(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
+				}
+
 
 				splash.setText("Loading user settings...");
 

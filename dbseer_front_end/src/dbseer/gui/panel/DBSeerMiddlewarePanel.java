@@ -1,6 +1,7 @@
 package dbseer.gui.panel;
 
 import com.sun.codemodel.internal.JOp;
+import dbseer.comp.DataCenter;
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.xml.XStreamHelper;
@@ -187,21 +188,10 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 					int length = 0;
 
 					ByteArrayInputStream byteStream = new ByteArrayInputStream(monitoringData);
-
-//					FileOutputStream writeZipFile = new FileOutputStream(new File(newRawDatasetDir + File.separator + "temp.zip"));
-//
-//					while ((length = byteStream.read(buf)) >= 0)
-//					{
-//						writeZipFile.write(buf, 0, length);
-//					}
-//					writeZipFile.flush();
-//					writeZipFile.close();
-//
-
-//					FileInputStream fis = new FileInputStream(newRawDatasetDir + File.separator + "temp.zip");
 					ZipInputStream zipInputStream = new ZipInputStream(byteStream);
 					ZipEntry entry = null;
 
+					// unzip the monitor package.
 					while ((entry = zipInputStream.getNextEntry()) != null)
 					{
 						File entryFile = new File(newRawDatasetDir + File.separator + entry.getName());
@@ -226,6 +216,19 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 						out.close();
 					}
 					zipInputStream.close();
+
+					// process the dataset
+					DataCenter dc = new DataCenter(DBSeerConstants.RAW_DATASET_PATH, datasetName);
+					if (!dc.parseLogs())
+					{
+						JOptionPane.showMessageDialog(null, "Failed to parse received monitoring logs", "Error", JOptionPane.ERROR_MESSAGE);
+					}
+					dc.performDBSCAN();
+
+					if (!dc.processDataset())
+					{
+						JOptionPane.showMessageDialog(null, "Failed to process received dataset", "Error", JOptionPane.ERROR_MESSAGE);
+					}
 				}
 				else
 				{

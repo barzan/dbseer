@@ -60,6 +60,10 @@ public class OpenDirectoryAction extends AbstractAction
 					{
 						profile.setPercentileLatencyPath(file);
 					}
+					else if (fileLower.contains("page"))
+					{
+						profile.setPageInfoPath(file);
+					}
 				}
 			}
 		}

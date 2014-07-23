@@ -6,6 +6,7 @@ classdef DataSet < handle
         trans_count_path 
         avg_latency_path 
         percentile_latency_path
+        page_info_path
         %tranTypes
         startIdx
         endIdx
@@ -19,6 +20,8 @@ classdef DataSet < handle
         percentileLatency
         transactionCount
         diffedMonitor
+        clusteredPageFreq
+        clusteredPageMix
     end
 
     properties (SetAccess='private', GetAccess='private')
@@ -50,6 +53,11 @@ classdef DataSet < handle
 
         function set.percentile_latency_path(this, value)
             this.percentile_latency_path = value;
+            this.statReady = false;
+        end
+
+        function set.page_info_path(this, value)
+            this.page_info_path = value;
             this.statReady = false;
         end
 
@@ -131,6 +139,22 @@ classdef DataSet < handle
             end
         end
 
+        function value = get.clusteredPageMix(this)
+            if this.statReady
+                value = this.clusteredPageMix;
+            else
+                value = [];
+            end
+        end
+
+        function value = get.clusteredPageFreq(this)
+            if this.statReady
+                value = this.clusteredPageFreq;
+            else
+                value = [];
+            end
+        end
+
         function this = setStruct(this, paramStruct)
             propertyList = properties(this);
             for i = 1:length(propertyList)
@@ -157,9 +181,9 @@ classdef DataSet < handle
         end
 
         function loadStatistics(this)
-            [this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
+            [this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor this.clusteredPageFreq this.clusteredPageMix] = ...
                 load_stats(this.header_path, this.monitor_path, this.trans_count_path, ... 
-                    this.avg_latency_path, this.percentile_latency_path, this.startIdx, 10, true);
+                    this.avg_latency_path, this.percentile_latency_path, this.startIdx, 10, true, this.page_info_path);
             this.statReady = true;
         end
     end % end methods

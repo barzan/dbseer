@@ -52,11 +52,17 @@ public class DBSeerMainFrame extends JFrame
 		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		menu.add(menuItem);
 
+		// Add dataset configuration from XML.
+		menuItem = new JMenuItem(new AddConfigDatasetFromXMLAction());
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		menu.add(menuItem);
+
 		// separator.
 		menu.addSeparator();
 
-		menuItem = new JMenuItem(new AddConfigDatasetFromXMLAction());
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		// Process dataset.
+		menuItem = new JMenuItem(new ProcessDatasetDirectoryAction());
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		menu.add(menuItem);
 
 //

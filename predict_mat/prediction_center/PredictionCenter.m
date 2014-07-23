@@ -111,20 +111,58 @@ classdef PredictionCenter < handle
                 config = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
                 myPred = cfFlushRateApprox(config, this.testConfig.transactionCount);
 
-                temp = [this.testConfig.pagesFlushed linPred classLinPred myPred treePred nnPred]; % kccaPred is not included for now.
+                if isfield(this.trainConfig.mvUngrouped, 'dbmsPageSize')
+                    page_size = this.trainConfig.mvUngrouped.dbmsPageSize;
+                else
+                    page_size = 16384;
+                end
+
+                if isfield(this.trainConfig.mvUngrouped, 'dbmsLogFileSize')
+                    log_file_size = this.trainConfig.mvUngrouped.dbmsLogFileSize;
+                else
+                    log_file_size = 50 * 1024 * 1024;
+                end
+
+                if isfield(this.trainConfig.mvUngrouped, 'dbmsBufferPoolSize')
+                    buffer_pool_size = this.trainConfig.mvUngrouped.dbmsBufferPoolSize;
+                else
+                    buffer_pool_size = 128 * 1024 * 1024;
+                end
+
+                logWrites = this.testConfig.mv.dbmsLogWritesMB .* 1024 .* 1024;
+                totalTransactions = this.testConfig.mv.clientTotalSubmittedTrans;
+                logWritesPerTransaction = logWrites ./ totalTransactions;
+                logWritesPerTransaction(any(isnan(logWritesPerTransaction),2),:)=[]; % remove NaN
+                avgWritePerPrediction = mean(logWritesPerTransaction);
+
+                maxWrites = max(this.testConfig.mv.osNumberOfSectorWrites) * 1024 * 1024 % bytes
+
+                io_conf2 = [log_file_size/avgWritePerPrediction maxWrites/page_size/2];
+                trans_info = struct('clustered_pages', this.testConfig.clusteredPageMix .* (buffer_pool_size/page_size), 'freq', ...
+                    this.testConfig.clusteredPageFreq, 'tps', this.testConfig.transactionCount);
+                myPred2 = cfFlushRateNew(io_conf2, trans_info);
+
+                % io_conf2 = [this.testConfig.mvUngrouped.dbmsTotalPages(end)/100 100*1024/16];
+                % io_conf2 = [5000000 1000];
+                % trans_info = struct('clustered_pages', this.testConfig.clusteredPageMix .* 8388608, 'freq', ...
+                %     this.testConfig.clusteredPageFreq, 'tps', this.testConfig.transactionCount);
+
+                % myPred2 = cfFlushRateNew(io_conf2, trans_info);
+
+                temp = [this.testConfig.pagesFlushed linPred classLinPred myPred myPred2 treePred nnPred]; % kccaPred is not included for now.
                 temp = [this.testConfig.TPS temp];
 
                 temp = sortrows(temp,1);
 
                 Xdata = {temp(:,1)};
-                Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7)]};
+                Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7) temp(:,8)]};
 
                 for i=3:7
                     meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
                     meanRelError{i-2} = mre(temp(:,i), temp(:,2));
                 end
 
-                legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+                legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Our model2', 'Tree regression', 'Neural Net'};
 
                 title = horzcat('Flush rate prediction with # test points = ', num2str(size(this.testConfig.TPS,1)));
                 Ylabel = 'Average # of page flush per seconds';
@@ -160,15 +198,46 @@ classdef PredictionCenter < handle
                 config = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
                 myPred = cfFlushRateApprox(config, testTransactionCount);
 
-                temp = [linPred classLinPred myPred treePred nnPred]; % kccaPred is not included for now.
+                if isfield(this.trainConfig.mvUngrouped, 'dbmsPageSize')
+                    page_size = this.trainConfig.mvUngrouped.dbmsPageSize;
+                else
+                    page_size = 16384;
+                end
+
+                if isfield(this.trainConfig.mvUngrouped, 'dbmsLogFileSize')
+                    log_file_size = this.trainConfig.mvUngrouped.dbmsLogFileSize;
+                else
+                    log_file_size = 50 * 1024 * 1024;
+                end
+
+                if isfield(this.trainConfig.mvUngrouped, 'dbmsBufferPoolSize')
+                    buffer_pool_size = this.trainConfig.mvUngrouped.dbmsBufferPoolSize;
+                else
+                    buffer_pool_size = 128 * 1024 * 1024;
+                end
+
+                logWrites = this.trainConfig.mvUngrouped.dbmsLogWritesMB .* 1024 .* 1024;
+                totalTransactions = sum(this.trainConfig.transactionCount,2);
+                logWritesPerTransaction = logWrites ./ totalTransactions;
+                logWritesPerTransaction(any(isnan(logWritesPerTransaction),2),:)=[];
+                avgWritePerPrediction = mean(logWritesPerTransaction);
+
+                maxWrites = max(this.trainConfig.mvUngrouped.osNumberOfSectorWrites) * 1024 * 1024 % bytes
+
+                io_conf2 = [log_file_size/avgWritePerPrediction maxWrites/page_size/2];
+                trans_info = struct('clustered_pages', this.trainConfig.clusteredPageMix .* (buffer_pool_size/page_size), 'freq', ...
+                    this.trainConfig.clusteredPageFreq, 'tps', testTransactionCount);
+                myPred2 = cfFlushRateNew(io_conf2, trans_info);
+
+                temp = [linPred classLinPred myPred myPred2 treePred nnPred]; % kccaPred is not included for now.
                 temp = [testTPS temp];
 
                 temp = sortrows(temp,1);
 
                 Xdata = {temp(:,1)};
-                Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6)]};
+                Ydata = {[temp(:,2) temp(:,3) temp(:,4) temp(:,5) temp(:,6) temp(:,7)]};
 
-                legends = {'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+                legends = {'LR', 'LR+classification', 'Our model', 'Our model2', 'Tree regression', 'Neural Net'};
 
                 title = horzcat('Flush rate prediction with transaction mixture = ', mat2str(this.testMixture), ', Min TPS = ', num2str(this.testMinTPS), ', Max TPS = ', num2str(this.testMaxTPS));
                 Ylabel = 'Average # of page flush per seconds';

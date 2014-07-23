@@ -53,8 +53,15 @@ public class MiddlewareSocket
 		this.port = port;
 		socket = new Socket();
 		InetSocketAddress address = new InetSocketAddress(ip, port);
-		socket.connect(address, MIDDLEWARE_CONNECT_TIMEOUT);
-		socket.setSoTimeout(MIDDLEWARE_SOCKET_TIMEOUT);
+		try
+		{
+			socket.connect(address, MIDDLEWARE_CONNECT_TIMEOUT);
+			socket.setSoTimeout(MIDDLEWARE_SOCKET_TIMEOUT);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 		input = new DataInputStream(socket.getInputStream());
 		output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 	}

@@ -10,31 +10,34 @@ import java.util.List;
 public class SystemMonitor
 {
 	private File monitorFile = null;
+	private File processedMonitorFile = null;
 	private List<MonitorLog> monitorLogs;
 	private String[] headers = null;
+	private String[] metaHeaders = null;
+	private PrintWriter writer = null;
 
 	private long startTimestamp = 0;
 	private long endTimestamp = 0;
 
-	private static final int HEADER_LINES_TO_IGNORE = 5;
+	private static final int HEADER_LINES_TO_IGNORE = 4;
 
 	public SystemMonitor()
 	{
 		monitorLogs = new ArrayList<MonitorLog>();
 	}
 
-	public boolean parseMonitorFile(File file)
+	public boolean parseMonitorFile(File file, File processFile)
 	{
 		monitorFile = file;
 
 		try
 		{
+			writer = new PrintWriter(new BufferedWriter(new FileWriter(processFile)));
 			BufferedReader br = new BufferedReader(new FileReader(monitorFile));
 			String line = null;
 			int linesSkipped = 0;
 
 			// handle headers;
-
 			while ( (line = br.readLine()) != null && linesSkipped < HEADER_LINES_TO_IGNORE)
 			{
 				linesSkipped++;
@@ -43,9 +46,20 @@ public class SystemMonitor
 			line = br.readLine();
 			if (line == null)
 			{
+				System.out.println("Empty metaheader");
+				return false;
+			}
+			writer.println(line);
+			line = line.replaceAll("\"", ""); // remove all double quotations.
+			metaHeaders = line.split(",");
+
+			line = br.readLine();
+			if (line == null)
+			{
 				System.out.println("Empty header");
 				return false;
 			}
+			writer.println(line);
 			line = line.replaceAll("\"", ""); // remove all double quotations.
 			headers = line.split(",");
 			MonitorLog.setHeaders(headers);
@@ -54,9 +68,13 @@ public class SystemMonitor
 
 			while ( (line = br.readLine()) != null )
 			{
+				writer.println(line);
 				MonitorLog log = new MonitorLog(line);
 				monitorLogs.add(log);
 			}
+
+			writer.flush();
+			writer.close();
 		}
 		catch (FileNotFoundException e)
 		{
@@ -105,6 +123,11 @@ public class SystemMonitor
 	public String[] getHeaders()
 	{
 		return headers;
+	}
+
+	public String[] getMetaHeaders()
+	{
+		return metaHeaders;
 	}
 
 	public List<MonitorLog> getLogs()

@@ -1,4 +1,5 @@
-function [Header Monitor LatencyAvg LatencyPercentile Counts DiffedMonitor] = load_stats(header_path, monitor_path, trans_count_path, avg_latency_path, percentile_latency_path, skipFromBegining, skipFromEnd, flag)
+function [Header Monitor LatencyAvg LatencyPercentile Counts DiffedMonitor ClusteredPageFreq ClusteredPageMix] = ...
+  load_stats(header_path, monitor_path, trans_count_path, avg_latency_path, percentile_latency_path, skipFromBegining, skipFromEnd, flag, page_info_path)
 
 Monitor = csvread(monitor_path,2,0); % dyoon: 0 added as third argument for col.
 
@@ -13,6 +14,15 @@ end
 
 run(header_path);
 Header = header;
+
+ClusteredPageMix = [];
+ClusteredPageFreq = [];
+
+if ~isempty(page_info_path) && strcmp(page_info_path, 'null') == false
+  run(page_info_path);
+  ClusteredPageFreq = clusteredPageFreq;
+  ClusteredPageMix = clusteredPageMix;
+end
 
 DiffedMonitor = diff(Monitor);
 LatencyAvg = load(avg_latency_path);

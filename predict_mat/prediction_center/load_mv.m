@@ -29,8 +29,13 @@ mvUngrouped.CoreVariance = var(mvUngrouped.cpu_usr,0,2);
 
 mvUngrouped.osAsynchronousIO = monitor(:,header.columns.aio);
 mvUngrouped.osNumberOfContextSwitches = monitor(:,header.columns.csw);
-mvUngrouped.osNumberOfSectorReads = monitor(:,header.columns.dsk_read)./1024./1024; %MB
-mvUngrouped.osNumberOfSectorWrites = monitor(:,header.columns.dsk_writ)./1024./1024; %MB
+if exist('extra') == 1
+    mvUngrouped.osNumberOfSectorReads = sum(monitor(:,extra.disk),2)./1024./1024; %MB
+    mvUngrouped.osNumberOfSectorWrites = sum(monitor(:,header.extra.disk+1),2)./1024./1024; %MB
+else
+    mvUngrouped.osNumberOfSectorReads = monitor(:,header.columns.dsk_read)./1024./1024; %MB
+    mvUngrouped.osNumberOfSectorWrites = monitor(:,header.columns.dsk_writ)./1024./1024; %MB
+end
 mvUngrouped.osAllocatedFileHandlers = monitor(:,header.columns.filesystem_files);
 mvUngrouped.osAllocatedINodes = monitor(:,header.columns.filesystem_inodes);
 mvUngrouped.osCountOfInterruptsServicedSinceBootTime = monitor(:,header.columns.int);
@@ -39,13 +44,22 @@ mvUngrouped.osNumberOfInterrupt = length(fn);
 for i=1:length(fn)
     eval(['mvUngrouped.osInterruptCount' num2str(i) '= monitor(:,header.metadata.interrupts.' fn{i} ');']);
 end
-mvUngrouped.osNumberOfReadsIssued = monitor(:,header.columns.io_read)./1024./1024; %MB
-mvUngrouped.osNumberOfWritesCompleted = monitor(:,header.columns.io_writ)./1024./1024; %MB
+if exist('extra') == 1
+    mvUngrouped.osNumberOfReadsIssued = sum(monitor(:,extra.io),2)./1024./1024; %MB
+    mvUngrouped.osNumberOfWritesCompleted = sum(monitor(:,extra.io+1),2)./1024./1024; %MB
+else
+    mvUngrouped.osNumberOfReadsIssued = monitor(:,header.columns.io_read)./1024./1024; %MB
+    mvUngrouped.osNumberOfWritesCompleted = monitor(:,header.columns.io_writ)./1024./1024; %MB
+end
 mvUngrouped.osNumberOfSwapInSinceLastBoot = monitor(:,header.columns.paging_in);
 mvUngrouped.osNumberOfSwapOutSinceLastBoot = monitor(:,header.columns.paging_out);
 mvUngrouped.osNumberOfProcessesCreated = monitor(:,header.columns.procs_new);
 mvUngrouped.osNumberOfProcessesCurrentlyRunning = monitor(:,header.columns.procs_run);
-mvUngrouped.osDiskUtilization = monitor(:,header.columns.util);
+if exist('extra') == 1
+    mvUngrouped.osDiskUtilization = sum(monitor(:,extra.util),2);
+else
+    mvUngrouped.osDiskUtilization = monitor(:,header.columns.util);
+end
 mvUngrouped.osFreeSwapSpace = monitor(:,header.columns.swap_free);
 mvUngrouped.osUsedSwapSpace = monitor(:,header.columns.swap_used);
 mvUngrouped.osNumberOfAllocatedPage = monitor(:,header.columns.virtual_alloc);
@@ -111,9 +125,9 @@ if strcmpi(header.dbms, 'mysql')
     mvUngrouped.dbmsRollbackHandler=dM(:,header.columns.Handler_rollback);
     
     % latency stats
-    mvUngrouped.measuredCPU=monitor(:,header.columns.mysqld_cpu)+monitor(:,header.columns.mysqld_children_cpu);
-    mvUngrouped.measuredWritesMB=monitor(:,header.columns.mysqld_bytes_written) / 1024 / 1024;
-    mvUngrouped.measuredReadsMB=monitor(:,header.columns.mysqld_bytes_read) / 1024 / 1024;
+    % mvUngrouped.measuredCPU=monitor(:,header.columns.mysqld_cpu)+monitor(:,header.columns.mysqld_children_cpu);
+    % mvUngrouped.measuredWritesMB=monitor(:,header.columns.mysqld_bytes_written) / 1024 / 1024;
+    % mvUngrouped.measuredReadsMB=monitor(:,header.columns.mysqld_bytes_read) / 1024 / 1024;
 
     lock_smoothing = 1;
     mvUngrouped.dbmsCurrentLockWaits=DoSmooth(monitor(:,header.columns.Innodb_row_lock_current_waits), lock_smoothing);
@@ -135,6 +149,16 @@ if strcmpi(header.dbms, 'mysql')
     mvUngrouped.dbmsReadRequests = dM(:, header.columns.Innodb_buffer_pool_read_requests);
     mvUngrouped.dbmsReads = dM(:, header.columns.Innodb_buffer_pool_reads);
     mvUngrouped.dbmsPhysicalReadsMB = dM(:,[header.columns.Innodb_data_read])./1024./1024;
+
+    if isfield(header.columns, 'Innodb_page_size')
+        mvUngrouped.dbmsPageSize = max(monitor(:, header.columns.Innodb_page_size));
+    end
+    if isfield(header.columns, 'Innodb_buffer_pool_size')
+        mvUngrouped.dbmsBufferPoolSize = max(monitor(:, header.columns.Innodb_buffer_pool_size));
+    end
+    if isfield(header.columns, 'Innodb_log_file_size')
+        mvUngrouped.dbmsLogFileSize = max(monitor(:, header.columns.Innodb_log_file_size));
+    end
 
 elseif strcmpi(header.dbms, 'psql')
     mvUngrouped.dbmsFlushedPages = DoSmooth(dM(:, header.columns.buffers_clean)+dM(:, header.columns.buffers_backend), 10);
@@ -167,8 +191,15 @@ mvGrouped.CoreVariance = var(mvGrouped.cpu_usr,0,2);
 
 mvGrouped.osAsynchronousIO = monitor_grouped(:,header.columns.aio);
 mvGrouped.osNumberOfContextSwitches = monitor_grouped(:,header.columns.csw);
-mvGrouped.osNumberOfSectorReads = monitor_grouped(:,header.columns.dsk_read)./1024./1024; %MB
-mvGrouped.osNumberOfSectorWrites = monitor_grouped(:,header.columns.dsk_writ)./1024./1024; %MB
+
+if exist('extra') == 1
+    mvGrouped.osNumberOfSectorReads = sum(monitor_grouped(:,extra.disk),2)./1024./1024; %MB
+    mvGrouped.osNumberOfSectorWrites = sum(monitor_grouped(:,header.extra.disk+1),2)./1024./1024; %MB
+else
+    mvGrouped.osNumberOfSectorReads = monitor_grouped(:,header.columns.dsk_read)./1024./1024; %MB
+    mvGrouped.osNumberOfSectorWrites = monitor_grouped(:,header.columns.dsk_writ)./1024./1024; %MB
+end
+
 mvGrouped.osAllocatedFileHandlers = monitor_grouped(:,header.columns.filesystem_files);
 mvGrouped.osAllocatedINodes = monitor_grouped(:,header.columns.filesystem_inodes);
 mvGrouped.osCountOfInterruptsServicedSinceBootTime = monitor_grouped(:,header.columns.int);
@@ -177,13 +208,25 @@ mvGrouped.osNumberOfInterrupt = length(fn);
 for i=1:length(fn)
     eval(['mvGrouped.osInterruptCount' num2str(i) '= monitor_grouped(:,header.metadata.interrupts.' fn{i} ');']);
 end
-mvGrouped.osNumberOfReadsIssued = monitor_grouped(:,header.columns.io_read)./1024./1024; %MB
-mvGrouped.osNumberOfWritesCompleted = monitor_grouped(:,header.columns.io_writ)./1024./1024; %MB
+
+if exist('extra') == 1
+    mvGrouped.osNumberOfReadsIssued = sum(monitor_grouped(:,extra.io),2)./1024./1024; %MB
+    mvGrouped.osNumberOfWritesCompleted = sum(monitor_grouped(:,extra.io+1),2)./1024./1024; %MB
+else
+    mvGrouped.osNumberOfReadsIssued = monitor_grouped(:,header.columns.io_read)./1024./1024; %MB
+    mvGrouped.osNumberOfWritesCompleted = monitor_grouped(:,header.columns.io_writ)./1024./1024; %MB
+end
+
 mvGrouped.osNumberOfSwapInSinceLastBoot = monitor_grouped(:,header.columns.paging_in);
 mvGrouped.osNumberOfSwapOutSinceLastBoot = monitor_grouped(:,header.columns.paging_out);
 mvGrouped.osNumberOfProcessesCreated = monitor_grouped(:,header.columns.procs_new);
 mvGrouped.osNumberOfProcessesCurrentlyRunning = monitor_grouped(:,header.columns.procs_run);
-mvGrouped.osDiskUtilization = monitor_grouped(:,header.columns.util);
+
+if exist('extra') == 1
+    mvGrouped.osDiskUtilization = sum(monitor_grouped(:,extra.util),2);
+else
+    mvGrouped.osDiskUtilization = monitor_grouped(:,header.columns.util);
+end
 mvGrouped.osFreeSwapSpace = monitor_grouped(:,header.columns.swap_free);
 mvGrouped.osUsedSwapSpace = monitor_grouped(:,header.columns.swap_used);
 mvGrouped.osNumberOfAllocatedPage = monitor_grouped(:,header.columns.virtual_alloc);
@@ -195,7 +238,6 @@ mvGrouped.osNetworkRecvKB=monitor_grouped(:,header.metadata.net_recv)./1024;
 
 mvGrouped.clientTotalSubmittedTrans=sum(IndividualCounts_grouped(:,:), 2);
 mvGrouped.clientIndividualSubmittedTrans=IndividualCounts_grouped;
-
 
 %Init
 if strcmpi(header.dbms, 'mysql')
@@ -249,9 +291,9 @@ if strcmpi(header.dbms, 'mysql')
     mvGrouped.dbmsRollbackHandler=dM_grouped(:,header.columns.Handler_rollback);
     
     % latency stats
-    mvGrouped.measuredCPU=monitor_grouped(:,header.columns.mysqld_cpu)+monitor_grouped(:,header.columns.mysqld_children_cpu);
-    mvGrouped.measuredWritesMB=monitor_grouped(:,header.columns.mysqld_bytes_written) / 1024 / 1024;
-    mvGrouped.measuredReadsMB=monitor_grouped(:,header.columns.mysqld_bytes_read) / 1024 / 1024;
+    % mvGrouped.measuredCPU=monitor_grouped(:,header.columns.mysqld_cpu)+monitor_grouped(:,header.columns.mysqld_children_cpu);
+    % mvGrouped.measuredWritesMB=monitor_grouped(:,header.columns.mysqld_bytes_written) / 1024 / 1024;
+    % mvGrouped.measuredReadsMB=monitor_grouped(:,header.columns.mysqld_bytes_read) / 1024 / 1024;
 
     lock_smoothing = 1;
     mvGrouped.dbmsCurrentLockWaits=DoSmooth(monitor_grouped(:,header.columns.Innodb_row_lock_current_waits), lock_smoothing);

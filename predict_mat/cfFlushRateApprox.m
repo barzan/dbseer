@@ -134,7 +134,7 @@ for i=1:size(uniqueTransCounts,1)
 
     initTime = toc(overallTime);
     fprintf(1,'initialization time=%f\n', initTime);
-        
+
     while abs(avgf-oldAvgf)>0.0001 || seenFullLog<100 
         oldAvgf = avgf;
         
