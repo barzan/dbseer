@@ -37,9 +37,9 @@ public class Encrypt {
       String sCurrentLine;
       br = new BufferedReader(new FileReader(filePath));
       while ((sCurrentLine = br.readLine()) != null) {
-        if (!sCurrentLine.replaceAll("\\s", "").contentEquals("<user-password>")) {
+        if (sCurrentLine.replaceAll("\\s", "").contentEquals("<user-password>")) {
           continue;
-        } else if (!sCurrentLine.replaceAll("\\s", "").contentEquals("</user-password>")) {
+        } else if (sCurrentLine.replaceAll("\\s", "").contentEquals("</user-password>")) {
           break;
         }
         byte[] tempchars = new byte[MAX_LENGTH];
