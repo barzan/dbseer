@@ -1,0 +1,118 @@
+--------------------------------------------------------------------------------
+--IMPORTANT:
+	All commands in this file assume you are in the top directory of the 
+	program, by default, named 'Middleware'
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--Building the Middleware
+
+To build the middleware, please run the file named 'build', as shown below
+
+	./build
+
+If the the file is not executable, use the following command to make it 
+executable:
+
+	chmod 755 build
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--Execute the Middleware
+
+To execute the middleware, please run the file named 'middleware' with required 
+arguments, as shown below
+
+	./middleware <listening_port> <User Name>@<MySQL IP> <MySQL Port> 
+		<Thread Number> <User Password File> <port for user>(optional)
+	(for remote MySQL IP)
+
+or
+
+	./middleware <listening_port> 127.0.0.1 <MySQL Port> <Thread Number> 
+		<User Password File> <port for user>(optional)
+	(for local MySQL IP, '127.0.0.1' can be replaced with 'localhost')
+
+If the the file is not executable, use the following command to make it 
+executable:
+
+	chmod 755 build
+
+If MySQL server is located on remote IP, please run the middleware with root 
+privilege (simply add 'sudo' before the command line above).
+
+Arguments details:
+
+	<listening_port>:	an integer as port number used by middleware to 
+				listening to MySQL clients requests
+
+	<User Name>@<MySQL IP>:	a string contains the user name for middleware
+				to login remote server via SSH and the IP address
+				of remote server
+
+	<MySQL Port>:		an integer as listening port number of MySQL 
+				server
+
+	<Thread Number>:	an integer which tells the program to create 
+				that number of working threads, which pass 
+				MySQL clients queries and log them, and this 
+				number excludes the thread used to communicate 
+				with users.
+
+	<User Password File>:	a string as name of the file which contains 
+				users ID and correspoding passwords, with 
+				MySQL-related variables for dstat (only for the
+				remote MySQL server scenario. The file should 
+				follow the format shown below
+
+					<user-password>
+					user0
+					password0
+					user1
+					password1
+					(and so on...)
+					</user-password>
+					mysql_user=user_name
+					mysql_pass=password
+					mysql_host="127.0.0.1"
+					mysql_port=3306
+
+				Please put this file in the top directory of 
+				middleware, by default, named 'Middleware'
+
+	<port for user>:	an integer as port number used by middleware to
+				listening to user requests. This argument is 
+				optional, by default, it is set to 3334
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--Configure dstat if monitoring local MySQL server
+
+To make sure the middleware execute dstat to monitor system resources and get 
+the log file, please first configure the variables in rs-sysmon2/setenv. Also, 
+please make sure the file rs-sysmon2/dstat is executable. If not, use the 
+following command to make it executable,
+
+	chmod 755 rs-sysmon2/dstat
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--Configure dstat if monitoring remote MySQL server
+
+To make sure the middleware is able to deploy and execute dstat on remote server 
+to monitor system resources and get the log file, please first configure the 
+variables in dstat_for_server/setenv.
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+--Dependencies
+
+javac (version 1.6+)
+java (version 1.6+)
+GNU BASH
+
+--------------------------------------------------------------------------------

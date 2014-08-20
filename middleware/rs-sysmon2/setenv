@@ -1,0 +1,110 @@
+
+############## SET THIS PARAMETERS ########################
+
+# choose and id for this experiment
+experimentid=1
+
+# choose and id for this machine
+machineid=1
+
+# optional comment about this experiment
+expcomment="a general purpose monitoring"
+
+# directory to save monitoring results
+expmonitoring_homedir=.
+
+# do you want to monitor mysql? 
+monitor_mysql=true
+
+# do you want to monitor postgres
+monitor_postgres=false
+
+# if you want to monitor mysql provide credentials.
+# NOTE: this is tested and designed to monitor the local mysql
+# only by issuing "SHOW GLOBAL STATUS" queries and parsing them, 
+# it should not require any privileges for the user, other than
+# being able to connect to the machine
+
+mysql_user=root
+mysql_pass=
+mysql_host="127.0.0.1"
+mysql_port=3306
+
+postgres_user="root"
+postgres_pass=
+postgres_host="127.0.0.1"
+postgres_port="5400"
+postgres_db="tpcc"
+
+# How often do you want to sample system stats? (in seconds) 
+# The program has minimal performance impact and records about 2.5 KB of data per sample 
+# (with mysql monitoring turned on).  
+monitoring_frequency=1
+
+# once you are done configuring set the variable below to true
+is_configured=true
+
+############################################################
+### EVERYTHING BELOW THIS POINT SHOULDN'T BE TOUCHED #######
+
+nummachines=1
+numclients=1
+nummysql=1
+initial_client_throttling=1600
+latency_sla=400
+throughput_sla=1000
+timeformat="%Y-%m-%d %H:%M:%S"
+
+###########################################################
+
+#echo "setting throttling rates..."
+export DSTAT_INITIAL_CLIENT_THROTTLING=initial_client_throttling
+
+echo "setting environment variables defined in setenv (that you should have configured before launching this)..."
+export DSTAT_CONFIGURED=$is_configured
+export DSTAT_MONITORING_FREQUENCY=$monitoring_frequency
+export DSTAT_MONITOR_MYSQL=$monitor_mysql
+export DSTAT_MONITOR_POSTGRES=$monitor_postgres
+export DSTAT_TIMEFMT=$timeformat
+export DSTAT_NUMCLIENTS=$numclients
+export DSTAT_NUMMYSQL=$nummysql
+export DSTAT_NUMMACHINES=$nummachines
+export DSTAT_EXPERIMENT_ID=$experimentid
+export DSTAT_MACHINE_ID=$machineid
+export DSTAT_LATENCY_SLA=$latency_sla
+export DSTAT_THROUGHPUT_SLA=$throughput_sla
+export DSTAT_EXPERIMENT_COMMENT=$expcomment
+export DSTAT_HOMEDIR=$expmonitoring_homedir
+
+#echo "setting login to mysql variables..."
+# CONFIGURATION FOR METADATA MYSQL
+export WA_MYSQL_USER=root
+export WA_MYSQL_PWD=
+export WA_MYSQL_PORT=3306
+export WA_MYSQL_HOST="127.0.0.1"
+export WA_MYSQL_DBNAME=workloadanalysis
+
+export DSTAT_POSTGRES_USER=$postgres_user
+export DSTAT_POSTGRES_PWD=$postgres_pass
+export DSTAT_POSTGRES_PORT=$postgres_port
+export DSTAT_POSTGRES_HOST=$postgres_host
+export DSTAT_POSTGRES_DB=$postgres_db
+
+# CONFIGURATION FOR MYSQL5 INSTANCE 1
+export DSTAT_MYSQL_USER=$mysql_user
+export DSTAT_MYSQL_PWD=$mysql_pass
+export DSTAT_MYSQL_PORT=$mysql_port
+export DSTAT_MYSQL_HOST=$mysql_host
+
+# CONFIGURATION FOR MYSQL5 INSTANCE 2
+export DSTAT_MYSQL_USER2=root
+export DSTAT_MYSQL_PWD2=
+export DSTAT_MYSQL_PORT2=3309
+export DSTAT_MYSQL_HOST2="127.0.0.1"
+
+# CONFIGURATION FOR MYSQL5 INSTANCE 3
+export DSTAT_MYSQL_USER3=root
+export DSTAT_MYSQL_PWD3=
+export DSTAT_MYSQL_PORT3=3307
+export DSTAT_MYSQL_HOST3="127.0.0.1"
+
