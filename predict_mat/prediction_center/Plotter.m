@@ -360,11 +360,13 @@ classdef Plotter < handle
             Xdata = {this.Xdata};
             Xlabel = this.Xlabel;
             %Ydata = [mean(mv.clientTransLatency(:,2:end),2) mean(mv.prclat.latenciesPCtile(:,2:end,6), 2)];
-            Ydata = {mean(mv.clientTransLatency(:,2:end),2)}; ...
-            Xdata{end+1} = this.Xdata;
-            Ydata{end+1} = mean(mv.prclat.latenciesPCtile(:,2:end,6), 2);
+            combinedLatency = sum(mv.clientTransLatency .* mv.clientIndividualSubmittedTrans,2)./mv.clientTotalSubmittedTrans;
+            combinedLatency(isnan(combinedLatency)) = 0;
+            Ydata = {combinedLatency};
+            %Xdata{end+1} = this.Xdata;
+            %Ydata{end+1} = mean(mv.prclat.latenciesPCtile(:,2:end,6), 2);
             Ylabel = 'latency (sec)';
-            legends = {'Avg latency','Avg 95 % latency'};
+            legends = {'Average latency'}; %,'Avg 95 % latency'};
             title = 'Latency';
         end
         

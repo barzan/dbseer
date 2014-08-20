@@ -18,7 +18,7 @@ import java.util.UUID;
 public class DBSeerDataSet
 {
 	private static final String[] tableHeaders = {"Name of dataset", "Monitoring Data", "Transaction Count",
-			"Average Latency", "Percentile Latency", "Header", "Page Info",// "Number of transaction types",
+			"Average Latency", "Percentile Latency", "Header", // "Number of transaction types",
 			"Start Index", "End Index"}; //, "Max Throughput Index"}; //"I/O Configuration", "Lock Configuration"
 		//};
 
@@ -28,10 +28,10 @@ public class DBSeerDataSet
 	private static final int TYPE_AVERAGE_LATENCY = 3;
 	private static final int TYPE_PERCENTILE_LATENCY = 4;
 	private static final int TYPE_HEADER = 5;
-	private static final int TYPE_PAGE_INFO = 6;
+	private static final int TYPE_PAGE_INFO = 9;
 //	private static final int TYPE_NUM_TRANSACTION_TYPE = 6;
-	private static final int TYPE_START_INDEX = 7;
-	private static final int TYPE_END_INDEX = 8;
+	private static final int TYPE_START_INDEX = 6;
+	private static final int TYPE_END_INDEX = 7;
 //	private static final int TYPE_MAX_THROUGHPUT_INDEX = 9;
 //	private static final int TYPE_IO_CONFIG = 10;
 //	private static final int TYPE_LOCK_CONFIG =11;
@@ -136,7 +136,7 @@ public class DBSeerDataSet
 				proxy.eval(this.uniqueVariableName + ".percentile_latency_path = '" +
 						this.percentileLatencyPath + "';");
 				proxy.eval(this.uniqueVariableName + ".trans_count_path = '" + this.transCountPath + "';");
-				proxy.eval(this.uniqueVariableName + ".page_info_path = '" + this.pageInfoPath + "';");
+				//proxy.eval(this.uniqueVariableName + ".page_info_path = '" + this.pageInfoPath + "';");
 				proxy.eval(this.uniqueVariableName + ".startIdx = " + this.startIndex + ";");
 				proxy.eval(this.uniqueVariableName + ".endIdx = " + this.endIndex + ";");
 				proxy.eval(this.uniqueVariableName + ".loadStatistics;");

@@ -113,22 +113,9 @@ public class DataCenter
 
 		long[][] counts = new long[monitorLogs.size()+60][clusters.size()];
 		double[][] latencies = new double[monitorLogs.size()+60][clusters.size()];
+		long[] totalCounts = new long[monitorLogs.size()+60];
+		double[] totalLatency = new double[monitorLogs.size()+60];
 		ArrayList<Double>[][] latenciesAtTime = (ArrayList<Double>[][])new ArrayList[monitorLogs.size()+60][clusters.size()];
-
-		for (Transaction t : actualTransactions)
-		{
-			for (long i = t.getStartTime(); i <= t.getEndTime(); ++i)
-			{
-				int clusterId = t.getCluster().getId();
-				counts[(int)(i - startTime)][clusterId]++;
-				latencies[(int)(i - startTime)][clusterId] += t.getLatency();
-				if (latenciesAtTime[(int)(i - startTime)][clusterId] == null)
-				{
-					latenciesAtTime[(int)(i - startTime)][clusterId] = new ArrayList<Double>();
-				}
-				latenciesAtTime[(int)(i - startTime)][clusterId].add((double) t.getLatency());
-			}
-		}
 
 		File countFile = new File(processedPath + File.separator + "trans_count");
 		File avgLatencyFile = new File(processedPath + File.separator + "avg_latency");
@@ -164,6 +151,56 @@ public class DataCenter
 			e.printStackTrace();
 		}
 
+		for (int i = 0; i < clusters.size(); ++i)
+		{
+			File file = new File(processedPath + File.separator + "transaction_" + (clusters.get(i).getId()+1) + ".latency");
+			PrintWriter writer = null;
+
+			try
+			{
+				writer =  new PrintWriter(new BufferedWriter(new FileWriter(file)));
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+
+			List<Transaction> transactionList = clusters.get(i).getTransactions();
+
+			Collections.sort(transactionList, new TransactionComparatorByEndTime());
+
+			for (Transaction t : transactionList)
+			{
+				writer.print(t.getId() + "," + t.getEndTime() + "," + t.getLatency() + ",");
+				for (Statement s : t.getStatements())
+				{
+					writer.print(s.getId() + ",");
+				}
+				writer.println();
+			}
+			writer.close();
+		}
+
+		for (Transaction t : actualTransactions)
+		{
+			long theTime = t.getEndTime();
+//			for (long i = t.getStartTime(); i <= t.getEndTime(); ++i)
+//			{
+				int clusterId = t.getCluster().getId();
+
+				totalCounts[(int)(theTime - startTime)]++;
+				totalLatency[(int)(theTime - startTime)] += t.getLatency();
+
+				counts[(int)(theTime - startTime)][clusterId]++;
+				latencies[(int)(theTime - startTime)][clusterId] += t.getLatency();
+				if (latenciesAtTime[(int)(theTime - startTime)][clusterId] == null)
+				{
+					latenciesAtTime[(int)(theTime - startTime)][clusterId] = new ArrayList<Double>();
+				}
+				latenciesAtTime[(int)(theTime - startTime)][clusterId].add((double) t.getLatency());
+//			}
+		}
+
 		String gap = "   "; // three whitespaces
 
 		for (int i = 0; i < monitorLogs.size(); ++i)
@@ -187,6 +224,20 @@ public class DataCenter
 					// divide by 1000 to convert into seconds.
 					avgLatencyWriter.printf("%.16e", (latencies[i][j] / (double) counts[i][j]) / 1000.0);
 			}
+			// write total count & avg latency
+//			countWriter.print(gap);
+//			avgLatencyWriter.print(gap);
+//
+//			countWriter.printf("%.16e", (double) totalCounts[i]);
+//			if (totalCounts[i] == 0 )
+//			{
+//				avgLatencyWriter.printf("%.16e", 0.0);
+//			}
+//			else
+//			{
+//				avgLatencyWriter.printf("%.16e", (totalLatency[i] / (double) totalCounts[i]) / 1000.0);
+//			}
+//
 			countWriter.println();
 			avgLatencyWriter.println();
 		}
@@ -395,27 +446,27 @@ public class DataCenter
 			}
 			else if (header.equalsIgnoreCase("sys"))
 			{
-				writer.print("'cpu" + cpuUsrSet.size() + "_sys'," + (i + 1));
+				writer.print("'cpu" + cpuSysSet.size() + "_sys'," + (i + 1));
 				cpuSysSet.add(i + 1);
 			}
 			else if (header.equalsIgnoreCase("idl"))
 			{
-				writer.print("'cpu" + cpuUsrSet.size() + "_idl'," + (i + 1));
+				writer.print("'cpu" + cpuIdlSet.size() + "_idl'," + (i + 1));
 				cpuIdlSet.add(i + 1);
 			}
 			else if (header.equalsIgnoreCase("wai"))
 			{
-				writer.print("'cpu" + cpuUsrSet.size() + "_wai'," + (i + 1));
+				writer.print("'cpu" + cpuWaiSet.size() + "_wai'," + (i + 1));
 				cpuWaiSet.add(i + 1);
 			}
 			else if (header.equalsIgnoreCase("hiq"))
 			{
-				writer.print("'cpu" + cpuUsrSet.size() + "_hiq'," + (i + 1));
+				writer.print("'cpu" + cpuHiqSet.size() + "_hiq'," + (i + 1));
 				cpuHiqSet.add(i + 1);
 			}
 			else if (header.equalsIgnoreCase("siq"))
 			{
-				writer.print("'cpu" + cpuUsrSet.size() + "_siq'," + (i + 1));
+				writer.print("'cpu" + cpuSiqSet.size() + "_siq'," + (i + 1));
 				cpuSiqSet.add(i + 1);
 			}
 			else if (header.equalsIgnoreCase("send"))
@@ -464,36 +515,6 @@ public class DataCenter
 			{
 				writer.print("'procs_" + header + "'," + (i + 1));
 			}
-//			else if (header.equalsIgnoreCase("recv"))
-//			{
-//				if (netIndexes.contains(i))
-//				{
-//					writer.print("'net_" + header);
-//					if (netRecvCount > 0) writer.print(netRecvCount + "',");
-//					else writer.print("',");
-//					writer.print(i+1);
-//					++netRecvCount;
-//				}
-//				else
-//				{
-//					writer.print("'" + headers[i].replaceAll("\\.","").replaceAll(" ", "_") + "'," + (i + 1)); // remove dots & spaces
-//				}
-//			}
-//			else if (header.equalsIgnoreCase("send"))
-//			{
-//				if (netIndexes.contains(i))
-//				{
-//					writer.print("'net_" + header);
-//					if (netSendCount > 0) writer.print(netSendCount + "',");
-//					else writer.print("',");
-//					writer.print(i+1);
-//					++netSendCount;
-//				}
-//				else
-//				{
-//					writer.print("'" + headers[i].replaceAll("\\.","").replaceAll(" ", "_") + "'," + (i + 1)); // remove dots & spaces
-//				}
-//			}
 			else if (header.equalsIgnoreCase("read"))
 			{
 				if (diskIndexes.contains(i))
@@ -932,7 +953,7 @@ public class DataCenter
 
 	public void performDBSCAN()
 	{
-		System.out.println("Staring DBSCAN");
+		System.out.println("Starting DBSCAN");
 		prepareTransactionClustering();
 
 		clusters.clear();

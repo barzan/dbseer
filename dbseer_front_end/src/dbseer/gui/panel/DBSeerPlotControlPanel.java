@@ -59,7 +59,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 		deselectAllButton.addActionListener(this);
 
 		profileComboBox = new JComboBox(new SharedComboBoxModel(DBSeerGUI.datasets));
-		profileComboBox.setBorder(BorderFactory.createTitledBorder("Choose a profile"));
+		profileComboBox.setBorder(BorderFactory.createTitledBorder("Choose a dataset"));
 		profileComboBox.setPreferredSize(new Dimension(250,100));
 
 		buttonPanel.add(profileComboBox, "dock north");
@@ -97,6 +97,8 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 			{
 				return;
 			}
+
+			DBSeerGUI.currentDataset = profile;
 
 			plotButton.setEnabled(false);
 			DBSeerGUI.status.setText("Plotting...");

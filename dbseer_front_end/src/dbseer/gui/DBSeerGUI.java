@@ -45,6 +45,8 @@ public class DBSeerGUI
 
 	public static MiddlewareSocket middlewareSocket = new MiddlewareSocket();
 
+	public static DBSeerDataSet currentDataset = null;
+
 	public static String[] getProfileNames()
 	{
 		String[] names = new String[datasets.getSize()];

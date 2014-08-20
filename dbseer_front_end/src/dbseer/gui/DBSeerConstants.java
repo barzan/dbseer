@@ -37,4 +37,9 @@ public class DBSeerConstants
 	public static final int STATEMENT_INSERT = 2;
 	public static final int STATEMENT_UPDATE = 3;
 	public static final int STATEMENT_DELETE = 4;
+
+	// Explain types
+	public static final int EXPLAIN_GREATER_THAN = 0;
+	public static final int EXPLAIN_LESS_THAN = 1;
+	public static final int EXPLAIN_DIFFERENT = 2;
 }

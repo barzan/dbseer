@@ -94,7 +94,7 @@ public class MiddlewareSocket
 		}
 		else if (packetId == PACKET_LOGIN_FAILURE)
 		{
-			errorMessage = "Login failed: invalid credentials.";
+			errorMessage = "Login failed: invalid credentials - " + new String(packetData);
 		}
 		else
 		{

@@ -1,4 +1,4 @@
-function [Header Monitor LatencyAvg LatencyPercentile Counts DiffedMonitor ClusteredPageFreq ClusteredPageMix] = ...
+function [Header Monitor LatencyAvg LatencyPercentile Counts DiffedMonitor] = ...
   load_stats(header_path, monitor_path, trans_count_path, avg_latency_path, percentile_latency_path, skipFromBegining, skipFromEnd, flag, page_info_path)
 
 Monitor = csvread(monitor_path,2,0); % dyoon: 0 added as third argument for col.
@@ -15,16 +15,16 @@ end
 run(header_path);
 Header = header;
 
-ClusteredPageMix = [];
-ClusteredPageFreq = [];
+% ClusteredPageMix = [];
+% ClusteredPageFreq = [];
 
-if ~isempty(page_info_path) && strcmp(page_info_path, 'null') == false
-  run(page_info_path);
-  ClusteredPageFreq = clusteredPageFreq;
-  ClusteredPageMix = clusteredPageMix;
-end
+% if ~isempty(page_info_path) && strcmp(page_info_path, 'null') == false
+%   run(page_info_path);
+%   ClusteredPageFreq = clusteredPageFreq;
+%   ClusteredPageMix = clusteredPageMix;
+% end
 
-DiffedMonitor = diff(Monitor);
+DiffedMonitor = diff(Monitor(startIdx:end,:));
 LatencyAvg = load(avg_latency_path);
 LatencyAvg = LatencyAvg(:,2:end); % getting rid of the rightmost column which is just some timestamps!
 %prclat = load(horzcat(inputDir,'/trans-',signature,'_prctile_latencies.mat'));
@@ -34,17 +34,23 @@ Counts = Counts(:,2:end); % getting rid of the rightmost column which is just so
 LatencyPercentile = load(percentile_latency_path);
 
 if nargin == 6
-   Monitor = Monitor(startIdx+2:end,:);
-   LatencyAvg = LatencyAvg(startIdx+2:end,:);
-   Counts = Counts(startIdx+2:end,:);
-   DiffedMonitor = DiffedMonitor(startIdx+1:end-1,:);
+   Monitor = Monitor(startIdx:end,:);
+   LatencyAvg = LatencyAvg(startIdx:end,:);
+   Counts = Counts(startIdx:end,:);
+   % DiffedMonitor = DiffedMonitor(startIdx+1:end-1,:);
+   DiffedMonitor = vertcat(zeros(1,size(DiffedMonitor,2)), DiffedMonitor);
 end
 
 if nargin >= 7
-   Monitor = Monitor(startIdx+2:endIdx,:);
-   LatencyAvg = LatencyAvg(startIdx+2:endIdx,:);
-   Counts = Counts(startIdx+2:endIdx,:);
-   DiffedMonitor = DiffedMonitor(startIdx+1:endIdx-1,:);
+   Monitor = Monitor(startIdx:end,:);
+   LatencyAvg = LatencyAvg(startIdx:end,:);
+   Counts = Counts(startIdx:end,:);
+   % DiffedMonitor = DiffedMonitor(startIdx+1:end-1,:);
+   DiffedMonitor = vertcat(zeros(1,size(DiffedMonitor,2)), DiffedMonitor);
+   % Monitor = Monitor(startIdx+2:endIdx,:);
+   % LatencyAvg = LatencyAvg(startIdx+2:endIdx,:);
+   % Counts = Counts(startIdx+2:endIdx,:);
+   % DiffedMonitor = DiffedMonitor(startIdx+1:endIdx-1,:);
 end
 
 end
