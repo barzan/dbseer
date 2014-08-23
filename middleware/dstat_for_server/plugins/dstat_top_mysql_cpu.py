@@ -36,7 +36,7 @@ class dstat_plugin(dstat):
             self.pidset2[pid] = long(l[13]) + long(l[14])
             usage = (self.pidset2[pid] - self.pidset1[pid]) * 1.0 / elapsed / cpunr
             name = l[1][1:-1]
-	        proc_name = getnamebypid(pid, name)
+	    proc_name = getnamebypid(pid, name)
 
             self.val['name'] = 'mysqld'
 
