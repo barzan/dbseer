@@ -12,7 +12,7 @@ else
  if [ ""$DSTAT_MONITOR_MYSQL == "true" ]
   then 
    echo "monitoring mysql"
-   $DSTAT_HOMEDIR/dstat --noupdate -T -l -f -c -m -n -d -r --aio -s -g --vm --fs  -i -y -p --disk-util --mysql5-all1 --mysql-ndb --client-events --output $DSTAT_HOMEDIR"/../Transactions/log_exp_"$DSTAT_EXPERIMENT_ID".csv"  $DSTAT_MONITORING_FREQUENCY 
+   $DSTAT_HOMEDIR/dstat --noupdate -T -l -f -c -m -n -d -r --aio -s -g --vm --fs  -i -y -p --disk-util --top-mysql-cpu --mysql5-all1 --mysql-ndb --client-events --output $DSTAT_HOMEDIR"/../Transactions/log_exp_"$DSTAT_EXPERIMENT_ID".csv"  $DSTAT_MONITORING_FREQUENCY 
  elif [ ""$DSTAT_MONITOR_POSTGRES == "true" ]
   then
    echo "monitoring postgres"
