@@ -1,25 +1,22 @@
 package dbseer.gui.actions;
 
-import com.sun.jmx.snmp.tasks.Task;
 import dbseer.comp.DataCenter;
 import dbseer.gui.DBSeerGUI;
-import dbseer.gui.dialog.ProgressDialog;
 import dbseer.gui.dialog.DBSeerFileLoadDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created by dyoon on 2014. 7. 22..
  */
-public class ProcessDatasetDirectoryAction extends AbstractAction
+public class ProcessDatasetDirectoryWithoutDBSCANAction extends AbstractAction
 {
 	private DBSeerFileLoadDialog loadDialog;
 
-	public ProcessDatasetDirectoryAction()
+	public ProcessDatasetDirectoryWithoutDBSCANAction()
 	{
-		super("Process Dataset");
+		super("Process Dataset Without DBSCAN");
 
 		loadDialog = new DBSeerFileLoadDialog();
 	}
@@ -34,7 +31,7 @@ public class ProcessDatasetDirectoryAction extends AbstractAction
 		{
 			final String directory = loadDialog.getFile().getAbsolutePath();
 
-			DBSeerGUI.status.setText("Processing Dataset...");
+			DBSeerGUI.status.setText("Processing Dataset without DBSCAN...");
 //			final ProgressDialog dialog = new ProgressDialog(null, "Processing dataset");
 //			dialog.setLocationRelativeTo(null);
 			SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
@@ -42,7 +39,7 @@ public class ProcessDatasetDirectoryAction extends AbstractAction
 				@Override
 				protected Void doInBackground() throws Exception
 				{
-					DataCenter dc = new DataCenter(directory, true);
+					DataCenter dc = new DataCenter(directory, false);
 					if (!dc.parseLogs())
 					{
 						System.out.println("Parsing log failure");

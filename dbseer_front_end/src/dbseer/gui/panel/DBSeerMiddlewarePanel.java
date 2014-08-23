@@ -225,7 +225,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 					}
 					dc.performDBSCAN();
 
-					if (!dc.processDataset())
+					if (!dc.processDataset(true))
 					{
 						JOptionPane.showMessageDialog(null, "Failed to process received dataset", "Error", JOptionPane.ERROR_MESSAGE);
 					}

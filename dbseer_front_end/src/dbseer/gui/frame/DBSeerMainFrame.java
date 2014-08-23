@@ -65,6 +65,11 @@ public class DBSeerMainFrame extends JFrame
 		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		menu.add(menuItem);
 
+		// Process dataset without DBSCAN.
+		menuItem = new JMenuItem(new ProcessDatasetDirectoryWithoutDBSCANAction());
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		menu.add(menuItem);
+
 //
 //		// and menu item.
 //		// set header

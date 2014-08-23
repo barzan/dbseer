@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
  */
 public class DataCenter
 {
+	private boolean doDBSCAN;
 	private String rawPath;
 	private String processedPath;
 	private String datasetName;
@@ -33,10 +34,18 @@ public class DataCenter
 	private ArrayList<Cluster> clusters;
 	private ArrayList<Transaction> actualTransactions;
 
-	public DataCenter(String path, String name)
+	public DataCenter(String path, String name, boolean doDBSCAN)
 	{
+		this.doDBSCAN = doDBSCAN;
 		this.rawPath = path + File.separator + name;
-		this.processedPath = this.rawPath + File.separator + "processed";
+		if (doDBSCAN)
+		{
+			this.processedPath = this.rawPath + File.separator + "processed";
+		}
+		else
+		{
+			this.processedPath = this.rawPath + File.separator + "processed_no_dbscan";
+		}
 		this.datasetName = name;
 		monitor = new SystemMonitor();
 		transactionMap = new HashMap<Integer, Transaction>();
@@ -47,10 +56,18 @@ public class DataCenter
 		actualTransactions = new ArrayList<Transaction>();
 	}
 
-	public DataCenter(String fullPath)
+	public DataCenter(String fullPath, boolean doDBSCAN)
 	{
+		this.doDBSCAN = doDBSCAN;
 		this.rawPath = fullPath;
-		this.processedPath = this.rawPath + File.separator + "processed";
+		if (doDBSCAN)
+		{
+			this.processedPath = this.rawPath + File.separator + "processed";
+		}
+		else
+		{
+			this.processedPath = this.rawPath + File.separator + "processed_no_dbscan";
+		}
 
 		File rawPathFile = new File(fullPath);
 		if (rawPathFile.getName() != null)
@@ -98,10 +115,45 @@ public class DataCenter
 
 	public boolean processDataset()
 	{
+		prepareTransactionClustering();
+		if (doDBSCAN)
+		{
+			performDBSCAN();
+		}
+		else
+		{
+			assignSingleCluster();
+		}
 		writeHeader();
 		writeTransactionInfo();
 		writePageInfo();
 		return true;
+	}
+
+	private void assignSingleCluster()
+	{
+		Cluster cluster = new Cluster();
+		cluster.setId(0);
+
+		clusters.clear();
+		actualTransactions.clear();
+
+		Transaction[] transactions = transactionMap.values().toArray(new Transaction[transactionMap.values().size()]);
+
+		for (Transaction transaction : transactions)
+		{
+			if (!transaction.isNoRowsReadWritten())
+			{
+				actualTransactions.add(transaction);
+			}
+		}
+
+		for (Transaction transaction : actualTransactions)
+		{
+			transaction.setCluster(cluster);
+		}
+
+		clusters.add(cluster);
 	}
 
 	private boolean writeTransactionInfo()
@@ -115,13 +167,16 @@ public class DataCenter
 		double[][] latencies = new double[monitorLogs.size()+60][clusters.size()];
 		long[] totalCounts = new long[monitorLogs.size()+60];
 		double[] totalLatency = new double[monitorLogs.size()+60];
+		long[][] statementCounts = new long[monitorLogs.size()+60][4*globalTableList.length]; // table * {select, update, insert, delete}
 		ArrayList<Double>[][] latenciesAtTime = (ArrayList<Double>[][])new ArrayList[monitorLogs.size()+60][clusters.size()];
 
 		File countFile = new File(processedPath + File.separator + "trans_count");
 		File avgLatencyFile = new File(processedPath + File.separator + "avg_latency");
+		File statementFile = new File(processedPath + File.separator + "stmt_count");
 
 		PrintWriter countWriter = null;
 		PrintWriter avgLatencyWriter = null;
+		PrintWriter statementWriter = null;
 
 		try
 		{
@@ -132,6 +187,15 @@ public class DataCenter
 			if (!countFile.exists())
 			{
 				countFile.createNewFile();
+			}
+
+			if (!statementFile.getParentFile().exists())
+			{
+				statementFile.getParentFile().mkdirs();
+			}
+			if (!statementFile.exists())
+			{
+				statementFile.createNewFile();
 			}
 
 			if (!avgLatencyFile.getParentFile().exists())
@@ -145,6 +209,7 @@ public class DataCenter
 
 			countWriter = new PrintWriter(new BufferedWriter(new FileWriter(countFile)));
 			avgLatencyWriter = new PrintWriter(new BufferedWriter(new FileWriter(avgLatencyFile)));
+			statementWriter = new PrintWriter(new BufferedWriter(new FileWriter(statementFile)));
 		}
 		catch (IOException e)
 		{
@@ -181,24 +246,47 @@ public class DataCenter
 			writer.close();
 		}
 
+		// write list of tables to statement count file.
+		for (String table : globalTableList)
+		{
+			statementWriter.print(table + ",");
+		}
+		statementWriter.println();
+
 		for (Transaction t : actualTransactions)
 		{
 			long theTime = t.getEndTime();
-//			for (long i = t.getStartTime(); i <= t.getEndTime(); ++i)
-//			{
-				int clusterId = t.getCluster().getId();
 
-				totalCounts[(int)(theTime - startTime)]++;
-				totalLatency[(int)(theTime - startTime)] += t.getLatency();
+			// summarize latency
+			int clusterId = t.getCluster().getId();
 
-				counts[(int)(theTime - startTime)][clusterId]++;
-				latencies[(int)(theTime - startTime)][clusterId] += t.getLatency();
-				if (latenciesAtTime[(int)(theTime - startTime)][clusterId] == null)
+			totalCounts[(int)(theTime - startTime)]++;
+			totalLatency[(int)(theTime - startTime)] += t.getLatency();
+
+			counts[(int)(theTime - startTime)][clusterId]++;
+			latencies[(int)(theTime - startTime)][clusterId] += t.getLatency();
+			if (latenciesAtTime[(int)(theTime - startTime)][clusterId] == null)
+			{
+				latenciesAtTime[(int)(theTime - startTime)][clusterId] = new ArrayList<Double>();
+			}
+			latenciesAtTime[(int)(theTime - startTime)][clusterId].add((double) t.getLatency());
+
+			long[] selects = t.getNumSelect();
+			long[] updates = t.getNumUpdate();
+			long[] inserts = t.getNumInsert();
+			long[] deletes = t.getNumDelete();
+
+			// count statements
+			for (long i = t.getStartTime(); i <= t.getEndTime(); ++i)
+			{
+				for (int j = 0; j < selects.length; ++j)
 				{
-					latenciesAtTime[(int)(theTime - startTime)][clusterId] = new ArrayList<Double>();
+					statementCounts[(int)(i - startTime)][j*4] += selects[j];
+					statementCounts[(int)(i - startTime)][j*4+1] += updates[j];
+					statementCounts[(int)(i - startTime)][j*4+2] += inserts[j];
+					statementCounts[(int)(i - startTime)][j*4+3] += deletes[j];
 				}
-				latenciesAtTime[(int)(theTime - startTime)][clusterId].add((double) t.getLatency());
-//			}
+			}
 		}
 
 		String gap = "   "; // three whitespaces
@@ -224,6 +312,11 @@ public class DataCenter
 					// divide by 1000 to convert into seconds.
 					avgLatencyWriter.printf("%.16e", (latencies[i][j] / (double) counts[i][j]) / 1000.0);
 			}
+			for (int j = 0; j < statementCounts[i].length; ++j)
+			{
+				statementWriter.printf("%d,", statementCounts[i][j]);
+			}
+
 			// write total count & avg latency
 //			countWriter.print(gap);
 //			avgLatencyWriter.print(gap);
@@ -240,12 +333,15 @@ public class DataCenter
 //
 			countWriter.println();
 			avgLatencyWriter.println();
+			statementWriter.println();
 		}
 
 		countWriter.flush();
 		countWriter.close();
 		avgLatencyWriter.flush();
 		avgLatencyWriter.close();
+		statementWriter.flush();
+		statementWriter.close();
 
 		if (!writeLatencyPercentile(latenciesAtTime, monitorLogs.size(), clusters.size()))
 		{
@@ -954,7 +1050,6 @@ public class DataCenter
 	public void performDBSCAN()
 	{
 		System.out.println("Starting DBSCAN");
-		prepareTransactionClustering();
 
 		clusters.clear();
 		actualTransactions.clear();
