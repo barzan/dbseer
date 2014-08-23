@@ -9,8 +9,8 @@ class dstat_plugin(dstat):
     amount of CPU processing power. Based on per process CPU information.
     """
     def __init__(self):
-        self.name = 'mysql-cpu'
-        self.vars = ('mysql-cpu',)
+        self.name = 'mysql_cpu'
+        self.vars = ('mysql_cpu',)
         self.type = 's'
         self.width = 9
         self.scale = 0
@@ -19,7 +19,7 @@ class dstat_plugin(dstat):
     def extract(self):
         self.val['max'] = 0
 #self.val['mysql-cpu'] = ''
-        self.val['mysql-cpu'] = '%s' % (cprint(0.0, 'f', 3, 3))
+        self.val['mysql_cpu'] = '%s' % (cprint(0.0, 'f', 3, 3))
         for pid in proc_pidlist():
             try:
                 ### Using dopen() will cause too many open files
@@ -36,7 +36,7 @@ class dstat_plugin(dstat):
             self.pidset2[pid] = long(l[13]) + long(l[14])
             usage = (self.pidset2[pid] - self.pidset1[pid]) * 1.0 / elapsed / cpunr
             name = l[1][1:-1]
-	    proc_name = getnamebypid(pid, name)
+	        proc_name = getnamebypid(pid, name)
 
             self.val['name'] = 'mysqld'
 
@@ -51,7 +51,7 @@ class dstat_plugin(dstat):
 
 #        if self.val['max'] != 0.0:
 #self.val['mysql-cpu'] = '%-*s%s' % (self.width-3, self.val['name'][0:self.width-3], cprint(self.val['max'], 'f', 3, 34))
-        self.val['mysql-cpu'] = '%s' % (cprint(self.val['max'], 'f', 3, 34))
+        self.val['mysql_cpu'] = '%s' % (cprint(self.val['max'], 'f', 3, 34))
 
         ### Debug (show PID)
 #        self.val['cpu process'] = '%*s %-*s' % (5, self.val['pid'], self.width-6, self.val['name'])
