@@ -50,6 +50,8 @@ public class DBSeerPlotExplainFrame extends JFrame implements ActionListener
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
+		// this is now performed at ExplainChartAction...
+		/*
 		if (actionEvent.getSource() == this.explainButton)
 		{
 			final ArrayList<Double> outlier = chartPanel.getOutlierRegion();
@@ -93,7 +95,7 @@ public class DBSeerPlotExplainFrame extends JFrame implements ActionListener
 					}
 
 					proxy.eval(outlierVar);
-					result = proxy.returningEval("explainPrototype(plotter.mv, outlier)", 1);
+					result = proxy.returningEval("explainPrototype2(plotter.mv, outlier)", 1);
 
 					return null;
 				}
@@ -101,5 +103,6 @@ public class DBSeerPlotExplainFrame extends JFrame implements ActionListener
 
 			worker.execute();
 		}
+		*/
 	}
 }

@@ -24,7 +24,7 @@ public class ProcessDatasetDirectoryWithoutDBSCANAction extends AbstractAction
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
-		loadDialog.createFileDialog("Open Directory", DBSeerFileLoadDialog.DIRECTORY_ONLY);
+		loadDialog.createFileDialog("Open Directory for Processing without DBSCAN", DBSeerFileLoadDialog.DIRECTORY_ONLY);
 		loadDialog.showDialog();
 
 		if (loadDialog.getFile() != null)

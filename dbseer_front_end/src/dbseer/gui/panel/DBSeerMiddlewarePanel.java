@@ -218,14 +218,13 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 					zipInputStream.close();
 
 					// process the dataset
-					DataCenter dc = new DataCenter(DBSeerConstants.RAW_DATASET_PATH, datasetName);
+					DataCenter dc = new DataCenter(DBSeerConstants.RAW_DATASET_PATH, datasetName, true);
 					if (!dc.parseLogs())
 					{
 						JOptionPane.showMessageDialog(null, "Failed to parse received monitoring logs", "Error", JOptionPane.ERROR_MESSAGE);
 					}
-					dc.performDBSCAN();
 
-					if (!dc.processDataset(true))
+					if (!dc.processDataset())
 					{
 						JOptionPane.showMessageDialog(null, "Failed to process received dataset", "Error", JOptionPane.ERROR_MESSAGE);
 					}

@@ -26,6 +26,9 @@ public class ExplainChartAction extends AbstractAction
 		this.console = console;
 		this.type = type;
 		this.outlierRegion = outlierRegion;
+
+		console.setWrapStyleWord(true);
+		console.setLineWrap(true);
 	}
 
 	@Override
@@ -35,21 +38,129 @@ public class ExplainChartAction extends AbstractAction
 		{
 			return;
 		}
+		console.setText("");
 		console.append("Determining metrics for possible explanation of outliers...\n");
+
+		final double meanDifferenceThreshold = 0.20;
+		final double decisionTreeAccThreshold = 90;
+		final int normalizedMeanResultColCount = 4;
+		final int decisionTreeResultColCount = 3;
 
 		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
 		{
 			private Object[] result;
+			String outlierVar = "";
+
+			private String getPrintableColumnName(String name)
+			{
+				if (name.startsWith("os"))
+				{
+					String column = name.substring(2);
+					for (int j = 1; j < column.length(); ++j)
+					{
+						char letter = column.charAt(j);
+						if (Character.isUpperCase(letter))
+						{
+							column = new StringBuilder(column).replace(j, j+1, " " + letter).toString();
+							++j;
+							while (j < column.length() && Character.isUpperCase(column.charAt(j)))
+							{
+								++j;
+							}
+						}
+					}
+					return column;
+				}
+				else if (name.startsWith("dbms"))
+				{
+					String column = name.substring(4);
+					for (int j = 1; j < column.length(); ++j)
+					{
+						char letter = column.charAt(j);
+						if (Character.isUpperCase(letter))
+						{
+							column = new StringBuilder(column).replace(j, j+1, " " + letter).toString();
+							++j;
+							while (j < column.length() && Character.isUpperCase(column.charAt(j)))
+							{
+								++j;
+							}
+						}
+					}
+					return column;
+				}
+				return name;
+			}
 
 			@Override
 			protected void done()
 			{
+				console.append(outlierVar + "\n\n");
 				if (result == null)
 				{
 					console.append("Columns for possible explanation not found.\n");
 					return;
 				}
 
+				Object[] results = result;
+				Object[] theResult = (Object[])results[0];
+
+				Object[] normalizedMeanResult = (Object[])theResult[0];
+				Object[] decisionTreeResult = (Object[])theResult[1];
+
+				console.append("Interesting columns found from statistical analysis in the descending order of " +
+						"normalized mean difference between normal and outlier regions are as follows (mean difference" +
+						" higher than " + meanDifferenceThreshold + " are shown):\n\n");
+				int normalizedRowLength = normalizedMeanResult.length / normalizedMeanResultColCount;
+				for (int i = 0; i < normalizedRowLength; ++i)
+				{
+					String fieldName = (String)normalizedMeanResult[i];
+					double meanDifference = ((double[])normalizedMeanResult[i+(2*normalizedRowLength)])[0];
+					if (Math.abs(meanDifference) < meanDifferenceThreshold)
+					{
+						continue;
+					}
+					console.append(getPrintableColumnName(fieldName) +
+							" has the normalized average value in outlier region that is ");
+					if (meanDifference >= 0)
+					{
+						console.append(String.format("%.2f", meanDifference) + " HIGHER than normal.");
+					}
+					else
+					{
+						console.append(String.format("%.2f", (-1.0*meanDifference)) + " LOWER than normal.");
+					}
+					console.append("\n");
+				}
+
+				console.append("\nInteresting columns found from decision tree analysis in the descending order of " +
+						"DT accuracy on training set for classifying normal and outlier regions are as follows " +
+						"(accuracy higher than " + decisionTreeAccThreshold + "% are shown):\n\n");
+				int decisionTreeRowLength = decisionTreeResult.length / decisionTreeResultColCount;
+				for (int i = 0; i < decisionTreeRowLength; ++i)
+				{
+					String fieldName = (String)decisionTreeResult[i];
+					double trainAccuracy = ((double[])decisionTreeResult[i+decisionTreeRowLength])[0] * 100;
+					if (trainAccuracy < decisionTreeAccThreshold)
+					{
+						continue;
+					}
+					console.append(getPrintableColumnName(fieldName) +
+							" has the DT with accuracy of " + String.format("%.2f", trainAccuracy) + "% classifying " +
+							"normal and outlier regions correctly.\n");
+				}
+
+//				for (int row = 0; row < rowLength; ++row)
+//				{
+
+//					Object[] aRow = normalizedMeanResult[row];
+//					String fieldName = (String)aRow[0];
+//					double meanDifference = ((Double)aRow[2]).doubleValue();
+//
+//					console.append(fieldName + " " + meanDifference + "\n");
+//				}
+
+				/*
 				String[] columns = (String[])result[0];
 				double[] meanDifference = (double[])result[1];
 
@@ -168,6 +279,7 @@ public class ExplainChartAction extends AbstractAction
 								String.format("%.2f", meanDiff) + "% from the average in normal region.\n");
 					}
 				}
+				*/
 			}
 
 			@Override
@@ -175,7 +287,7 @@ public class ExplainChartAction extends AbstractAction
 			{
 				MatlabProxy proxy = DBSeerGUI.proxy;
 
-				String outlierVar = "outlier = [";
+				outlierVar = "outlier = [";
 
 				for (int i = 0; i < outlierRegion.size(); ++i)
 				{
@@ -191,7 +303,7 @@ public class ExplainChartAction extends AbstractAction
 				}
 
 				proxy.eval(outlierVar);
-				result = proxy.returningEval("explainPrototype(plotter.mv, outlier, " + type + ")", 2);
+				result = proxy.returningEval("explainPrototype2(plotter.mv, outlier, " + type + ")", 1);
 
 				return null;
 			}

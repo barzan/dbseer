@@ -7,6 +7,8 @@ import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import java.util.UUID;
@@ -15,10 +17,10 @@ import java.util.UUID;
  * Created by dyoon on 2014. 5. 24..
  */
 @XStreamAlias("dataset")
-public class DBSeerDataSet
+public class DBSeerDataSet implements TableModelListener
 {
 	private static final String[] tableHeaders = {"Name of dataset", "Monitoring Data", "Transaction Count",
-			"Average Latency", "Percentile Latency", "Header", // "Number of transaction types",
+			"Average Latency", "Percentile Latency", "Header", "Statement Stat", // "Number of transaction types",
 			"Start Index", "End Index"}; //, "Max Throughput Index"}; //"I/O Configuration", "Lock Configuration"
 		//};
 
@@ -28,10 +30,11 @@ public class DBSeerDataSet
 	private static final int TYPE_AVERAGE_LATENCY = 3;
 	private static final int TYPE_PERCENTILE_LATENCY = 4;
 	private static final int TYPE_HEADER = 5;
-	private static final int TYPE_PAGE_INFO = 9;
 //	private static final int TYPE_NUM_TRANSACTION_TYPE = 6;
-	private static final int TYPE_START_INDEX = 6;
-	private static final int TYPE_END_INDEX = 7;
+	private static final int TYPE_STATEMENT_STAT = 6;
+	private static final int TYPE_START_INDEX = 7;
+	private static final int TYPE_END_INDEX = 8;
+	private static final int TYPE_PAGE_INFO = 9;
 //	private static final int TYPE_MAX_THROUGHPUT_INDEX = 9;
 //	private static final int TYPE_IO_CONFIG = 10;
 //	private static final int TYPE_LOCK_CONFIG =11;
@@ -52,6 +55,7 @@ public class DBSeerDataSet
 	private String percentileLatencyPath = "";
 	private String headerPath = "";
 	private String pageInfoPath = "";
+	private String statementStatPath = "";
 
 	private int startIndex = 0;
 	private int endIndex = 0;
@@ -70,6 +74,7 @@ public class DBSeerDataSet
 		uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
 		name = "Unnamed dataset";
 		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
+		tableModel.addTableModelListener(this);
 		table = new JTable(tableModel);
 		table.setFillsViewportHeight(true);
 		table.getColumnModel().getColumn(0).setMaxWidth(400);
@@ -89,6 +94,7 @@ public class DBSeerDataSet
 	{
 		uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
 		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
+		tableModel.addTableModelListener(this);
 		table = new JTable(tableModel);
 		table.setFillsViewportHeight(true);
 		table.getColumnModel().getColumn(0).setMaxWidth(400);
@@ -136,6 +142,7 @@ public class DBSeerDataSet
 				proxy.eval(this.uniqueVariableName + ".percentile_latency_path = '" +
 						this.percentileLatencyPath + "';");
 				proxy.eval(this.uniqueVariableName + ".trans_count_path = '" + this.transCountPath + "';");
+				proxy.eval(this.uniqueVariableName + ".statement_stat_path = '" + this.statementStatPath + "';");
 				//proxy.eval(this.uniqueVariableName + ".page_info_path = '" + this.pageInfoPath + "';");
 				proxy.eval(this.uniqueVariableName + ".startIdx = " + this.startIndex + ";");
 				proxy.eval(this.uniqueVariableName + ".endIdx = " + this.endIndex + ";");
@@ -153,7 +160,7 @@ public class DBSeerDataSet
 	public void setFromTable()
 	{
 		TableCellEditor editor = table.getCellEditor();
-		if ( editor != null ) editor.stopCellEditing(); // stop editing
+//		if ( editor != null ) editor.stopCellEditing(); // stop editing
 
 		for (int i = 0; i < tableModel.getRowCount(); ++i)
 		{
@@ -170,7 +177,8 @@ public class DBSeerDataSet
 							this.averageLatencyPath = (String)tableModel.getValueAt(i, 1);
 							break;
 						case TYPE_END_INDEX:
-							this.endIndex = Integer.parseInt((String)tableModel.getValueAt(i, 1));
+							if (tableModel.getValueAt(i, 1) != "")
+								this.endIndex = Integer.parseInt((String)tableModel.getValueAt(i, 1));
 							break;
 						case TYPE_HEADER:
 							this.headerPath = (String)tableModel.getValueAt(i, 1);
@@ -196,8 +204,12 @@ public class DBSeerDataSet
 						case TYPE_PERCENTILE_LATENCY:
 							this.percentileLatencyPath = (String)tableModel.getValueAt(i, 1);
 							break;
+						case TYPE_STATEMENT_STAT:
+							this.statementStatPath = (String)tableModel.getValueAt(i, 1);
+							break;
 						case TYPE_START_INDEX:
-							this.startIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
+							if (tableModel.getValueAt(i, 1) != "")
+								this.startIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
 							break;
 						case TYPE_TRANSACTION_COUNT:
 							this.transCountPath = (String)tableModel.getValueAt(i, 1);
@@ -253,6 +265,9 @@ public class DBSeerDataSet
 //							break;
 						case TYPE_PERCENTILE_LATENCY:
 							tableModel.setValueAt(this.percentileLatencyPath, i, 1);
+							break;
+						case TYPE_STATEMENT_STAT:
+							tableModel.setValueAt(this.statementStatPath, i, 1);
 							break;
 						case TYPE_START_INDEX:
 							tableModel.setValueAt(String.valueOf(this.startIndex), i, 1);
@@ -451,5 +466,23 @@ public class DBSeerDataSet
 		updateTable();
 		tableModel.fireTableDataChanged();
 		this.dataSetLoaded = false;
+	}
+
+	public synchronized String getStatementStatPath()
+	{
+		return statementStatPath;
+	}
+
+	public synchronized void setStatementStatPath(String statementStatPath)
+	{
+		this.statementStatPath = statementStatPath;
+		updateTable();
+		tableModel.fireTableDataChanged();
+		this.dataSetLoaded = false;
+	}
+
+	@Override
+	public void tableChanged(TableModelEvent tableModelEvent)
+	{
 	}
 }

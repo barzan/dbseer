@@ -6,6 +6,7 @@ classdef DataSet < handle
         trans_count_path 
         avg_latency_path 
         percentile_latency_path
+        statement_stat_path
         %tranTypes
         startIdx
         endIdx
@@ -18,6 +19,7 @@ classdef DataSet < handle
         averageLatency
         percentileLatency
         transactionCount
+        statementStat
         diffedMonitor
     end
 
@@ -57,6 +59,11 @@ classdef DataSet < handle
         %     this.tranTypes = obj;
         %     statReady = false;
         % end
+
+        function set.statement_stat_path(this, value)
+            this.statement_stat_path = value;
+            this.statReady = false;
+        end
 
         function set.startIdx(this, value)
             this.startIdx = value;
@@ -123,6 +130,14 @@ classdef DataSet < handle
             end
         end
 
+        function value = get.statementStat(this)
+            if this.statReady
+                value = this.statementStat;
+            else
+                value = [];
+            end
+        end
+
         function value = get.diffedMonitor(this)
             if this.statReady
                 value = this.diffedMonitor;
@@ -157,9 +172,9 @@ classdef DataSet < handle
         end
 
         function loadStatistics(this)
-            [this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
+            [this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor this.statementStat] = ...
                 load_stats(this.header_path, this.monitor_path, this.trans_count_path, ... 
-                    this.avg_latency_path, this.percentile_latency_path, this.startIdx, 0, true);
+                    this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, this.startIdx, 0, true);
             this.statReady = true;
         end
     end % end methods

@@ -54,6 +54,7 @@ public class DBSeerSelectableChartPanel extends ChartPanel
 				public void run()
 				{
 					DBSeerPlotExplainFrame newFrame = new DBSeerPlotExplainFrame(chartToExplain);
+					newFrame.setPreferredSize(new Dimension(1024,768));
 					newFrame.pack();
 					newFrame.setVisible(true);
 				}

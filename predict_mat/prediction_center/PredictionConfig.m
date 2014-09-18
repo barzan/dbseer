@@ -93,9 +93,9 @@ classdef PredictionConfig < handle
                 this.datasetList{i}.loadStatistics;
                 conf = this.datasetList{i}.getStruct;
                 if ~isempty(this.groupingStrategy)
-                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, this.groupingStrategy);
+                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, conf.statementStat, this.groupingStrategy);
                 else
-                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor);
+                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, conf.statementStat);
                 end
     
                 if i==1

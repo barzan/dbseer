@@ -52,13 +52,17 @@ public class OpenDirectoryAction extends AbstractAction
 					{
 						profile.setAverageLatencyPath(file);
 					}
-					else if (fileLower.contains("count"))
+					else if (fileLower.contains("trans_count"))
 					{
 						profile.setTransCountPath(file);
 					}
 					else if (fileLower.contains("prctile") || fileLower.contains("percentile"))
 					{
 						profile.setPercentileLatencyPath(file);
+					}
+					else if (fileLower.contains("stmt_count"))
+					{
+						profile.setStatementStatPath(file);
 					}
 					else if (fileLower.contains("page"))
 					{

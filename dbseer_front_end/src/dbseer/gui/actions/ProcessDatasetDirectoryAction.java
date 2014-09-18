@@ -27,7 +27,7 @@ public class ProcessDatasetDirectoryAction extends AbstractAction
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
-		loadDialog.createFileDialog("Open Directory", DBSeerFileLoadDialog.DIRECTORY_ONLY);
+		loadDialog.createFileDialog("Open Directory for Processing", DBSeerFileLoadDialog.DIRECTORY_ONLY);
 		loadDialog.showDialog();
 
 		if (loadDialog.getFile() != null)

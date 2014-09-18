@@ -144,7 +144,8 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 								profile.getUniqueVariableName() + ".averageLatency," +
 								profile.getUniqueVariableName() + ".percentileLatency," +
 								profile.getUniqueVariableName() + ".transactionCount," +
-								profile.getUniqueVariableName() + ".diffedMonitor);");
+								profile.getUniqueVariableName() + ".diffedMonitor," +
+								profile.getUniqueVariableName() + ".statementStat);");
 						proxy.eval("plotter.mv = mvUngrouped;");
 
 					}

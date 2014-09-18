@@ -312,6 +312,8 @@ public class DataCenter
 					// divide by 1000 to convert into seconds.
 					avgLatencyWriter.printf("%.16e", (latencies[i][j] / (double) counts[i][j]) / 1000.0);
 			}
+
+			statementWriter.printf("%.16e,", (double)log.getTimestamp());
 			for (int j = 0; j < statementCounts[i].length; ++j)
 			{
 				statementWriter.printf("%d,", statementCounts[i][j]);
