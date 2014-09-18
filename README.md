@@ -145,7 +145,7 @@ E) Dependencies
 * GNU BASH
 * Linux (for 'dstat')
 
-**3. GUI front-end **
+**3. GUI front-end**
 
 The DBSeer GUI front-end is developed with IntelliJ IDEA 13. 
 
