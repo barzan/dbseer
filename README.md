@@ -10,13 +10,15 @@ The main DBSeer package is written in MATLAB. The middleware and GUI front-end a
 You require the following to run DBSeer:
 
 * MATLAB
-* JDK 1.6+
-* (for middleware) Linux ('dstat' only runs on Linux)
+* JDK 1.6+ (for the middleware) 
+* Linux ('dstat' only runs on Linux)
 * ant (to compile the GUI front-end manually)
+* common-libs (can be obtained from here https://github.com/barzan/common-libs)
 
 **1. DBSeer**
 
 A) INSTALLATION: You need to add the following directories to your MATLAB path: common_mat predict_data predict_mat sc
+Note that the common_mat directory in the common-libs package (https://github.com/barzan/common-libs)
 
 B) How to use DBSeer
 
