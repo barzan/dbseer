@@ -1,5 +1,9 @@
 package dbseer.comp;
 
+import dbseer.gui.DBSeerGUI;
+import matlabcontrol.MatlabInvocationException;
+import matlabcontrol.MatlabProxy;
+
 import javax.swing.*;
 
 /**
@@ -10,6 +14,52 @@ public class UserInputValidator
 	public UserInputValidator()
 	{
 
+	}
+
+	public static boolean matchMatrixDimension(String m1, String m2)
+	{
+		int d1 = 0;
+		int d2 = 0;
+		String[] tokens = m1.trim().split("[\\[\\]\\s]+");
+		for (String token : tokens)
+		{
+			if (!token.isEmpty())
+			{
+				++d1;
+			}
+		}
+
+		tokens = m2.trim().split("[\\[\\]\\s]+");
+		for (String token : tokens)
+		{
+			if (!token.isEmpty())
+			{
+				++d2;
+			}
+		}
+
+		if (d1 == d2) return true;
+		return false;
+	}
+
+	public static boolean validateMatlabMatrix(String input, String fieldName, boolean isEnabled)
+	{
+		if (!isEnabled) return true;
+
+		MatlabProxy proxy = DBSeerGUI.proxy;
+
+		try
+		{
+			proxy.eval("validate_test = " + input + ";");
+		}
+		catch (MatlabInvocationException e)
+		{
+			JOptionPane.showMessageDialog(null, "Data validation error at " + fieldName + ".\n" +
+							"It is not a valid MATLAB matrix.", "Error",
+					JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+		return true;
 	}
 
 	public static boolean validateSingleRowMatrix(String input, String fieldName, boolean isEnabled)
@@ -35,9 +85,19 @@ public class UserInputValidator
 		if (!matchRegex)
 		{
 			JOptionPane.showMessageDialog(null, "Data validation error at " + fieldName + ".\n" +
-							"It is not a number.", "Error",
+							"It must be a positive number.", "Error",
 					JOptionPane.ERROR_MESSAGE);
 		}
 		return matchRegex;
+	}
+
+	public static boolean validateSingleRowMatrix(String input)
+	{
+		return input.matches("\\[\\s*(\\d+(.\\d+)?)*(\\s+(\\d+(.\\d+)?)+)*\\s*\\]");
+	}
+
+	public static boolean validateNumber(String input)
+	{
+		return input.matches("\\d+(.\\d+)?");
 	}
 }

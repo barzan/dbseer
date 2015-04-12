@@ -1,6 +1,7 @@
 package dbseer.comp;
 
 import dbseer.gui.DBSeerConstants;
+import dbseer.gui.DBSeerGUI;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
 import matlabcontrol.MatlabInvocationException;
@@ -15,7 +16,8 @@ public class PredictionCenter
 {
 	private MatlabProxy proxy;
 
-	private String prediction;
+	private String prediction = "";
+	private String predictionDescription = "";
 	private String dbseerPath;
 
 	private DBSeerConfiguration trainConfig;
@@ -47,21 +49,37 @@ public class PredictionCenter
 	public PredictionCenter(MatlabProxy proxy, String prediction, String dbseerPath)
 	{
 		this.proxy = proxy;
-		this.prediction = prediction;
+		for (int i = 0; i < DBSeerGUI.availablePredictions.length; ++i)
+		{
+			if (prediction.equalsIgnoreCase(DBSeerGUI.availablePredictions[i]))
+			{
+				this.prediction = DBSeerGUI.actualPredictionFunctions[i];
+				this.predictionDescription = DBSeerGUI.availablePredictions[i];
+			}
+		}
+//		this.prediction = prediction;
 		this.dbseerPath = dbseerPath;
 	}
 
-	public void run()
+	public boolean run()
 	{
+		if (this.prediction == "")
+		{
+			JOptionPane.showMessageDialog(null, "Prediction Task Undefined.", "Error",
+					JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
 		try
 		{
-			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = pc.performPrediction;");
+			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = pc.performPrediction;");
 		}
 		catch (MatlabInvocationException e)
 		{
 			JOptionPane.showMessageDialog(null, this.getLastError(), "Error",
 					JOptionPane.ERROR_MESSAGE);
+			return false;
 		}
+		return true;
 	}
 
 	public boolean initialize()
@@ -81,13 +99,21 @@ public class PredictionCenter
 			proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
 			proxy.eval("pc = PredictionCenter;");
-			trainConfig.initialize();
+			if (!trainConfig.initialize())
+			{
+				return false;
+			}
 			proxy.eval("pc.trainConfig = " + trainConfig.getUniqueVariableName() + ";");
 
 			if (testMode == DBSeerConstants.TEST_MODE_DATASET)
 			{
+				String mappedTransactionType = trainConfig.mapTransactionTypes(testDataset);
+				if (mappedTransactionType == null)
+				{
+					return false;
+				}
 				proxy.eval("pc.testConfig = PredictionConfig;");
-				proxy.eval("pc.testConfig.transactionType = pc.trainConfig.transactionType;");
+				proxy.eval("pc.testConfig.transactionType = " + mappedTransactionType + ";");
 				testDataset.loadDataset();
 				proxy.eval("pc.testConfig.addDataset(" + testDataset.getUniqueVariableName() + ");");
 
@@ -168,10 +194,18 @@ public class PredictionCenter
 			proxy.eval("pc.testMode = " + testMode + ";" );
 			proxy.eval("pc.taskName = '" + prediction + "';");
 		}
-		catch (MatlabInvocationException e)
+		catch (Exception e)
 		{
-			JOptionPane.showMessageDialog(null, this.getLastError(), "Error",
-					JOptionPane.ERROR_MESSAGE);
+			if (e instanceof MatlabInvocationException)
+			{
+				JOptionPane.showMessageDialog(null, this.getLastError(), "Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, e.getMessage(), "Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
 
 			return false;
 		}
@@ -199,6 +233,11 @@ public class PredictionCenter
 	public String getPrediction()
 	{
 		return prediction;
+	}
+
+	public String getPredictionDescription()
+	{
+		return predictionDescription;
 	}
 
 	public String getTestDatasetName()
@@ -351,5 +390,10 @@ public class PredictionCenter
 	public void setLockType(int lockType)
 	{
 		this.lockType = lockType;
+	}
+
+	public DBSeerConfiguration getTrainConfig()
+	{
+		return trainConfig;
 	}
 }

@@ -1,5 +1,6 @@
 package dbseer.gui.frame;
 
+import dbseer.gui.panel.DBSeerDatasetListPanel;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.actions.AddDataSetAction;
 import dbseer.gui.actions.OpenDirectoryAction;
@@ -17,12 +18,15 @@ public class DBSeerDataSetFrame extends JFrame implements ActionListener
 {
 	boolean isEditMode;
 	private DBSeerDataSet profile;
+	private DBSeerDataSet profileBackup;
 	private JScrollPane scrollPane;
 	private JButton openDirectoryButton;
 	private JButton addProfileButton;
 	private JButton editProfileButton;
 	private JButton cancelButton;
 	private JList list;
+
+	private DBSeerDatasetListPanel panel;
 
 	public DBSeerDataSetFrame(String title, DBSeerDataSet profile, JList list)
 	{
@@ -33,17 +37,20 @@ public class DBSeerDataSetFrame extends JFrame implements ActionListener
 		initializeGUI();
 	}
 
-	public DBSeerDataSetFrame(String title, DBSeerDataSet profile, JList list, boolean isEditMode)
+	public DBSeerDataSetFrame(String title, DBSeerDataSet profile, JList list, boolean isEditMode, DBSeerDatasetListPanel panel)
 	{
 		this.setTitle(title);
 		this.profile = profile;
 		this.list = list;
 		this.isEditMode = isEditMode;
+		this.panel = panel;
 		initializeGUI();
 	}
 
 	private void initializeGUI()
 	{
+		this.profile.backup();
+		this.profile.updateTable();
 		this.setLayout(new MigLayout("fill", "[fill,grow]"));
 		scrollPane = new JScrollPane(profile.getTable());
 		profile.getTable().setFillsViewportHeight(true);
@@ -51,8 +58,8 @@ public class DBSeerDataSetFrame extends JFrame implements ActionListener
 		scrollPane.setPreferredSize(new Dimension(1000,400));
 
 		openDirectoryButton = new JButton(new OpenDirectoryAction(profile));
-		addProfileButton = new JButton(new AddDataSetAction(profile, this, list));
-		editProfileButton = new JButton("Edit Dataset");
+		addProfileButton = new JButton(new AddDataSetAction(profile, this, list, panel));
+		editProfileButton = new JButton("Save");
 		editProfileButton.addActionListener(this);
 		cancelButton = new JButton("Cancel");
 		cancelButton.addActionListener(this);
@@ -69,6 +76,8 @@ public class DBSeerDataSetFrame extends JFrame implements ActionListener
 	{
 		if (actionEvent.getSource() == cancelButton)
 		{
+			this.profile.restore();
+			this.profile.updateTable();
 			this.dispose();
 		}
 		else if (actionEvent.getSource() == editProfileButton)
@@ -79,8 +88,11 @@ public class DBSeerDataSetFrame extends JFrame implements ActionListener
 				@Override
 				public void run()
 				{
-					profile.setFromTable();
-					frame.dispose();
+					if (profile.validateTable())
+					{
+						profile.setFromTable();
+						frame.dispose();
+					}
 				}
 			});
 

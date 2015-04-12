@@ -17,6 +17,6 @@ public class BlownTransactionCountsToCpuPanel extends JPanel
 	private void initializeGUI()
 	{
 		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: BlownTransactionCountsToCpu"));
+//		this.add(new JLabel("Prediction: BlownTransactionCountsToCpu"));
 	}
 }

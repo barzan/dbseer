@@ -56,7 +56,7 @@ public class ProcessDatasetDirectoryAction extends AbstractAction
 				protected void done()
 				{
 					DBSeerGUI.status.setText("");
-					JOptionPane.showMessageDialog(null, "Dataset processed.");
+					JOptionPane.showMessageDialog(null, "Dataset has been processed.");
 				}
 			};
 

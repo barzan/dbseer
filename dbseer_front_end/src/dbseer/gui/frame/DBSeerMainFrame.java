@@ -36,7 +36,7 @@ public class DBSeerMainFrame extends JFrame
 
 	private void initializeGUI()
 	{
-		this.setTitle("DBSeer GUI Frontend");
+		this.setTitle("DBSeer Console");
 		System.setProperty("apple.laf.useScreenMenuBar", "true"); // for mac os
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "DBSeer"); // for mac os
 		layout = new MigLayout("ins 5 5 5 5", "[grow,fill]", "[][grow,fill]push[fill]");
@@ -116,6 +116,11 @@ public class DBSeerMainFrame extends JFrame
 		DBSeerGUI.status.setHorizontalTextPosition(JLabel.LEFT);
 		DBSeerGUI.status.setBorder(BorderFactory.createLoweredBevelBorder());
 		DBSeerGUI.status.setPreferredSize(new Dimension(500, 20));
+
+		DBSeerGUI.explainStatus.setHorizontalAlignment(JLabel.LEFT);
+		DBSeerGUI.explainStatus.setHorizontalTextPosition(JLabel.LEFT);
+		DBSeerGUI.explainStatus.setBorder(BorderFactory.createLoweredBevelBorder());
+		DBSeerGUI.explainStatus.setPreferredSize(new Dimension(500, 20));
 
 		DBSeerGUI.middlewareStatus.setHorizontalAlignment(JLabel.LEFT);
 		DBSeerGUI.middlewareStatus.setHorizontalTextPosition(JLabel.LEFT);

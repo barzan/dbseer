@@ -29,10 +29,10 @@ public class DBSeerPredictionFrame extends JFrame
 		this.setPreferredSize(new Dimension(1024, 768));
 
 		JFreeChart chart = DBSeerChartFactory.createXYLinePredictionChart(center);
-		JTable errorTable = DBSeerChartFactory.createErrorTable();
+		JTable errorTable = DBSeerChartFactory.createErrorTable(center);
 		ChartPanel chartPanel = new ChartPanel(chart);
 		chartPanel.setPreferredSize(new Dimension(1024, 768));
-		String title = center.getPrediction();
+		String title = center.getPredictionDescription();
 		if (center.getTestMode() == DBSeerConstants.TEST_MODE_DATASET)
 		{
 			title += ", Test with Dataset (" + center.getTestDatasetName() + ") ";
@@ -58,16 +58,19 @@ public class DBSeerPredictionFrame extends JFrame
 			default:
 				break;
 		}
-		switch (center.getGroupingTarget())
+		if (center.getGroupingType() != DBSeerConstants.GROUP_NONE)
 		{
-			case DBSeerConstants.GROUP_TARGET_INDIVIDUAL_TRANS_COUNT:
-				title += "[Target: Individual transactions]";
-				break;
-			case DBSeerConstants.GROUP_TARGET_TPS:
-				title += "[Target: TPS]";
-				break;
-			default:
-				break;
+			switch (center.getGroupingTarget())
+			{
+				case DBSeerConstants.GROUP_TARGET_INDIVIDUAL_TRANS_COUNT:
+					title += "[Target: Individual transactions]";
+					break;
+				case DBSeerConstants.GROUP_TARGET_TPS:
+					title += "[Target: TPS]";
+					break;
+				default:
+					break;
+			}
 		}
 		this.setTitle(title);
 		if (errorTable != null)

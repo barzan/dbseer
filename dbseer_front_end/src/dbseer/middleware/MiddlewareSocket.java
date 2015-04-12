@@ -15,7 +15,7 @@ import java.util.Arrays;
 public class MiddlewareSocket
 {
 	private static final int MIDDLEWARE_CONNECT_TIMEOUT = 5000; // 5sec
-	private static final int MIDDLEWARE_SOCKET_TIMEOUT = 60000; // 1 MIN.
+	private static final int MIDDLEWARE_SOCKET_TIMEOUT = 0; // No timeout.
 	private static final int PACKET_LOGIN_REQUEST = 100;
 	private static final int PACKET_LOGIN_SUCCESS = 101;
 	private static final int PACKET_LOGIN_FAILURE = 102;
@@ -60,7 +60,7 @@ public class MiddlewareSocket
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 		input = new DataInputStream(socket.getInputStream());
 		output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));

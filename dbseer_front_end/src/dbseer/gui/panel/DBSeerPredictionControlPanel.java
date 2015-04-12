@@ -53,8 +53,10 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 	private JLabel numClusterLabel;
 	private JLabel transactionTypesToGroupLabel;
 	private JLabel groupingRangeLabel;
+	private JLabel elapsedTimeLabel;
 
 	private JButton predictionButton;
+	private JButton showButton;
 
 	private JPanel controlPanel;
 	private JPanel testPanel;
@@ -74,7 +76,11 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 	private TransactionCountsToCpuByCountsPanel transactionCountsToCpuByCountsPanel;
 	private TransactionCountsToIOPanel transactionCountsToIOPanel;
 	private TransactionCountsToLatencyPanel transactionCountsToLatencyPanel;
+	private TransactionCountsToLatencyPanel transactionCountsToLatencyPanel99;
+	private TransactionCountsToLatencyPanel transactionCountsToLatencyPanelMedian;
 	private TransactionCountsWaitTimeToLatencyPanel transactionCountsWaitTimeToLatencyPanel;
+	private TransactionCountsWaitTimeToLatencyPanel transactionCountsWaitTimeToLatencyPanel99;
+	private TransactionCountsWaitTimeToLatencyPanel transactionCountsWaitTimeToLatencyPanelMedian;
 	private BlownTransactionCountsToCpuPanel blownTransactionCountsToCpuPanel;
 	private BlownTransactionCountsToIOPanel blownTransactionCountsToIOPanel;
 	private LinearPredictionPanel linearPredictionPanel;
@@ -87,7 +93,7 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 
 	private void initializeGUI()
 	{
-	 	this.setLayout(new MigLayout("", "[][]"));
+	 	this.setLayout(new MigLayout("fill", "[][]"));
 
 		predictionComboBox = new JComboBox(new DefaultComboBoxModel(DBSeerGUI.availablePredictions));
 		trainConfigComboBox = new JComboBox(new SharedComboBoxModel(DBSeerGUI.configs));
@@ -104,6 +110,10 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 
 		predictionButton = new JButton("Predict");
 		predictionButton.addActionListener(this);
+		showButton = new JButton("Show Result");
+		showButton.setEnabled(false);
+		showButton.addActionListener(this);
+		elapsedTimeLabel = new JLabel("");
 
 		controlPanel = new JPanel();
 		controlPanel.setLayout(new MigLayout("fill, ins 5 5 5 5"));
@@ -133,7 +143,7 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		testDatasetComboBox.setBorder(BorderFactory.createTitledBorder("Test Dataset"));
 
 		testMixtureTextField = new JTextField();
-		testMixtureLabel = new JLabel("Test Mixture:");
+		testMixtureLabel = new JLabel("Test Mixture (e.g. [0.4 0.4 0.1 0.05 0.05]):");
 		testMinTPSTextField = new JTextField();
 		testMinTPSLabel = new JLabel("Test Minimum TPS:");
 		testMaxTPSTextField = new JTextField();
@@ -147,7 +157,7 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		allowedRelativeDiffLabel = new JLabel("Allowed relative diff:");
 		numClusterLabel = new JLabel("Number of clusters:");
 		transactionTypesToGroupLabel = new JLabel("Transactions to group:");
-		groupingRangeLabel = new JLabel("Group ranges");
+		groupingRangeLabel = new JLabel("Group ranges (e.g. [100 200; 300 400; 500 600 ... ]):");
 
 		minFrequencyTextField = new JTextField();
 		minTPSTextField = new JTextField();
@@ -180,14 +190,14 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		datasetSetupPanel.add(groupingSetupPanel, "cell 0 1, growx");
 
 		mixtureTPSSetupPanel.add(testMixtureLabel, "split 2");
-		mixtureTPSSetupPanel.add(testMixtureTextField, "grow, wrap");
+		mixtureTPSSetupPanel.add(testMixtureTextField, "growx, wrap");
 		mixtureTPSSetupPanel.add(testMinTPSLabel, "split 2");
-		mixtureTPSSetupPanel.add(testMinTPSTextField, "grow, wrap");
+		mixtureTPSSetupPanel.add(testMinTPSTextField, "growx, wrap");
 		mixtureTPSSetupPanel.add(testMaxTPSLabel, "split 2");
-		mixtureTPSSetupPanel.add(testMaxTPSTextField, "grow, wrap");
+		mixtureTPSSetupPanel.add(testMaxTPSTextField, "growx, wrap");
 
 		predictionSetupPanel = new JPanel(new CardLayout());
-		predictionSetupPanel.setBorder(BorderFactory.createTitledBorder("Prediction Setup"));
+		predictionSetupPanel.setBorder(BorderFactory.createTitledBorder("Additional Configuration"));
 		predictionSetupPanel.setPreferredSize(new Dimension(400, 200));
 		predictionSetupPanel.add(new EmptyPredictionPanel(), "No Prediction");
 
@@ -197,10 +207,12 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 				(String) predictionComboBox.getSelectedItem());
 
 		controlPanel.add(predictionSetupPanel, "spanx 2, grow, wrap");
-		controlPanel.add(predictionButton, "");
+		controlPanel.add(predictionButton, "split 2, growx");
+		controlPanel.add(showButton, "growx");
+		controlPanel.add(elapsedTimeLabel);
 
 //		this.add(testPanel, "cell 0 1, aligny top, grow");
-		this.add(controlPanel, "cell 0 0 1 2, aligny top");
+		this.add(controlPanel, "cell 0 0 1 2, grow, aligny top");
 		this.add(datasetSetupPanel, "cell 1 0, grow");
 		this.add(mixtureTPSSetupPanel, "cell 1 1, grow");
 
@@ -217,61 +229,164 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		transactionCountsToCpuByCountsPanel = new TransactionCountsToCpuByCountsPanel();
 		transactionCountsToIOPanel = new TransactionCountsToIOPanel();
 		transactionCountsToLatencyPanel = new TransactionCountsToLatencyPanel();
+		transactionCountsToLatencyPanel99 = new TransactionCountsToLatencyPanel();
+		transactionCountsToLatencyPanelMedian = new TransactionCountsToLatencyPanel();
 		transactionCountsWaitTimeToLatencyPanel = new TransactionCountsWaitTimeToLatencyPanel();
+		transactionCountsWaitTimeToLatencyPanel99 = new TransactionCountsWaitTimeToLatencyPanel();
+		transactionCountsWaitTimeToLatencyPanelMedian = new TransactionCountsWaitTimeToLatencyPanel();
 		blownTransactionCountsToCpuPanel = new BlownTransactionCountsToCpuPanel();
 		blownTransactionCountsToIOPanel = new BlownTransactionCountsToIOPanel();
 		linearPredictionPanel = new LinearPredictionPanel();
 		physicalReadPredictionPanel = new PhysicalReadPredictionPanel();
 
-		predictionSetupPanel.add(flushRatePredictionByTPSPanel, "FlushRatePredictionByTPS");
-		predictionSetupPanel.add(flushRatePredictionByCountsPanel, "FlushRatePredictionByCounts");
-		predictionSetupPanel.add(maxThroughputPredictionPanel, "MaxThroughputPrediction");
-		predictionSetupPanel.add(lockPredictionPanel, "LockPrediction");
-		predictionSetupPanel.add(transactionCountsToCpuByTPSPanel, "TransactionCountsToCpuByTPS");
-		predictionSetupPanel.add(transactionCountsToCpuByCountsPanel, "TransactionCountsToCpuByCounts");
-		predictionSetupPanel.add(transactionCountsToIOPanel, "TransactionCountsToIO");
-		predictionSetupPanel.add(transactionCountsToLatencyPanel, "TransactionCountsToLatency");
-		predictionSetupPanel.add(transactionCountsWaitTimeToLatencyPanel, "TransactionCountsWaitTimeToLatency");
-		predictionSetupPanel.add(blownTransactionCountsToCpuPanel, "BlownTransactionCountsToCpu");
-		predictionSetupPanel.add(blownTransactionCountsToIOPanel, "BlownTransactionCountsToIO");
-		predictionSetupPanel.add(linearPredictionPanel, "LinearPrediction");
-		predictionSetupPanel.add(physicalReadPredictionPanel, "PhysicalReadPrediction");
+		predictionSetupPanel.add(flushRatePredictionByTPSPanel, "Disk Flush Rate by TPS");
+		predictionSetupPanel.add(flushRatePredictionByCountsPanel, "Disk Flush Rate by Individual Transactions");
+		predictionSetupPanel.add(maxThroughputPredictionPanel, "Max Throughput");
+		predictionSetupPanel.add(lockPredictionPanel, "Lock");
+		predictionSetupPanel.add(transactionCountsToCpuByTPSPanel, "CPU by TPS");
+		predictionSetupPanel.add(transactionCountsToCpuByCountsPanel, "CPU by Individual Transactions");
+		predictionSetupPanel.add(transactionCountsToIOPanel, "IO by TPS");
+		predictionSetupPanel.add(transactionCountsToLatencyPanel, "Latency");
+		predictionSetupPanel.add(transactionCountsToLatencyPanel99, "Latency (99% Quantile)");
+		predictionSetupPanel.add(transactionCountsToLatencyPanelMedian, "Latency (Median)");
+		predictionSetupPanel.add(transactionCountsWaitTimeToLatencyPanel, "Latency (With Lock Waits)");
+		predictionSetupPanel.add(transactionCountsWaitTimeToLatencyPanel99, "Latency (With Lock Waits, 99% Quantile)");
+		predictionSetupPanel.add(transactionCountsWaitTimeToLatencyPanelMedian, "Latency (With Lock Waits, Median)");
+		predictionSetupPanel.add(blownTransactionCountsToCpuPanel, "CPU by Blown Transaction Counts");
+		predictionSetupPanel.add(blownTransactionCountsToIOPanel, "IO by Blown Transaction Counts");
+		predictionSetupPanel.add(linearPredictionPanel, "Log Writes");
+		predictionSetupPanel.add(physicalReadPredictionPanel, "Physical Disk Read");
+
+//		predictionSetupPanel.add(flushRatePredictionByTPSPanel, "FlushRatePredictionByTPS");
+//		predictionSetupPanel.add(flushRatePredictionByCountsPanel, "FlushRatePredictionByCounts");
+//		predictionSetupPanel.add(maxThroughputPredictionPanel, "MaxThroughputPrediction");
+//		predictionSetupPanel.add(lockPredictionPanel, "LockPrediction");
+//		predictionSetupPanel.add(transactionCountsToCpuByTPSPanel, "TransactionCountsToCpuByTPS");
+//		predictionSetupPanel.add(transactionCountsToCpuByCountsPanel, "TransactionCountsToCpuByCounts");
+//		predictionSetupPanel.add(transactionCountsToIOPanel, "TransactionCountsToIO");
+//		predictionSetupPanel.add(transactionCountsToLatencyPanel, "TransactionCountsToLatency");
+//		predictionSetupPanel.add(transactionCountsWaitTimeToLatencyPanel, "TransactionCountsWaitTimeToLatency");
+//		predictionSetupPanel.add(blownTransactionCountsToCpuPanel, "BlownTransactionCountsToCpu");
+//		predictionSetupPanel.add(blownTransactionCountsToIOPanel, "BlownTransactionCountsToIO");
+//		predictionSetupPanel.add(linearPredictionPanel, "LinearPrediction");
+//		predictionSetupPanel.add(physicalReadPredictionPanel, "PhysicalReadPrediction");
 	}
 
-	private void setPredictionSpecificValues(PredictionCenter center)
+	private boolean setPredictionSpecificValues(PredictionCenter center)
 	{
-		if (((String)predictionComboBox.getSelectedItem()).compareTo("FlushRatePredictionByTPS") == 0)
+		if (((String)predictionComboBox.getSelectedItem()).compareTo("Disk Flush Rate by TPS") == 0)
 		{
+			if (!UserInputValidator.validateSingleRowMatrix(flushRatePredictionByTPSPanel.getIOConf()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter IO configuration correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setIoConfiguration(flushRatePredictionByTPSPanel.getIOConf());
 		}
-		else if (((String)predictionComboBox.getSelectedItem()).compareTo("FlushRatePredictionByCounts") == 0)
+		else if (((String)predictionComboBox.getSelectedItem()).compareTo("Disk Flush Rate by Individual Transactions") == 0)
 		{
+			if (!UserInputValidator.validateSingleRowMatrix(flushRatePredictionByCountsPanel.getIOConf()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter IO configuration correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setIoConfiguration(flushRatePredictionByCountsPanel.getIOConf());
+			if (!UserInputValidator.validateSingleRowMatrix(flushRatePredictionByCountsPanel.getWhichTransactiontoPlot()) &&
+					!UserInputValidator.validateNumber(flushRatePredictionByCountsPanel.getWhichTransactiontoPlot()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter transaction type to plot correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setTransactionTypeToPlot(flushRatePredictionByCountsPanel.getWhichTransactiontoPlot());
 		}
-		else if (((String)predictionComboBox.getSelectedItem()).compareTo("MaxThroughputPrediction") == 0)
+		else if (((String)predictionComboBox.getSelectedItem()).compareTo("Max Throughput") == 0)
 		{
+			if (!UserInputValidator.validateSingleRowMatrix(maxThroughputPredictionPanel.getIOConf()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter IO configuration correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setIoConfiguration(maxThroughputPredictionPanel.getIOConf());
+			if (!UserInputValidator.validateSingleRowMatrix(maxThroughputPredictionPanel.getLockConf()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter lock configuration correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setLockConfiguration(maxThroughputPredictionPanel.getLockConf());
 		}
-		else if (((String)predictionComboBox.getSelectedItem()).compareTo("LockPrediction") == 0)
+		else if (((String)predictionComboBox.getSelectedItem()).compareTo("Lock") == 0)
 		{
+			if (!UserInputValidator.validateSingleRowMatrix(lockPredictionPanel.getLockConf()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter lock configuration correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setLockConfiguration(lockPredictionPanel.getLockConf());
-			center.setLearnLock(lockPredictionPanel.getLearnLock());
 			center.setLockType(lockPredictionPanel.getLockType());
+			center.setLearnLock(lockPredictionPanel.getLearnLock());
 		}
-		else if (((String)predictionComboBox.getSelectedItem()).compareTo("TransactionCountsToCpuByCounts") == 0)
+		else if (((String)predictionComboBox.getSelectedItem()).compareTo("CPU by Individual Transactions") == 0)
 		{
+			if (!UserInputValidator.validateSingleRowMatrix(transactionCountsToCpuByCountsPanel.getWhichTransactiontoPlot()) &&
+					!UserInputValidator.validateNumber(transactionCountsToCpuByCountsPanel.getWhichTransactiontoPlot()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter transaction type to plot correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setTransactionTypeToPlot(transactionCountsToCpuByCountsPanel.getWhichTransactiontoPlot());
 		}
-		else if (((String)predictionComboBox.getSelectedItem()).compareTo("TransactionCountsWaitTimeToLatency") == 0)
+		else if (((String)predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits)") == 0)
 		{
+			if (!UserInputValidator.validateSingleRowMatrix(transactionCountsWaitTimeToLatencyPanel.getWhichTransactiontoPlot()) &&
+					!UserInputValidator.validateNumber(transactionCountsWaitTimeToLatencyPanel.getWhichTransactiontoPlot()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter transaction type to plot correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setTransactionTypeToPlot(transactionCountsWaitTimeToLatencyPanel.getWhichTransactiontoPlot());
 		}
-		else if (((String)predictionComboBox.getSelectedItem()).compareTo("LinearPrediction") == 0)
+		else if (((String)predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, 99% Quantile)") == 0)
 		{
+			if (!UserInputValidator.validateSingleRowMatrix(transactionCountsWaitTimeToLatencyPanel99.getWhichTransactiontoPlot()) &&
+					!UserInputValidator.validateNumber(transactionCountsWaitTimeToLatencyPanel99.getWhichTransactiontoPlot()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter transaction type to plot correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
+			center.setTransactionTypeToPlot(transactionCountsWaitTimeToLatencyPanel99.getWhichTransactiontoPlot());
+		}
+		else if (((String)predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, Median)") == 0)
+		{
+			if (!UserInputValidator.validateSingleRowMatrix(transactionCountsWaitTimeToLatencyPanelMedian.getWhichTransactiontoPlot()) &&
+					!UserInputValidator.validateNumber(transactionCountsWaitTimeToLatencyPanelMedian.getWhichTransactiontoPlot()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter transaction type to plot correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
+			center.setTransactionTypeToPlot(transactionCountsWaitTimeToLatencyPanelMedian.getWhichTransactiontoPlot());
+		}
+		else if (((String)predictionComboBox.getSelectedItem()).compareTo("Log Writes") == 0)
+		{
+			if (!UserInputValidator.validateSingleRowMatrix(linearPredictionPanel.getWhichTransactiontoPlot()) &&
+					!UserInputValidator.validateNumber(linearPredictionPanel.getWhichTransactiontoPlot()))
+			{
+				JOptionPane.showMessageDialog(null, "Please enter transaction type to plot correctly.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 			center.setTransactionTypeToPlot(linearPredictionPanel.getWhichTransactiontoPlot());
 		}
+		return true;
 	}
 
 	private boolean validateUserInput()
@@ -281,11 +396,60 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 				!UserInputValidator.validateNumber(minFrequencyTextField.getText().trim(), "Min Freq", minFrequencyTextField.isEnabled()) ||
 				!UserInputValidator.validateNumber(minTPSTextField.getText().trim(), "Min TPS", minTPSTextField.isEnabled()) ||
 				!UserInputValidator.validateNumber(maxTPSTextField.getText().trim(), "Max TPS", maxTPSTextField.isEnabled()) ||
+				!UserInputValidator.validateNumber(testMinTPSTextField.getText().trim(), "Test Minimum TPS", testMinTPSTextField.isEnabled()) ||
+				!UserInputValidator.validateNumber(testMaxTPSTextField.getText().trim(), "Test Maximum TPS", testMaxTPSTextField.isEnabled()) ||
 				!UserInputValidator.validateNumber(allowedRelativeDiffTextField.getText().trim(), "Allowed Relative diff", allowedRelativeDiffTextField.isEnabled()) ||
-				!UserInputValidator.validateNumber(numClusterTextField.getText().trim(), "Number of clusters", numClusterTextField.isEnabled())
+				!UserInputValidator.validateNumber(numClusterTextField.getText().trim(), "Number of clusters", numClusterTextField.isEnabled()) ||
+				!UserInputValidator.validateMatlabMatrix(groupingRangeTextArea.getText().trim(), "Grouping Range", groupingRangeTextArea.isEnabled())
 				)
 		{
 			return false;
+		}
+		if (testMixtureTextField.isEnabled())
+		{
+			if (!UserInputValidator.matchMatrixDimension(((DBSeerConfiguration) trainConfigComboBox.getSelectedItem()).getTransactionTypes(),
+					testMixtureTextField.getText().trim()))
+			{
+				JOptionPane.showMessageDialog(null, "Test Mixture must have same dimension as the transaction type of the train config.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
+		}
+		if (minTPSTextField.isEnabled() || maxTPSTextField.isEnabled())
+		{
+			int minTPS = Integer.parseInt(minTPSTextField.getText().trim());
+			int maxTPS = Integer.parseInt(maxTPSTextField.getText().trim());
+
+			if (minTPS < 0 || maxTPS < 0)
+			{
+				JOptionPane.showMessageDialog(null, "Min/Max TPS must be greater than zero.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
+			if (minTPS >= maxTPS)
+			{
+				JOptionPane.showMessageDialog(null, "Max TPS must be greater than Min TPS.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
+		}
+		if (testMinTPSTextField.isEnabled() || testMaxTPSTextField.isEnabled())
+		{
+			int minTPS = Integer.parseInt(testMinTPSTextField.getText().trim());
+			int maxTPS = Integer.parseInt(testMaxTPSTextField.getText().trim());
+
+			if (minTPS < 0 || maxTPS < 0)
+			{
+				JOptionPane.showMessageDialog(null, "Test Minimum/Maximum TPS must be greater than zero.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
+			if (minTPS >= maxTPS)
+			{
+				JOptionPane.showMessageDialog(null, "Test Maximum TPS must be greater than Test Minimum TPS.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
+			}
 		}
 		return true;
 	}
@@ -293,28 +457,22 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
-		if (actionEvent.getSource() == predictionButton)
+		final PredictionCenter center = new PredictionCenter(DBSeerGUI.proxy,
+				(String)predictionComboBox.getSelectedItem(),
+				DBSeerGUI.userSettings.getDBSeerRootPath());
+
+		// setup configuration variables for prediction center
+		if (actionEvent.getSource() == predictionButton ||
+				actionEvent.getSource() == showButton)
 		{
-			final DBSeerConfiguration trainConfig = (DBSeerConfiguration)trainConfigComboBox.getSelectedItem();
-
-			if (trainConfig == null)
+			if (actionEvent.getSource() == predictionButton)
 			{
-				return;
+				if (!validateUserInput())
+				{
+					return;
+				}
 			}
 
-			if (!validateUserInput())
-			{
-				return;
-			}
-
-			predictionButton.setEnabled(false);
-			DBSeerGUI.status.setText("Performing prediction...");
-
-			final PredictionCenter center = new PredictionCenter(DBSeerGUI.proxy,
-					(String)predictionComboBox.getSelectedItem(),
-					DBSeerGUI.userSettings.getDBSeerRootPath());
-
-			// setup configuration variables for prediction center
 			center.setTestMode(predictionTestModeComboBox.getSelectedIndex());
 			if (testDatasetComboBox.getSelectedItem() != null)
 			{
@@ -344,48 +502,109 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 			center.setTestMixture(testMixture);
 
 			// Prediction-specific options
-			setPredictionSpecificValues(center);
+			if (!setPredictionSpecificValues(center))
+			{
+				return;
+			}
+		}
+
+		if (actionEvent.getSource() == predictionButton)
+		{
+			elapsedTimeLabel.setText("");
+			final DBSeerConfiguration trainConfig = (DBSeerConfiguration)trainConfigComboBox.getSelectedItem();
+
+			if (trainConfig == null)
+			{
+				JOptionPane.showMessageDialog(null, "Please select a train config.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
+			if (((String)predictionTestModeComboBox.getSelectedItem()).equalsIgnoreCase("Dataset") &&
+					testDatasetComboBox.getSelectedItem() == null)
+			{
+				JOptionPane.showMessageDialog(null, "Please select a test dataset.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
+			predictionButton.setEnabled(false);
+			showButton.setEnabled(false);
+			DBSeerGUI.status.setText("Performing Prediction...");
 
 			SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
 			{
 				boolean isInitialized = false;
+				boolean isRun = false;
+				long startTime, endTime;
+				double timeElapsed = 0;
+
 				@Override
 				protected Void doInBackground() throws Exception
 				{
 					isInitialized = center.initialize();
 
+					if (isInitialized)
+					{
+						startTime = System.nanoTime();
+						isRun = center.run();
+						endTime = System.nanoTime();
+						timeElapsed = (double)(endTime - startTime) / (1000 * 1000 * 1000);
+					}
 					return null;
 				}
 
 				@Override
 				protected void done()
 				{
-					if (isInitialized)
+					if (isRun)
 					{
-						SwingUtilities.invokeLater(new Runnable()
-						{
-							@Override
-							public void run()
-							{
-								DBSeerPredictionFrame predictionFrame = new DBSeerPredictionFrame(center);
-								predictionFrame.pack();
-								predictionFrame.setVisible(true);
-								predictionButton.setEnabled(true);
-								predictionButton.requestFocus();
-								DBSeerGUI.status.setText("");
-								}
-						});
+						DBSeerGUI.status.setText("Prediction Complete.");
+						elapsedTimeLabel.setText(String.format("Elapsed Time: %.2fs", timeElapsed));
+						predictionButton.setEnabled(true);
+						showButton.setEnabled(true);
+//						SwingUtilities.invokeLater(new Runnable()
+//						{
+//							@Override
+//							public void run()
+//							{
+//								DBSeerPredictionFrame predictionFrame = new DBSeerPredictionFrame(center);
+//								predictionFrame.pack();
+//								predictionFrame.setVisible(true);
+//								predictionButton.setEnabled(true);
+//								predictionButton.requestFocus();
+//								DBSeerGUI.status.setText("");
+//							}
+//						});
 					}
 					else
 					{
+						elapsedTimeLabel.setText("");
 						predictionButton.setEnabled(true);
 						predictionButton.requestFocus();
+						showButton.setEnabled(false);
 						DBSeerGUI.status.setText("");
 					}
 				}
 			};
 
 			worker.execute();
+		}
+		else if (actionEvent.getSource() == showButton)
+		{
+			SwingUtilities.invokeLater(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					DBSeerPredictionFrame predictionFrame = new DBSeerPredictionFrame(center);
+					predictionFrame.pack();
+					predictionFrame.setVisible(true);
+					predictionButton.setEnabled(true);
+					predictionButton.requestFocus();
+					DBSeerGUI.status.setText("");
+				}
+			});
 		}
 		else if (actionEvent.getSource() == predictionTestModeComboBox ||
 				actionEvent.getSource() == groupingTargetBox ||
@@ -398,7 +617,7 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 			CardLayout layout = (CardLayout)predictionSetupPanel.getLayout();
 			layout.show(predictionSetupPanel, (String)predictionComboBox.getSelectedItem());
 
-			if (((String) predictionComboBox.getSelectedItem()).compareTo("PhysicalReadPrediction") == 0)
+			if (((String) predictionComboBox.getSelectedItem()).compareTo("Physical Disk Read") == 0)
 			{
 				predictionTestModeComboBox.setSelectedIndex(DBSeerConstants.TEST_MODE_DATASET);
 				predictionTestModeComboBox.setEnabled(false);
@@ -407,17 +626,34 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 			{
 				predictionTestModeComboBox.setEnabled(true);
 			}
+
+			if (((String) predictionComboBox.getSelectedItem()).compareTo("Latency (99% Quantile)") == 0 ||
+					((String) predictionComboBox.getSelectedItem()).compareTo("Latency (Median)") == 0 ||
+					((String) predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, 99% Quantile)") == 0 ||
+					((String) predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, Median)") == 0)
+			{
+				groupingTypeBox.setSelectedIndex(DBSeerConstants.GROUP_NONE);
+				groupingTypeBox.setEnabled(false);
+			}
+			else
+			{
+				groupingTypeBox.setEnabled(true);
+			}
 		}
 		else if (actionEvent.getSource() == trainConfigComboBox)
 		{
-			String ioConf = ((DBSeerConfiguration)trainConfigComboBox.getSelectedItem()).getIoConfiguration();
-			String lockConf = ((DBSeerConfiguration)trainConfigComboBox.getSelectedItem()).getLockConfiguration();
+			DBSeerConfiguration config = (DBSeerConfiguration)trainConfigComboBox.getSelectedItem();
+			if (config != null)
+			{
+				String ioConf = ((DBSeerConfiguration) trainConfigComboBox.getSelectedItem()).getIoConfiguration();
+				String lockConf = ((DBSeerConfiguration) trainConfigComboBox.getSelectedItem()).getLockConfiguration();
 
-			flushRatePredictionByTPSPanel.setIOConf(ioConf);
-			flushRatePredictionByCountsPanel.setIOConf(ioConf);
-			maxThroughputPredictionPanel.setIOConf(ioConf);
-			maxThroughputPredictionPanel.setLockConf(lockConf);
-			lockPredictionPanel.setLockConf(lockConf);
+				flushRatePredictionByTPSPanel.setIOConf(ioConf);
+				flushRatePredictionByCountsPanel.setIOConf(ioConf);
+				maxThroughputPredictionPanel.setIOConf(ioConf);
+				maxThroughputPredictionPanel.setLockConf(lockConf);
+				lockPredictionPanel.setLockConf(lockConf);
+			}
 		}
 	}
 
@@ -446,7 +682,19 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 						comp.setEnabled(false);
 					}
 					groupingRangeTextArea.setEditable(false);
-					groupingTypeBox.setEnabled(true);
+					groupingRangeTextArea.setEnabled(false);
+//					groupingTypeBox.setEnabled(true);
+					if (((String) predictionComboBox.getSelectedItem()).compareTo("Latency (99% Quantile)") == 0 ||
+							((String) predictionComboBox.getSelectedItem()).compareTo("Latency (Median)") == 0 ||
+							((String) predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, 99% Quantile)") == 0 ||
+							((String) predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, Median)") == 0)
+					{
+						groupingTypeBox.setEnabled(false);
+					}
+					else
+					{
+						groupingTypeBox.setEnabled(true);
+					}
 
 					if (groupingTypeBox.getSelectedIndex() == DBSeerConstants.GROUP_NONE)
 					{

@@ -1,6 +1,6 @@
 package dbseer.gui.actions;
 
-import dbseer.gui.frame.DBSeerPlotFrame;
+import dbseer.gui.frame.DBSeerPlotPresetFrame;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -10,7 +10,7 @@ import java.awt.event.ActionEvent;
  */
 public class OpenPlotFrameAction extends AbstractAction
 {
-	private DBSeerPlotFrame plotFrame;
+	private DBSeerPlotPresetFrame plotFrame;
 
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)

@@ -1,314 +1,607 @@
 package dbseer.gui.actions;
 
+import dbseer.comp.UserInputValidator;
+import dbseer.gui.DBSeerConstants;
 import dbseer.gui.DBSeerGUI;
+import dbseer.gui.chart.DBSeerXYLineAndShapeRenderer;
+import dbseer.gui.panel.DBSeerExplainChartPanel;
+import dbseer.gui.user.DBSeerCausalModel;
+import dbseer.gui.user.DBSeerPredicate;
 import matlabcontrol.MatlabProxy;
+import org.jfree.chart.entity.XYItemEntity;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.awt.font.GraphicAttribute;
+import java.io.File;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by dyoon on 2014. 8. 18..
  */
 public class ExplainChartAction extends AbstractAction
 {
-	private JTextArea console;
-	private String name;
-	private int type;
-	private ArrayList<Double> outlierRegion;
+	private static double confidenceThreshold = 20.0;
 
-	public ExplainChartAction(String name, int type, JTextArea console, ArrayList<Double> outlierRegion)
+	private String name;
+	private String causalModelPath;
+	private int type;
+	private DBSeerExplainChartPanel panel;
+	private JTextArea console;
+	private boolean isPredicateAbsolute;
+
+	private ArrayList<DBSeerCausalModel> explanations;
+
+	public ExplainChartAction(String name, int type, DBSeerExplainChartPanel panel)
 	{
 		super(name);
 		this.name = name;
-		this.console = console;
 		this.type = type;
-		this.outlierRegion = outlierRegion;
-
-		console.setWrapStyleWord(true);
-		console.setLineWrap(true);
+		this.panel = panel;
+		// temp
+		this.causalModelPath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator + "causal_models";
+		this.console = panel.getExplainConsole();
+		this.explanations = panel.getControlPanel().getExplanations();
+		this.isPredicateAbsolute = true;
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
-		if (outlierRegion.isEmpty())
+		if (type == DBSeerConstants.EXPLAIN_SELECT_NORMAL_REGION)
+		{
+			Set<XYItemEntity> selectedItems = panel.getSelectedItems();
+			ArrayList<Double> region = panel.getNormalRegion();
+			region.clear();
+
+			for (XYItemEntity item : selectedItems)
+			{
+				region.add(item.getDataset().getX(item.getSeriesIndex(), item.getItem()).doubleValue());
+			}
+			ArrayList<Double> otherRegion = panel.getAnomalyRegion();
+			otherRegion.removeAll(region);
+			DBSeerXYLineAndShapeRenderer renderer = (DBSeerXYLineAndShapeRenderer) panel.getChart().getXYPlot().getRenderer();
+			renderer.setSelectedNormal(selectedItems);
+			panel.clearRectangle();
+			panel.setRefreshBuffer(true);
+			panel.repaint();
+		}
+		else if (type == DBSeerConstants.EXPLAIN_APPEND_NORMAL_REGION)
+		{
+			DBSeerXYLineAndShapeRenderer renderer = (DBSeerXYLineAndShapeRenderer) panel.getChart().getXYPlot().getRenderer();
+			Set<XYItemEntity> previousItems = renderer.getSelectedNormal();
+			Set<XYItemEntity> selectedItems = panel.getSelectedItems();
+			ArrayList<Double> region = panel.getNormalRegion();
+
+			for (XYItemEntity item : selectedItems)
+			{
+				region.add(item.getDataset().getX(item.getSeriesIndex(), item.getItem()).doubleValue());
+			}
+			ArrayList<Double> otherRegion = panel.getAnomalyRegion();
+			otherRegion.removeAll(region);
+			if (previousItems != null)
+			{
+				previousItems.addAll(selectedItems);
+				renderer.setSelectedNormal(previousItems);
+			}
+			else
+			{
+				renderer.setSelectedNormal(selectedItems);
+			}
+			panel.clearRectangle();
+			panel.setRefreshBuffer(true);
+			panel.repaint();
+		}
+		else if (type == DBSeerConstants.EXPLAIN_SELECT_ANOMALY_REGION)
+		{
+			Set<XYItemEntity> selectedItems = panel.getSelectedItems();
+			ArrayList<Double> region = panel.getAnomalyRegion();
+			region.clear();
+
+			for (XYItemEntity item : selectedItems)
+			{
+				region.add(item.getDataset().getX(item.getSeriesIndex(), item.getItem()).doubleValue());
+			}
+			ArrayList<Double> otherRegion = panel.getNormalRegion();
+			otherRegion.removeAll(region);
+			DBSeerXYLineAndShapeRenderer renderer = (DBSeerXYLineAndShapeRenderer) panel.getChart().getXYPlot().getRenderer();
+			renderer.setSelectedAnomaly(selectedItems);
+			panel.clearRectangle();
+			panel.setRefreshBuffer(true);
+			panel.repaint();
+		}
+		else if (type == DBSeerConstants.EXPLAIN_APPEND_ANOMALY_REGION)
+		{
+			DBSeerXYLineAndShapeRenderer renderer = (DBSeerXYLineAndShapeRenderer) panel.getChart().getXYPlot().getRenderer();
+			Set<XYItemEntity> previousItems = renderer.getSelectedAnomaly();
+			Set<XYItemEntity> selectedItems = panel.getSelectedItems();
+			ArrayList<Double> region = panel.getAnomalyRegion();
+
+			for (XYItemEntity item : selectedItems)
+			{
+				region.add(item.getDataset().getX(item.getSeriesIndex(), item.getItem()).doubleValue());
+			}
+			ArrayList<Double> otherRegion = panel.getNormalRegion();
+			otherRegion.removeAll(region);
+			if (previousItems != null)
+			{
+				previousItems.addAll(selectedItems);
+				renderer.setSelectedAnomaly(previousItems);
+			}
+			else
+			{
+				renderer.setSelectedAnomaly(selectedItems);
+			}
+			panel.clearRectangle();
+			panel.setRefreshBuffer(true);
+			panel.repaint();
+		}
+		else if (type == DBSeerConstants.EXPLAIN_CLEAR_REGION)
+		{
+			ArrayList<Double> region = panel.getNormalRegion();
+			region.clear();
+			region = panel.getAnomalyRegion();
+			region.clear();
+
+			DBSeerXYLineAndShapeRenderer renderer = (DBSeerXYLineAndShapeRenderer) panel.getChart().getXYPlot().getRenderer();
+			renderer.clearAnomaly();
+			renderer.clearNormal();
+
+			DefaultListModel explanationListModel = panel.getControlPanel().getExplanationListModel();
+			explanationListModel.clear();
+			DefaultListModel predicateListModel = panel.getControlPanel().getPredicateListModel();
+			predicateListModel.clear();
+
+			panel.clearRectangle();
+			panel.setRefreshBuffer(true);
+			panel.repaint();
+
+		}
+		else if (type == DBSeerConstants.EXPLAIN_EXPLAIN)
+		{
+			explain();
+		}
+		else if (type == DBSeerConstants.EXPLAIN_TOGGLE_PREDICATES)
+		{
+			togglePredicates();
+		}
+		else if (type == DBSeerConstants.EXPLAIN_SAVE_PREDICATES)
+		{
+			savePredicates();
+		}
+		else if (type == DBSeerConstants.EXPLAIN_UPDATE_EXPLANATIONS)
+		{
+			updateExplanations();
+		}
+	}
+
+	private void updateExplanations()
+	{
+		JTextField confidenceThresholdTextField = panel.getControlPanel().getConfidenceThresholdTextField();
+		if (!UserInputValidator.validateNumber(confidenceThresholdTextField.getText().trim(), "Confidence Threshold", true))
 		{
 			return;
 		}
-		console.setText("");
-		console.append("Determining metrics for possible explanation of outliers...\n");
-
-		final double meanDifferenceThreshold = 0.20;
-		final double decisionTreeAccThreshold = 90;
-		final int normalizedMeanResultColCount = 4;
-		final int decisionTreeResultColCount = 3;
-
-		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
+		confidenceThreshold = Double.parseDouble(confidenceThresholdTextField.getText().trim());
+		if (confidenceThreshold < 0 || confidenceThreshold > 100)
 		{
-			private Object[] result;
-			String outlierVar = "";
+			JOptionPane.showMessageDialog(null, "Confidence threshold must be between 1 and 100.",
+					"Warning", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
 
-			private String getPrintableColumnName(String name)
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			@Override
+			public void run()
 			{
-				if (name.startsWith("os"))
+				DefaultListModel explanationListModel = panel.getControlPanel().getExplanationListModel();
+				explanationListModel.clear();
+
+				int rank = 1;
+				for (DBSeerCausalModel explanation : explanations)
 				{
-					String column = name.substring(2);
-					for (int j = 1; j < column.length(); ++j)
+					if (explanation.getConfidence() > confidenceThreshold)
 					{
-						char letter = column.charAt(j);
-						if (Character.isUpperCase(letter))
-						{
-							column = new StringBuilder(column).replace(j, j+1, " " + letter).toString();
-							++j;
-							while (j < column.length() && Character.isUpperCase(column.charAt(j)))
-							{
-								++j;
-							}
-						}
+						String output = String.format("%d. %s\n", rank++, explanation.toString());
+						explanationListModel.addElement(output);
 					}
-					return column;
 				}
-				else if (name.startsWith("dbms"))
-				{
-					String column = name.substring(4);
-					for (int j = 1; j < column.length(); ++j)
-					{
-						char letter = column.charAt(j);
-						if (Character.isUpperCase(letter))
-						{
-							column = new StringBuilder(column).replace(j, j+1, " " + letter).toString();
-							++j;
-							while (j < column.length() && Character.isUpperCase(column.charAt(j)))
-							{
-								++j;
-							}
-						}
-					}
-					return column;
-				}
-				return name;
+			}
+		});
+	}
+
+	private void explain()
+	{
+		try
+		{
+			if (panel.getAnomalyRegion().isEmpty())
+			{
+				JOptionPane.showMessageDialog(null, "Please select an anomaly region.", "Warning", JOptionPane.WARNING_MESSAGE);
+				return;
 			}
 
-			@Override
-			protected void done()
+//			console.setText("Analyzing data for explanation... ");
+			DBSeerGUI.explainStatus.setText("Analyzing data for explanation...");
+
+			final MatlabProxy proxy = DBSeerGUI.proxy;
+			final DBSeerExplainChartPanel explainPanel = this.panel;
+			final String causalModelPath = this.causalModelPath;
+			final JTextArea console = this.console;
+			final ExplainChartAction action = this;
+
+			SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
 			{
-				console.append(outlierVar + "\n\n");
-				if (result == null)
+				String normalIdx = "";
+				String anomalyIdx = "";
+
+				HashSet<Integer> normalRegion = new HashSet<Integer>();
+				HashSet<Integer> anomalyRegion = new HashSet<Integer>();
+
+				@Override
+				protected Void doInBackground() throws Exception
 				{
-					console.append("Columns for possible explanation not found.\n");
-					return;
+					for (Double d : explainPanel.getNormalRegion())
+					{
+						normalRegion.add(d.intValue());
+					}
+					for (Double d : explainPanel.getAnomalyRegion())
+					{
+						anomalyRegion.add(d.intValue());
+					}
+
+					for (Integer i : normalRegion)
+					{
+						normalIdx = normalIdx + i.toString() + " ";
+					}
+					for (Integer i : anomalyRegion)
+					{
+						anomalyIdx = anomalyIdx + i.toString() + " ";
+					}
+
+					proxy.eval("normal_idx = [" + normalIdx + "];");
+					proxy.eval("anomaly_idx = [" + anomalyIdx + "];");
+					proxy.eval("[predicates explanations] = explainPerformance(plotter.mv, anomaly_idx, normal_idx, '" +
+							causalModelPath + "', 500, 0.2, 10);");
+
+					return null;
 				}
 
-				Object[] results = result;
-				Object[] theResult = (Object[])results[0];
-
-				Object[] normalizedMeanResult = (Object[])theResult[0];
-				Object[] decisionTreeResult = (Object[])theResult[1];
-
-				console.append("Interesting columns found from statistical analysis in the descending order of " +
-						"normalized mean difference between normal and outlier regions are as follows (mean difference" +
-						" higher than " + meanDifferenceThreshold + " are shown):\n\n");
-				int normalizedRowLength = normalizedMeanResult.length / normalizedMeanResultColCount;
-				for (int i = 0; i < normalizedRowLength; ++i)
+				@Override
+				protected void done()
 				{
-					String fieldName = (String)normalizedMeanResult[i];
-					double meanDifference = ((double[])normalizedMeanResult[i+(2*normalizedRowLength)])[0];
-					if (Math.abs(meanDifference) < meanDifferenceThreshold)
+					try
 					{
-						continue;
+						DBSeerGUI.explainStatus.setText("");
+//						explainPanel.getShowPredicatesMenuItem().setEnabled(true);
+//						explainPanel.getSavePredicatesMenuItem().setEnabled(true);
+						printExplanations();
 					}
-					console.append(getPrintableColumnName(fieldName) +
-							" has the normalized average value in outlier region that is ");
-					if (meanDifference >= 0)
+					catch (Exception e)
 					{
-						console.append(String.format("%.2f", meanDifference) + " HIGHER than normal.");
+						JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						e.printStackTrace();
 					}
-					else
-					{
-						console.append(String.format("%.2f", (-1.0*meanDifference)) + " LOWER than normal.");
-					}
-					console.append("\n");
+				}
+			};
+			worker.execute();
+		}
+		catch(Exception e)
+		{
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	public void printExplanations()
+	{
+		final MatlabProxy proxy = DBSeerGUI.proxy;
+		int explanationColumnCount = 6;
+		int predicateColumnCount = 5;
+
+		int explanationRowCount = 0;
+		int predicateRowCount = 0;
+		double maxConfidence = Double.MIN_VALUE;
+
+		this.explanations.clear();
+		DefaultListModel explanationListModel = panel.getControlPanel().getExplanationListModel();
+		explanationListModel.clear();
+
+		JTextField confidenceThresholdTextField = panel.getControlPanel().getConfidenceThresholdTextField();
+		if (!UserInputValidator.validateNumber(confidenceThresholdTextField.getText().trim(), "Confidence Threshold", true))
+		{
+			return;
+		}
+		confidenceThreshold = Double.parseDouble(confidenceThresholdTextField.getText().trim());
+		if (confidenceThreshold < 0 || confidenceThreshold > 100)
+		{
+			JOptionPane.showMessageDialog(null, "Confidence threshold must be between 1 and 100.",
+					"Warning", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+
+		try
+		{
+			Object[] explanations = (Object[])proxy.getVariable("explanations");
+			explanationRowCount = explanations.length / explanationColumnCount;
+			for (int r = 0; r < explanationRowCount; ++r)
+			{
+				String causeName = (String)explanations[r];
+				double[] confidence = (double[])explanations[r+explanationRowCount*1];
+				Object[] predicates = (Object[])explanations[r+explanationRowCount*5];
+
+				DBSeerCausalModel explanation = new DBSeerCausalModel(causeName, confidence[0]);
+				explanation.getPredicates();
+
+				predicateRowCount = predicates.length / predicateColumnCount;
+				for (int p = 0; p < predicateRowCount; ++p)
+				{
+					String predicateName = (String)predicates[p];
+					double[] bounds = (double[])predicates[p+predicateRowCount*1];
+					DBSeerPredicate predicate = new DBSeerPredicate(predicateName, bounds[0], bounds[1]);
+					explanation.getPredicates().add(predicate);
 				}
 
-				console.append("\nInteresting columns found from decision tree analysis in the descending order of " +
-						"DT accuracy on training set for classifying normal and outlier regions are as follows " +
-						"(accuracy higher than " + decisionTreeAccThreshold + "% are shown):\n\n");
-				int decisionTreeRowLength = decisionTreeResult.length / decisionTreeResultColCount;
-				for (int i = 0; i < decisionTreeRowLength; ++i)
-				{
-					String fieldName = (String)decisionTreeResult[i];
-					double trainAccuracy = ((double[])decisionTreeResult[i+decisionTreeRowLength])[0] * 100;
-					if (trainAccuracy < decisionTreeAccThreshold)
-					{
-						continue;
-					}
-					console.append(getPrintableColumnName(fieldName) +
-							" has the DT with accuracy of " + String.format("%.2f", trainAccuracy) + "% classifying " +
-							"normal and outlier regions correctly.\n");
-				}
+				this.explanations.add(explanation);
 
-//				for (int row = 0; row < rowLength; ++row)
+				if (maxConfidence < confidence[0])
+				{
+					maxConfidence = confidence[0];
+				}
+			}
+		}
+		catch(Exception e)
+		{
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
+
+//		double[] mockupConf = {82.74, 21.49, 14.23, 7.86};
+
+		int rank = 1;
+		for (DBSeerCausalModel explanation : explanations)
+		{
+			if (explanation.getConfidence() > confidenceThreshold)
+			{
+//				String output = String.format("%d. %s\n", rank++, explanation.toString());
+				// temp
+//				if (rank <= 4)
 //				{
-
-//					Object[] aRow = normalizedMeanResult[row];
-//					String fieldName = (String)aRow[0];
-//					double meanDifference = ((Double)aRow[2]).doubleValue();
-//
-//					console.append(fieldName + " " + meanDifference + "\n");
+//					String output = String.format("%d. %s (%.2f%%)\n", rank, explanation.getCause(), mockupConf[rank - 1]);
+//					explanationListModel.addElement(output);
+//					rank++;
 //				}
+//				else
+//				{
+//					String output = String.format("%d. %s\n", rank++, explanation.toString());
+//					explanationListModel.addElement(output);
+//				}
+				String output = String.format("%d. %s\n", rank++, explanation.toString());
+				explanationListModel.addElement(output);
+			}
+		}
 
-				/*
-				String[] columns = (String[])result[0];
-				double[] meanDifference = (double[])result[1];
+		if (maxConfidence < confidenceThreshold)
+		{
+			String output = String.format("There are no possible causes with the confidence higher than threshold (%.2f%%).\n",
+					confidenceThreshold);
+			console.append(output);
+			console.append("Showing the current predicates.\n");
+		}
 
-				// process possible explanation columns.
-				Map<String, Double> cpuMap = new HashMap<String, Double>();
-				Map<String, Double> osMap = new HashMap<String, Double>();
-				Map<String, Double> dbmsMap = new HashMap<String, Double>();
+		printPredicates();
+	}
 
-				for (int i = 0; i < columns.length; ++i)
-				{
-					if (columns[i].startsWith("cpu"))
-					{
-						cpuMap.put(columns[i], meanDifference[i]);
-					}
-					else if (columns[i].startsWith("os"))
-					{
-						String column = columns[i].substring(2);
-						for (int j = 1; j < column.length(); ++j)
-						{
-							char letter = column.charAt(j);
-							if (Character.isUpperCase(letter))
-							{
-								column = new StringBuilder(column).replace(j, j+1, " " + letter).toString();
-								++j;
-								while (j < column.length() && Character.isUpperCase(column.charAt(j)))
-								{
-									++j;
-								}
-							}
-						}
-						osMap.put(column, meanDifference[i]);
-					}
-					else if (columns[i].startsWith("dbms"))
-					{
-						String column = columns[i].substring(4);
-						for (int j = 1; j < column.length(); ++j)
-						{
-							char letter = column.charAt(j);
-							if (Character.isUpperCase(letter))
-							{
-								column = new StringBuilder(column).replace(j, j+1, " " + letter).toString();
-								++j;
-								while (j < column.length() && Character.isUpperCase(column.charAt(j)))
-								{
-									++j;
-								}
-							}
-						}
-						dbmsMap.put(column, meanDifference[i]);
-					}
-				}
+	public void togglePredicates()
+	{
+		DefaultListModel predicateListModel = panel.getControlPanel().getPredicateListModel();
+		if  (predicateListModel.getSize() == 0)
+		{
+			return;
+		}
+		this.isPredicateAbsolute = !this.isPredicateAbsolute;
+		printPredicates();
+	}
 
+	public void printPredicates()
+	{
+		final MatlabProxy proxy = DBSeerGUI.proxy;
+		int predicateColumnCount = 5;
 
-				if (cpuMap.size() > 0)
-				{
-					console.append("\n");
-					console.append("There are possible explanations found in CPU statistics:\n");
-					for (Map.Entry<String, Double> entry : cpuMap.entrySet())
-					{
-						String column = entry.getKey();
-						double meanDiff = entry.getValue().doubleValue() * 100; // %
-						console.append(" '" + column + "'");
-						if (meanDiff > 0)
-						{
-							console.append(" is greater than expected:\n");
-						}
-						else if (meanDiff < 0)
-						{
-							console.append(" is less than expected:\n");
-						}
-						console.append("    The outlier region has changed its total average by " +
-								String.format("%.2f", meanDiff) + "% from the average in normal region.\n");
-					}
-				}
+		DefaultListModel predicateListModel = panel.getControlPanel().getPredicateListModel();
+		predicateListModel.clear();
 
-				if (osMap.size() > 0)
-				{
-					console.append("\n");
-					console.append("There are possible explanations found in OS statistics:\n");
-					for (Map.Entry<String, Double> entry : osMap.entrySet())
-					{
-						String column = entry.getKey();
-						double meanDiff = entry.getValue().doubleValue() * 100; // %
-						console.append(" '" + column + "'");
-						if (meanDiff > 0)
-						{
-							console.append(" is greater than expected:\n");
-						}
-						else if (meanDiff < 0)
-						{
-							console.append(" is less than expected:\n");
-						}
-						console.append("    The outlier region has changed its total average by " +
-								String.format("%.2f", meanDiff) + "% from the average in normal region.\n");
-					}
-				}
+		try
+		{
+			Object[] predicates = (Object[]) proxy.getVariable("predicates");
+			int predicateRowCount = predicates.length / predicateColumnCount;
+			String[] predicateNames = new String[predicateRowCount];
+			double[] lowerBounds = new double[predicateRowCount];
+			double[] upperBounds = new double[predicateRowCount];
+			double[] relativeRatio = new double[predicateRowCount];
 
-				if (dbmsMap.size() > 0)
-				{
-					console.append("\n");
-					console.append("There are possible explanations found in DBMS statistics:\n");
-					for (Map.Entry<String, Double> entry : dbmsMap.entrySet())
-					{
-						String column = entry.getKey();
-						double meanDiff = entry.getValue().doubleValue() * 100; // %
-						console.append(" '" + column + "'");
-						if (meanDiff > 0)
-						{
-							console.append(" is greater than expected:\n");
-						}
-						else if (meanDiff < 0)
-						{
-							console.append(" is less than expected:\n");
-						}
-						console.append("    The outlier region has changed its total average by " +
-								String.format("%.2f", meanDiff) + "% from the average in normal region.\n");
-					}
-				}
-				*/
+			if (predicateRowCount == 0)
+			{
+				console.append("There is no valid predicate.\n");
+				return;
 			}
 
-			@Override
-			protected Void doInBackground() throws Exception
+			for (int r = 0; r < predicateRowCount; ++r)
 			{
-				MatlabProxy proxy = DBSeerGUI.proxy;
-
-				outlierVar = "outlier = [";
-
-				for (int i = 0; i < outlierRegion.size(); ++i)
+				predicateNames[r] = (String)predicates[r];
+				if (predicateNames[r].contains("numTrans_"))
 				{
-					outlierVar += outlierRegion.get(i).intValue();
-					if (i == outlierRegion.size() - 1)
+					Pattern p = Pattern.compile("\\d+");
+					Matcher m = p.matcher(predicateNames[r]);
+					if (m.find())
 					{
-						outlierVar += "];";
+						int txIndex = Integer.parseInt(m.group());
+
+						predicateNames[r] = String.format("# of '%s' transactions",
+								DBSeerGUI.currentDataset.getTransactionTypeNames().get(txIndex-1));
 					}
+				}
+				double[] range = (double[])predicates[r+predicateRowCount*1];
+				double[] ratio = (double[])predicates[r+predicateRowCount*2];
+				lowerBounds[r] = range[0];
+				upperBounds[r] = range[1];
+				relativeRatio[r] = ratio[0];
+			}
+
+			// print x greater than y first.
+			for (int r = 0; r < predicateRowCount; ++r)
+			{
+				//temp
+//				String name = predicateNames[r];
+//				if (!(name.equalsIgnoreCase("AvgCpuIdle") ||
+//						name.contains("NetworkSend") ||
+//						name.contains("NetworkRecv") ||
+//						name.contains("CommittedCommands")))
+//				{
+//					continue;
+//				}
+				if (!Double.isInfinite(lowerBounds[r]) && Double.isInfinite(upperBounds[r]))
+				{
+					String output = null;
+					if (isPredicateAbsolute)
+						output = String.format("%s > %.2f\n", predicateNames[r], lowerBounds[r]);
 					else
 					{
-						outlierVar += " ";
+						String higher_lower = (relativeRatio[r] > 0) ? "HIGHER" : "LOWER";
+						if (relativeRatio[r] == 0)
+						{
+							output = String.format("%s is EQUAL in abnormal and normal regions", predicateNames[r]);
+						}
+						else
+						{
+							output = String.format("%s is %.2f%% %s than normal", predicateNames[r], Math.abs(relativeRatio[r]), higher_lower);
+						}
 					}
+					predicateListModel.addElement(output);
 				}
-
-				proxy.eval(outlierVar);
-				result = proxy.returningEval("explainPrototype2(plotter.mv, outlier, " + type + ")", 1);
-
-				return null;
 			}
-		};
 
-		worker.execute();
+			// print x less than y.
+			for (int r = 0; r < predicateRowCount; ++r)
+			{
+				//temp
+//				String name = predicateNames[r];
+//				if (!(name.equalsIgnoreCase("AvgCpuIdle") ||
+//						name.contains("NetworkSend") ||
+//						name.contains("NetworkRecv") ||
+//						name.contains("CommittedCommands")))
+//				{
+//					continue;
+//				}
+				if (Double.isInfinite(lowerBounds[r]) && !Double.isInfinite(upperBounds[r]))
+				{
+					String output = null;
+					if (isPredicateAbsolute)
+						output = String.format("%s < %.2f\n", predicateNames[r], upperBounds[r]);
+					else
+					{
+						String higher_lower = (relativeRatio[r] > 0) ? "HIGHER" : "LOWER";
+						if (relativeRatio[r] == 0)
+						{
+							output = String.format("%s is EQUAL in abnormal and normal regions", predicateNames[r]);
+						}
+						else
+						{
+							output = String.format("%s is %.2f%% %s than normal", predicateNames[r], Math.abs(relativeRatio[r]), higher_lower);
+						}
+					}
+					predicateListModel.addElement(output);
+				}
+			}
+
+			// print a < x < b
+			for (int r = 0; r < predicateRowCount; ++r)
+			{
+				//temp
+//				String name = predicateNames[r];
+//				if (!(name.equalsIgnoreCase("AvgCpuIdle") ||
+//						name.contains("NetworkSend") ||
+//						name.contains("NetworkRecv") ||
+//						name.contains("CommittedCommands")))
+//				{
+//					continue;
+//				}
+				if (!Double.isInfinite(lowerBounds[r]) && !Double.isInfinite(upperBounds[r]))
+				{
+					String output = null;
+					if (isPredicateAbsolute)
+						output = String.format("%.2f < %s < %.2f\n", lowerBounds[r], predicateNames[r], upperBounds[r]);
+					else
+					{
+						String higher_lower = (relativeRatio[r] > 0) ? "HIGHER" : "LOWER";
+						if (relativeRatio[r] == 0)
+						{
+							output = String.format("%s is EQUAL in abnormal and normal regions", predicateNames[r]);
+						}
+						else
+						{
+							output = String.format("%s is %.2f%% %s than normal", predicateNames[r], Math.abs(relativeRatio[r]), higher_lower);
+						}
+					}
+					predicateListModel.addElement(output);
+				}
+			}
+		}
+		catch(Exception e)
+		{
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void savePredicates()
+	{
+		DefaultListModel predicateListModel = panel.getControlPanel().getPredicateListModel();
+		if (predicateListModel.getSize() == 0)
+		{
+			JOptionPane.showMessageDialog(null, "There are no predicates to save.\nPlease generate predicates first.", "Warning", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		final MatlabProxy proxy = DBSeerGUI.proxy;
+		try
+		{
+			String cause = (String) JOptionPane.showInputDialog(null, "Enter the cause for predicates ", "New Causal Model",
+					JOptionPane.PLAIN_MESSAGE, null, null, "New Causal Model");
+
+			if (cause == null)
+			{
+				return;
+			}
+
+			String path = cause;
+			String actualPath = causalModelPath + File.separator + cause + ".mat";
+			boolean exist = false;
+			int idx = 0;
+
+			File checkFile = new File(actualPath);
+			while (checkFile.exists())
+			{
+				exist = true;
+				++idx;
+				actualPath = causalModelPath + File.separator + cause + "-" + idx + ".mat";
+				checkFile = new File(actualPath);
+			}
+
+			if (exist)
+			{
+				path = cause + "-" + idx;
+			}
+
+			proxy.eval("createCausalModel('" + causalModelPath + "','" + path + "','" + cause + "', predicates);");
+
+			String output = String.format("\nA causal model with the cause '%s' has been saved as: \n%s", cause,
+					actualPath);
+
+			console.append(output + "\n");
+		}
+		catch (Exception e)
+		{
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 }

@@ -21,6 +21,7 @@ classdef PredictionConfig < handle
         averageCpuUsage % P
         diskWrite % IO
         transactionLatency % L
+		transactionLatencyPercentile
         lockWaitTime % W, NumOfWaitDueToLocks
         currentLockWait % LocksBeingWaitedFor
         TPS % TPS
@@ -38,6 +39,7 @@ classdef PredictionConfig < handle
         averageCpuUsageUngrouped % P
         diskWriteUngrouped % IO
         transactionLatencyUngrouped % L
+		transactionLatencyPercentileUngrouped
         lockWaitTimeUngrouped % W, NumOfWaitDueToLocks
         currentLockWaitUngrouped % LocksBeingWaitedFor
         TPSUngrouped % TPS
@@ -93,9 +95,9 @@ classdef PredictionConfig < handle
                 this.datasetList{i}.loadStatistics;
                 conf = this.datasetList{i}.getStruct;
                 if ~isempty(this.groupingStrategy)
-                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, conf.statementStat, this.groupingStrategy);
+                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, this.groupingStrategy);
                 else
-                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, conf.statementStat);
+                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor);
                 end
     
                 if i==1
@@ -136,6 +138,7 @@ classdef PredictionConfig < handle
                 this.currentLockWait = [];
             end
             this.transactionLatency = mv.clientTransLatency(:,this.transactionType);
+			this.transactionLatencyPercentile = mv.prclat;
             this.TPS = sum(this.transactionCount,2);
             if isfield(mv, 'dbmsChangedRows')
                 this.rowsChanged = mv.dbmsChangedRows;
@@ -171,6 +174,7 @@ classdef PredictionConfig < handle
                 this.currentLockWaitUngrouped = [];
             end
             this.transactionLatencyUngrouped = mvUngrouped.clientTransLatency(:,this.transactionType);
+			this.transactionLatencyPercentileUngrouped = mvUngrouped.prclat;
             this.TPSUngrouped = sum(this.transactionCount,2);
             if isfield(mvUngrouped, 'dbmsChangedRows')
                 this.rowsChangedUngrouped = mvUngrouped.dbmsChangedRows;

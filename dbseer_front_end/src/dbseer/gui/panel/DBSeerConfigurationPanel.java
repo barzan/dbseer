@@ -25,12 +25,12 @@ public class DBSeerConfigurationPanel extends JPanel
 		loginPanel = new DBSeerMiddlewarePanel();
 		loginPanel.setBorder(BorderFactory.createTitledBorder("Middleware"));
 		configListPanel = new DBSeerConfigListPanel();
-		configListPanel.setBorder(BorderFactory.createTitledBorder("Available Configs"));
+		configListPanel.setBorder(BorderFactory.createTitledBorder("Available Train Configs"));
 		profileListPanel = new DBSeerDatasetListPanel();
 		profileListPanel.setBorder(BorderFactory.createTitledBorder("Available Datasets"));
 
 		this.add(loginPanel, "dock west");
-		this.add(configListPanel, "grow");
 		this.add(profileListPanel, "grow");
+		this.add(configListPanel, "grow");
 	}
 }

@@ -2,12 +2,15 @@ package dbseer.gui.frame;
 
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.panel.DBSeerExplainChartPanel;
+import dbseer.gui.panel.DBSeerExplainControlPanel;
 import matlabcontrol.MatlabProxy;
 import net.miginfocom.swing.MigLayout;
 import org.jfree.chart.JFreeChart;
 
 import javax.swing.*;
+import javax.swing.plaf.DimensionUIResource;
 import javax.swing.text.DefaultCaret;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -18,33 +21,38 @@ import java.util.ArrayList;
 public class DBSeerPlotExplainFrame extends JFrame implements ActionListener
 {
 	private JFreeChart chart;
-	private JTextArea testLog = new JTextArea(20, 50);
-	private JButton explainButton;
+	private JTextArea testLog = new JTextArea(10, 50);
 	private DBSeerExplainChartPanel chartPanel;
+	private DBSeerExplainControlPanel controlPanel;
 
 	public DBSeerPlotExplainFrame(JFreeChart chart)
 	{
-		this.setTitle("Explain");
+		this.setTitle("DBSherlock");
 		this.chart = chart;
 		initializeGUI();
 	}
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("fill"));
-		chartPanel = new DBSeerExplainChartPanel(chart, testLog);
-		this.add(chartPanel, "grow, wrap");
+		this.setLayout(new MigLayout("fill, ins 5"));
+		controlPanel = new DBSeerExplainControlPanel();
+		chartPanel = new DBSeerExplainChartPanel(chart, testLog, controlPanel);
+//		chartPanel.setPreferredSize(new Dimension(640, 480));
+		controlPanel.setChartPanel(chartPanel);
+		controlPanel.initialize();
+		this.add(chartPanel, "grow");
+		this.add(controlPanel, "grow");
 
-		DefaultCaret caret = (DefaultCaret)testLog.getCaret();
-		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-
-		testLog.setEditable(false);
-		JScrollPane logPane = new JScrollPane(testLog, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		logPane.setViewportView(testLog);
-		logPane.setAutoscrolls(true);
-		logPane.setBorder(BorderFactory.createTitledBorder("Explain Console"));
-		this.add(logPane, "grow, wrap");
+//		DefaultCaret caret = (DefaultCaret)testLog.getCaret();
+//		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+//
+//		testLog.setEditable(false);
+//		JScrollPane logPane = new JScrollPane(testLog, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+//				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+//		logPane.setViewportView(testLog);
+//		logPane.setAutoscrolls(true);
+//		logPane.setBorder(BorderFactory.createTitledBorder("Explanation"));
+//		this.add(logPane, "grow");
 	}
 
 	@Override

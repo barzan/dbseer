@@ -1,5 +1,6 @@
 package dbseer.gui.actions;
 
+import dbseer.gui.panel.DBSeerDatasetListPanel;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.DBSeerGUI;
 
@@ -14,13 +15,15 @@ public class AddDataSetAction extends AbstractAction
 	private DBSeerDataSet profile;
 	private JFrame frame;
 	private JList list; // JList to update
+	private DBSeerDatasetListPanel panel;
 
-	public AddDataSetAction(DBSeerDataSet profile, JFrame frame, JList list)
+	public AddDataSetAction(DBSeerDataSet profile, JFrame frame, JList list, DBSeerDatasetListPanel panel)
 	{
 		super("Add Dataset");
 		this.profile = profile;
 		this.frame = frame;
 		this.list = list;
+		this.panel = panel;
 	}
 
 	@Override
@@ -52,13 +55,18 @@ public class AddDataSetAction extends AbstractAction
 			@Override
 			public void run()
 			{
-				profile.setFromTable();
-				//System.out.println(profile.getMonitoringDataPath());
-				DBSeerGUI.datasets.addElement(profile);
-				//list.setListData(DBSeerGUI.datasets.toArray());
-				frame.dispose();
+				if (profile.validateTable())
+				{
+					profile.setFromTable();
+					DBSeerGUI.datasets.addElement(profile);
+					frame.dispose();
+				}
 			}
 		});
 
+		if (DBSeerGUI.datasets.size() != 0)
+		{
+			panel.getEditButton().setEnabled(true);
+		}
 	}
 }

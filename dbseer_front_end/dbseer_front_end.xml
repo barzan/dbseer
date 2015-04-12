@@ -105,6 +105,10 @@
     <pathelement location="${basedir}/lib/swtgraphics2d.jar"/>
   </path>
 
+  <path id="library.jgraphx.classpath">
+    <pathelement location="${basedir}/lib/jgraphx.jar"/>
+  </path>
+
   <path id="library.matlabcontrol-4.1.0.classpath">
     <pathelement location="${basedir}/lib/matlabcontrol-4.1.0.jar"/>
   </path>
@@ -147,6 +151,7 @@
     <path refid="library.jfreechart-1.0.16.classpath"/>
     <path refid="library.xstream-1.4.7.classpath"/>
     <path refid="library.fdb-sql-parser-1.3.0.classpath"/>
+    <path refid="library.jgraphx.classpath"/>
   </path>
 
   <path id="dbseer_front_end.runtime.production.module.classpath">
@@ -156,6 +161,7 @@
     <path refid="library.jfreechart-1.0.16.classpath"/>
     <path refid="library.xstream-1.4.7.classpath"/>
     <path refid="library.fdb-sql-parser-1.3.0.classpath"/>
+    <path refid="library.jgraphx.classpath"/>
   </path>
 
   <path id="dbseer_front_end.module.classpath">
@@ -166,6 +172,7 @@
     <path refid="library.jfreechart-1.0.16.classpath"/>
     <path refid="library.xstream-1.4.7.classpath"/>
     <path refid="library.fdb-sql-parser-1.3.0.classpath"/>
+    <path refid="library.jgraphx.classpath"/>
   </path>
 
   <path id="dbseer_front_end.runtime.module.classpath">
@@ -176,6 +183,7 @@
     <path refid="library.jfreechart-1.0.16.classpath"/>
     <path refid="library.xstream-1.4.7.classpath"/>
     <path refid="library.fdb-sql-parser-1.3.0.classpath"/>
+    <path refid="library.jgraphx.classpath"/>
   </path>
 
 
@@ -257,6 +265,7 @@
       <zipfileset src="${basedir}/lib/xpp3_min-1.1.4c.jar"/>
       <zipfileset src="${basedir}/lib/xstream-1.4.7.jar"/>
       <zipfileset src="${basedir}/lib/fdb-sql-parser-1.3.0.jar"/>
+      <zipfileset src="${basedir}/lib/jgraphx.jar"/>
     </jar>
     <copy file="${temp.jar.path.dbseer_front_end.jar}" tofile="${artifact.temp.output.dbseer_front_end:jar}/dbseer_front_end.jar"/>
   </target>

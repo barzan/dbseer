@@ -17,6 +17,6 @@ public class TransactionCountsToCpuByTPSPanel extends JPanel
 	private void initializeGUI()
 	{
 		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: TransactionCountsToCpuByTPS"));
+//		this.add(new JLabel("Prediction: TransactionCountsToCpuByTPS"));
 	}
 }

@@ -39,7 +39,17 @@ public class DBSeerConstants
 	public static final int STATEMENT_DELETE = 4;
 
 	// Explain types
-	public static final int EXPLAIN_GREATER_THAN = 0;
-	public static final int EXPLAIN_LESS_THAN = 1;
-	public static final int EXPLAIN_DIFFERENT = 2;
+	public static final int EXPLAIN_SELECT_NORMAL_REGION = 0;
+	public static final int EXPLAIN_SELECT_ANOMALY_REGION = 1;
+	public static final int EXPLAIN_CLEAR_REGION = 2;
+	public static final int EXPLAIN_EXPLAIN = 3;
+	public static final int EXPLAIN_TOGGLE_PREDICATES = 4;
+	public static final int EXPLAIN_SAVE_PREDICATES = 5;
+	public static final int EXPLAIN_APPEND_NORMAL_REGION = 6;
+	public static final int EXPLAIN_APPEND_ANOMALY_REGION = 7;
+	public static final int EXPLAIN_UPDATE_EXPLANATIONS = 8;
+
+	// Constants
+	public static final double EXPLAIN_DEFAULT_CONFIDENCE_THRESHOLD = 20.0;
+	public static final int DBSCAN_MAX_CLUSTERS = 5;
 }

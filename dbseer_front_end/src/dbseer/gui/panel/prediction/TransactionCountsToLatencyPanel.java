@@ -17,6 +17,6 @@ public class TransactionCountsToLatencyPanel extends JPanel
 	private void initializeGUI()
 	{
 		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: TransactionCountsToLatency"));
+//		this.add(new JLabel("Prediction: TransactionCountsToLatency"));
 	}
 }

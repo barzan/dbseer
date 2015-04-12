@@ -8,6 +8,7 @@ classdef DataSet < handle
         percentile_latency_path
         statement_stat_path
         %tranTypes
+		use_entire = true;
         startIdx
         endIdx
         %maxThroughputIdx
@@ -64,6 +65,11 @@ classdef DataSet < handle
             this.statement_stat_path = value;
             this.statReady = false;
         end
+
+		function set.use_entire(this, value)
+			this.use_entire = value;
+			this.statReady = false;
+		end
 
         function set.startIdx(this, value)
             this.startIdx = value;
@@ -172,9 +178,15 @@ classdef DataSet < handle
         end
 
         function loadStatistics(this)
-            [this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor this.statementStat] = ...
-                load_stats(this.header_path, this.monitor_path, this.trans_count_path, ... 
-                    this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, this.startIdx, 0, true);
+			if this.use_entire
+				[this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
+					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ... 
+					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, 0, 0, true);
+			else
+				[this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
+					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ... 
+					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, this.startIdx, this.endIdx, false);
+			end
             this.statReady = true;
         end
     end % end methods

@@ -41,6 +41,8 @@ public class DBSeerGUI
 
 	public static JLabel status = new JLabel();
 
+	public static JLabel explainStatus = new JLabel();
+
 	public static JLabel middlewareStatus = new JLabel();
 
 	public static MiddlewareSocket middlewareSocket = new MiddlewareSocket();
@@ -60,6 +62,99 @@ public class DBSeerGUI
 	public static final String[] availableWorkloads = {
 			"TPCC",
 			"LOCK1"
+	};
+
+	public static final String[] availableChartNames = {
+			"CPU (usr) Usage per Core",
+			"CPU (sys) Usage per Core",
+			"CPU (usr) Usage Variance",
+			"Average CPU Usage",
+			"Transaction Statistics",
+			"Context Switches",
+			"Disk Writes (MB)",
+			"Disk Writes (MB) v2",
+			"Disk Writes (#)",
+			"Disk Writes (#) v2",
+			"Disk Reads (MB)",
+			"Disk Reads (#)",
+			"Disk Cache Miss Ratio",
+			"Rows changed vs. Time",
+			"Rows changed vs. Disk Writes (MB)",
+			"Rows Changed vs. Disk Writes (#)",
+			"Network Statistics",
+			"Lock Analysis",
+			"Combined Average Latency",
+			"Overall Latency",
+			"Latency vs. CPU",
+			"Latency vs. CPU (99% Quantile)",
+			"Latency vs. CPU (Median)",
+			"Buffer Pool Statistics",
+			"Handler Statistics",
+			"Latency vs. Throughput",
+			"Latency vs. Throughput (99% Quantile)",
+			"Latency vs. Throughput (Median)",
+			"Latency vs. Lock Time",
+			"Latency vs. Lock Time (99% Quantile)",
+			"Latency vs. Lock Time (Median)",
+			"Transaction Mix"
+	};
+
+	public static final String[] transactionChartNames = {
+			"Transaction Mix",
+			"Transaction Statistics",
+			"Latency vs. CPU",
+			"Latency vs. CPU (99% Quantile)",
+			"Latency vs. CPU (Median)",
+			"Latency vs. Throughput",
+			"Latency vs. Throughput (99% Quantile)",
+			"Latency vs. Throughput (Median)",
+			"Latency vs. Lock Time",
+			"Latency vs. Lock Time (99% Quantile)",
+			"Latency vs. Lock Time (Median)",
+			"Combined Average Latency",
+			"Overall Latency"
+	};
+
+	public static final String[] transactionSampleCharts = {
+			"TPSCommitRollback",
+//			"CombinedAvgLatency",
+//			"LatencyOverall",
+			"LatencyVersusCPU",
+			"LatencyVersusCPU99",
+			"LatencyVersusCPUMedian",
+			"LatencyPerTPS",
+			"LatencyPerTPS99",
+			"LatencyPerTPSMedian",
+			"LatencyPerLocktime",
+			"LatencyPerLocktime99",
+			"LatencyPerLocktimeMedian",
+			"CombinedAvgLatency",
+			"TransactionMix"
+	};
+
+	public static final String[] systemChartNames = {
+			"CPU (usr) Usage per Core",
+			"CPU (sys) Usage per Core",
+			"CPU (usr) Usage Variance",
+			"Average CPU Usage",
+			"Context Switches",
+			"Disk Writes (MB)",
+			"Disk Writes (MB) v2",
+			"Disk Writes (#)",
+			"Disk Writes (#) v2",
+			"Disk Reads (MB)",
+			"Disk Reads (#)",
+			"Disk Cache Miss Ratio",
+			"Network Statistics"
+	};
+
+	public static final String[] dbmsChartNames = {
+			"Rows changed vs. Time",
+			"Rows changed vs. Disk Writes (MB)",
+			"Rows Changed vs. Disk Writes (#)",
+			"Lock Analysis",
+			"Buffer Pool Statistics",
+			"Handler Statistics"
 	};
 
 	public static final String[] availableCharts = {
@@ -84,13 +179,40 @@ public class DBSeerGUI
 			"CombinedAvgLatency",
 			"LatencyOverall",
 			"LatencyVersusCPU",
+			"LatencyVersusCPU99",
+			"LatencyVersusCPUMedian",
 			"WorkingSetSize",
 			"WorkingSetSize2",
 			"LatencyPerTPS",
-			"LatencyPerLocktime"
+			"LatencyPerTPS99",
+			"LatencyPerTPSMedian",
+			"LatencyPerLocktime",
+			"LatencyPerLocktime99",
+			"LatencyPerLocktimeMedian",
+			"TransactionMix"
 	};
 
 	public static final String[] availablePredictions = {
+			"Disk Flush Rate by TPS",
+			"Disk Flush Rate by Individual Transactions",
+			"Max Throughput",
+			"CPU by TPS",
+			"CPU by Individual Transactions",
+			"IO by TPS",
+			"Latency",
+			"Latency (99% Quantile)",
+			"Latency (Median)",
+			"Latency (With Lock Waits)",
+			"Latency (With Lock Waits, 99% Quantile)",
+			"Latency (With Lock Waits, Median)",
+			"CPU by Blown Transaction Counts",
+			"IO by Blown Transaction Counts",
+			"Log Writes",
+			"Physical Disk Read",
+			"Lock"
+	};
+
+	public static final String[] actualPredictionFunctions = {
 			"FlushRatePredictionByTPS",
 			"FlushRatePredictionByCounts",
 			"MaxThroughputPrediction",
@@ -98,7 +220,11 @@ public class DBSeerGUI
 			"TransactionCountsToCpuByCounts",
 			"TransactionCountsToIO",
 			"TransactionCountsToLatency",
+			"TransactionCountsToLatency99",
+			"TransactionCountsToLatencyMedian",
 			"TransactionCountsWaitTimeToLatency",
+			"TransactionCountsWaitTimeToLatency99",
+			"TransactionCountsWaitTimeToLatencyMedian",
 			"BlownTransactionCountsToCpu",
 			"BlownTransactionCountsToIO",
 			"LinearPrediction",
@@ -146,6 +272,7 @@ public class DBSeerGUI
 				try
 				{
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//					WebLookAndFeel.install();
 				}
 				catch (ClassNotFoundException e)
 				{
@@ -166,7 +293,7 @@ public class DBSeerGUI
 
 				MatlabProxyFactoryOptions options = new MatlabProxyFactoryOptions.Builder()
 						.setUsePreviouslyControlledSession(true)
-						.setHidden(false).build();
+						.setHidden(true).build();
 				MatlabProxyFactory factory = new MatlabProxyFactory(options);
 
 				try
@@ -176,13 +303,12 @@ public class DBSeerGUI
 				}
 				catch (MatlabConnectionException e)
 				{
-					JOptionPane.showMessageDialog(null, e.toString(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
 				}
 				catch (MatlabInvocationException e)
 				{
-					JOptionPane.showMessageDialog(null, e.toString(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
 				}
-
 
 				splash.setText("Loading user settings...");
 

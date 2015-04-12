@@ -14,6 +14,7 @@ public class DBSeerConfigurationTableModel extends DefaultTableModel
 		super((Object[][]) obj, strings);
 	}
 
+
 	@Override
 	public boolean isCellEditable(int row, int col)
 	{

@@ -105,17 +105,24 @@ public class SystemMonitor
 
 	public List<MonitorLog> getLogs(long startTime, long endTime)
 	{
-		if (startTime < startTimestamp || startTime > endTimestamp)
+		if (startTime < startTimestamp || startTime > endTimestamp || startTime - startTimestamp >= monitorLogs.size())
 		{
 			return null;
 		}
 
-		if (endTime < startTimestamp || endTime > endTimestamp + 1)
+		if (endTime < startTimestamp)// || endTime > endTimestamp + 1)
 		{
 			return null;
 		}
 
-		List<MonitorLog> logs = monitorLogs.subList((int)(startTime - startTimestamp), (int)(endTime - startTimestamp));
+		long end = endTime - startTimestamp;
+
+		if ((endTime-startTimestamp) > monitorLogs.size())
+		{
+			end = monitorLogs.size();
+		}
+
+		List<MonitorLog> logs = monitorLogs.subList((int)(startTime - startTimestamp), (int)(end));
 
 		return logs;
 	}

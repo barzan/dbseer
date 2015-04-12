@@ -37,6 +37,12 @@ public class Transaction
 	private long[] numUpdate;
 	private long[] numDelete;
 
+	private long minStatementOffset;
+	private long maxStatementOffset;
+
+	private long minQueryOffset;
+	private long maxQueryOffset;
+
 	private List<Integer> tableAccessed;
 	private List<Integer> typeAccessed;
 
@@ -52,6 +58,9 @@ public class Transaction
 
 		tableAccessed = new ArrayList<Integer>();
 		typeAccessed = new ArrayList<Integer>();
+
+		minStatementOffset = Long.MAX_VALUE;
+		maxStatementOffset = Long.MIN_VALUE;
 	}
 
 	public void printAll()
@@ -78,9 +87,67 @@ public class Transaction
 		System.out.println();
 	}
 
+	public boolean contains(long time)
+	{
+		if (time >= startTime && time <= endTime)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	public String getEntireStatement()
+	{
+		String stmt = "";
+		for (Statement s : statements)
+		{
+			String content = s.getContent();
+			if (content.contains("commit") || content.contains("COMMIT") || content.contains("SET SESSION") ||
+					content.contains("rollback") || content.contains("ROLLBACK"))
+			{
+				continue;
+			}
+			stmt = stmt + content + "\n";
+		}
+		return stmt;
+	}
+
 	public void addStatement(Statement stmt)
 	{
+		long offset = stmt.getFileOffset();
+		if (offset > maxStatementOffset)
+		{
+			maxStatementOffset = offset;
+		}
+		if (offset < minStatementOffset)
+		{
+			minStatementOffset = offset;
+		}
 		statements.add(stmt);
+	}
+
+	public void updateQueryMinMaxOffset()
+	{
+		if (statements.isEmpty())
+		{
+			return;
+		}
+
+		minQueryOffset = statements.get(0).getQueryOffset();
+		maxQueryOffset = statements.get(0).getQueryOffset();
+
+		for (Statement s : statements)
+		{
+			long offset = s.getQueryOffset();
+			if (offset > maxQueryOffset)
+			{
+				maxQueryOffset = offset;
+			}
+			if (offset < minQueryOffset)
+			{
+				minQueryOffset = offset;
+			}
+		}
 	}
 
 	public List<Statement> getStatements()
@@ -378,5 +445,45 @@ public class Transaction
 	public void setCluster(Cluster cluster)
 	{
 		this.cluster = cluster;
+	}
+
+	public long getMinStatementOffset()
+	{
+		return minStatementOffset;
+	}
+
+	public void setMinStatementOffset(long minStatementOffset)
+	{
+		this.minStatementOffset = minStatementOffset;
+	}
+
+	public long getMaxStatementOffset()
+	{
+		return maxStatementOffset;
+	}
+
+	public void setMaxStatementOffset(long maxStatementOffset)
+	{
+		this.maxStatementOffset = maxStatementOffset;
+	}
+
+	public long getMinQueryOffset()
+	{
+		return minQueryOffset;
+	}
+
+	public void setMinQueryOffset(long minQueryOffset)
+	{
+		this.minQueryOffset = minQueryOffset;
+	}
+
+	public long getMaxQueryOffset()
+	{
+		return maxQueryOffset;
+	}
+
+	public void setMaxQueryOffset(long maxQueryOffset)
+	{
+		this.maxQueryOffset = maxQueryOffset;
 	}
 }

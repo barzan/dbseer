@@ -24,7 +24,7 @@ public class DBSeerPathChoosePanel extends JPanel implements ActionListener
 
 		fileLoadDialog = new DBSeerFileLoadDialog();
 
-		openButton = new JButton("Browse");
+		openButton = new JButton("Change Root Path");
 		pathToDBSeerLabel = new JLabel();
 		pathToDBSeerLabel.setText("Current DBSeer Root Path: " + DBSeerGUI.userSettings.getDBSeerRootPath());
 		pathToDBSeerLabel.setPreferredSize(new Dimension(500, 10));

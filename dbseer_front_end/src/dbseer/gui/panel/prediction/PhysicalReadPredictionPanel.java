@@ -17,6 +17,7 @@ public class PhysicalReadPredictionPanel extends JPanel
 	private void initializeGUI()
 	{
 		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: PhysicalReadPrediction (Only supports test with dataset)"));
+		this.add(new JLabel("(This prediction only supports test with dataset.)"));
+//		this.add(new JLabel("Prediction: PhysicalReadPrediction (Only supports test with dataset)"));
 	}
 }

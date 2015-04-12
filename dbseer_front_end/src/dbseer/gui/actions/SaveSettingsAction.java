@@ -30,7 +30,7 @@ public class SaveSettingsAction extends AbstractAction
 		}
 		catch (FileNotFoundException e)
 		{
-			JOptionPane.showMessageDialog(null, e.toString(), "Error while saving settings.", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Error while saving settings.", JOptionPane.ERROR_MESSAGE);
 		}
 
 		JOptionPane.showMessageDialog(null, "Setting successfully saved.");

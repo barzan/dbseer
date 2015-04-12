@@ -5,6 +5,7 @@ import dbseer.gui.dialog.DBSeerFileLoadDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
+import java.io.*;
 
 /**
  * Created by dyoon on 2014. 5. 26..
@@ -16,7 +17,7 @@ public class OpenDirectoryAction extends AbstractAction
 
 	public OpenDirectoryAction(DBSeerDataSet profile)
 	{
-		super("Open Directory");
+		super("Import from Directory");
 
 		this.profile = profile;
 		loadDialog = new DBSeerFileLoadDialog();
@@ -26,7 +27,7 @@ public class OpenDirectoryAction extends AbstractAction
 	public void actionPerformed(ActionEvent actionEvent)
 	{
 		//DBSeerConfiguration config = DBSeerGUI.config;
-		loadDialog.createFileDialog("Open Directory", DBSeerFileLoadDialog.DIRECTORY_ONLY);
+		loadDialog.createFileDialog("Import from Directory", DBSeerFileLoadDialog.DIRECTORY_ONLY);
 		loadDialog.showDialog();
 
 		if (loadDialog.getFile() != null)
@@ -44,6 +45,18 @@ public class OpenDirectoryAction extends AbstractAction
 					{
 						profile.setMonitoringDataPath(file);
 					}
+					else if (fileLower.contains("alllogs-t"))
+					{
+						profile.setTransactionFilePath(file);
+					}
+					else if (fileLower.contains("alllogs-q"))
+					{
+						profile.setQueryFilePath(file);
+					}
+					else if (fileLower.contains("alllogs-s"))
+					{
+						profile.setStatementFilePath(file);
+					}
 					else if (fileLower.contains("header"))
 					{
 						profile.setHeaderPath(file);
@@ -51,6 +64,23 @@ public class OpenDirectoryAction extends AbstractAction
 					else if (fileLower.contains("avg") || fileLower.contains("average"))
 					{
 						profile.setAverageLatencyPath(file);
+						File avgLatencyFile = new File(file);
+						try
+						{
+							BufferedReader reader = new BufferedReader(new FileReader(avgLatencyFile));
+							String line = reader.readLine(); // read first line.
+							String[] tokens = line.trim().split("\\s+");
+							int numTransactionType = tokens.length - 1;
+							profile.setNumTransactionTypes(numTransactionType);
+						}
+						catch (FileNotFoundException e)
+						{
+							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						}
+						catch (IOException e)
+						{
+							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						}
 					}
 					else if (fileLower.contains("trans_count"))
 					{

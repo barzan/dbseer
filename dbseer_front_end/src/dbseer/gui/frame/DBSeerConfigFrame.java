@@ -1,5 +1,6 @@
 package dbseer.gui.frame;
 
+import dbseer.gui.panel.DBSeerConfigListPanel;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.DBSeerGUI;
@@ -41,20 +42,32 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 	private JButton removeProfileFromConfigButton;
 
 	private DefaultListModel originalProfileList;
+	private DefaultListModel availableProfiles;
+	private DBSeerConfigListPanel panel;
 
-	public DBSeerConfigFrame(String title, DBSeerConfiguration config, JList list, boolean isEditMode)
+	public DBSeerConfigFrame(String title, DBSeerConfiguration config, JList list, boolean isEditMode, DBSeerConfigListPanel panel)
 	{
 		this.setTitle(title);
 		this.config = config;
 		this.list = list;
 		this.isEditMode = isEditMode;
+		this.panel = panel;
+
+		DefaultListModel original = config.getDatasetList();
+		availableProfiles = new DefaultListModel();
+		for (int i = 0; i < DBSeerGUI.datasets.getSize(); ++i)
+		{
+			if (!original.contains(DBSeerGUI.datasets.getElementAt(i)))
+			{
+				availableProfiles.addElement(DBSeerGUI.datasets.getElementAt(i));
+			}
+		}
 
 		if (isEditMode)
 		{
 			// let's backup selected datasets for the config in edit mode.
 			// it will be used to restore the datasets when editing has been cancelled by user.
 			originalProfileList = new DefaultListModel();
-			DefaultListModel original = config.getDatasetList();
 			for (int i = 0; i < original.getSize(); ++i)
 			{
 				originalProfileList.addElement(original.getElementAt(i));
@@ -90,18 +103,19 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 //		textScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED),
 //				"Specify groups manually here"));
 
-		availableProfileList = new JList(DBSeerGUI.datasets);
+//		availableProfileList = new JList(DBSeerGUI.datasets);
+		availableProfileList = new JList(availableProfiles);
 		selectedProfileList = new JList(config.getDatasetList());
 		availableProfileListPane = new JScrollPane(availableProfileList);
 		availableProfileListPane.setPreferredSize(new Dimension(200, 300));
-		availableProfileListPane.setBorder(BorderFactory.createTitledBorder("Available Datasets"));
+		availableProfileListPane.setBorder(BorderFactory.createTitledBorder("Available datasets"));
 
 		selectedProfileListPane = new JScrollPane(selectedProfileList);
 		selectedProfileListPane.setPreferredSize(new Dimension(200, 300));
-		selectedProfileListPane.setBorder(BorderFactory.createTitledBorder("Selected Datasets"));
+		selectedProfileListPane.setBorder(BorderFactory.createTitledBorder("Datasets for this train config"));
 
 		addProfileToConfigButton = new JButton(">>");
-		removeProfileFromConfigButton = new JButton("Remove");
+		removeProfileFromConfigButton = new JButton("<<");
 
 		this.add(tableScrollPane, "cell 0 0 2 2, grow");
 
@@ -116,7 +130,7 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 		profileListPanel.add(removeProfileFromConfigButton, "cell 0 1, top, growx");
 
 		addConfigButton = new JButton("Add Config");
-		editConfigButton = new JButton("Edit Config");
+		editConfigButton = new JButton("Save");
 		cancelButton = new JButton("Cancel");
 
 //		this.add(groupComboBoxPanel, "cell 2 0");
@@ -172,15 +186,19 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 				@Override
 				public void run()
 				{
-					config.setFromTable();
-//					config.setGroupingRange(groupsTextArea.getText());
-//					config.setGroupingType(groupingTypeBox.getSelectedIndex());
-//					config.setGroupingTarget(groupingTargetBox.getSelectedIndex());
-
-					DBSeerGUI.configs.addElement(config);
-					frame.dispose();
+					if (config.validateTable())
+					{
+						config.setFromTable();
+						DBSeerGUI.configs.addElement(config);
+						frame.dispose();
+					}
 				}
 			});
+
+			if (DBSeerGUI.configs.size() != 0)
+			{
+				panel.getEditButton().setEnabled(true);
+			}
 		}
 		else if (actionEvent.getSource() == editConfigButton)
 		{
@@ -189,12 +207,11 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 				@Override
 				public void run()
 				{
-					config.setFromTable();
-//					config.setGroupingRange(groupsTextArea.getText());
-//					config.setGroupingType(groupingTypeBox.getSelectedIndex());
-//					config.setGroupingTarget(groupingTargetBox.getSelectedIndex());
-
-					frame.dispose();
+					if (config.validateTable())
+					{
+						config.setFromTable();
+						frame.dispose();
+					}
 				}
 			});
 		}
@@ -224,6 +241,7 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 			{
 				DBSeerDataSet profile = (DBSeerDataSet)profileObj;
 				config.addDataset(profile);
+				availableProfiles.removeElement(profile);
 			}
 		}
 		else if (actionEvent.getSource() == removeProfileFromConfigButton)
@@ -233,6 +251,7 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 			{
 				DBSeerDataSet profile = (DBSeerDataSet)profileObj;
 				config.removeDataset(profile);
+				availableProfiles.addElement(profile);
 			}
 		}
 	}

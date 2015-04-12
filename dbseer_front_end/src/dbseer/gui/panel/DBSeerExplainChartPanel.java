@@ -2,6 +2,7 @@ package dbseer.gui.panel;
 
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.actions.ExplainChartAction;
+import net.miginfocom.swing.MigLayout;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.entity.EntityCollection;
@@ -23,8 +24,11 @@ import java.util.Set;
  */
 public class DBSeerExplainChartPanel extends ChartPanel
 {
-	private ArrayList<Double> outlierRegion;
-	private JTextArea testLog;
+	private Set<XYItemEntity> selectedItems;
+	private ArrayList<Double> normalRegion;
+	private ArrayList<Double> anomalyRegion;
+
+	private JTextArea explainConsole;
 	private int startX, startY;
 	private int endX, endY;
 	private double x,y,height,width;
@@ -32,31 +36,95 @@ public class DBSeerExplainChartPanel extends ChartPanel
 	private Rectangle2D selectRectangle = null;
 	private JPopupMenu popupMenu = null;
 
-	public DBSeerExplainChartPanel(JFreeChart chart, JTextArea log)
+	private JMenuItem showPredicatesMenuItem = null;
+	private JMenuItem savePredicatesMenuItem = null;
+
+	private DBSeerExplainControlPanel controlPanel;
+
+	public DBSeerExplainChartPanel(JFreeChart chart, JTextArea log, DBSeerExplainControlPanel controlPanel)
 	{
 		super(chart);
-		outlierRegion = new ArrayList<Double>();
+		normalRegion = new ArrayList<Double>();
+		anomalyRegion = new ArrayList<Double>();
+		this.setLayout(new MigLayout("fill"));
 		this.setMouseWheelEnabled(true);
-		this.testLog = log;
-		this.popupMenu = new JPopupMenu();
+		this.explainConsole = log;
+		this.controlPanel = controlPanel;
+		this.popupMenu = this.getPopupMenu();
 
 		JMenuItem popupItem;
-		popupItem = new JMenuItem(new ExplainChartAction("Greater than expected", DBSeerConstants.EXPLAIN_GREATER_THAN,
-				testLog, outlierRegion));
-		popupMenu.add(popupItem);
-		popupItem = new JMenuItem(new ExplainChartAction("Less than expected", DBSeerConstants.EXPLAIN_LESS_THAN,
-				testLog, outlierRegion));
-		popupMenu.add(popupItem);
-		popupItem = new JMenuItem(new ExplainChartAction("Different", DBSeerConstants.EXPLAIN_DIFFERENT,
-				testLog, outlierRegion));
-		popupMenu.add(popupItem);
+//		popupItem = new JMenuItem(new ExplainChartAction("Select as Anomaly (Marked as Black)", DBSeerConstants.EXPLAIN_SELECT_ANOMALY_REGION,
+//				this));
+//		popupMenu.add(popupItem);
+//		popupItem = new JMenuItem(new ExplainChartAction("Select as Normal (Marked as White, Optional)", DBSeerConstants.EXPLAIN_SELECT_NORMAL_REGION,
+//				this));
+//		popupMenu.add(popupItem);
+		popupMenu.insert(new JSeparator(), 0);
+		popupItem = new JMenuItem(new ExplainChartAction("Clear All", DBSeerConstants.EXPLAIN_CLEAR_REGION, this));
+		popupMenu.insert(popupItem, 0);
+		popupItem = new JMenuItem(new ExplainChartAction("Select as Normal (Optional)", DBSeerConstants.EXPLAIN_APPEND_NORMAL_REGION,
+				this));
+		popupMenu.insert(popupItem, 0);
+		popupItem = new JMenuItem(new ExplainChartAction("Select as Anomaly", DBSeerConstants.EXPLAIN_APPEND_ANOMALY_REGION,
+				this));
+		popupMenu.insert(popupItem, 0);
+//		popupMenu.add(popupItem);
+//		popupMenu.add(popupItem);
+//
+//		popupMenu.add(popupItem);
+//		popupMenu.addSeparator();
+//		popupItem = new JMenuItem(new ExplainChartAction("Explain", DBSeerConstants.EXPLAIN_EXPLAIN, this));
+//		popupMenu.add(popupItem);
+//		popupMenu.addSeparator();
+//		showPredicatesMenuItem = new JMenuItem(new ExplainChartAction("Show Predicates", DBSeerConstants.EXPLAIN_SHOW_PREDICATES, this));
+//		showPredicatesMenuItem.setEnabled(false);
+//		popupMenu.add(showPredicatesMenuItem);
+//		savePredicatesMenuItem = new JMenuItem(new ExplainChartAction("Save Predicates as Causal Model", DBSeerConstants.EXPLAIN_SAVE_PREDICATES, this));
+//		savePredicatesMenuItem.setEnabled(false);
+//		popupMenu.add(savePredicatesMenuItem);
 
 		super.setPopupMenu(this.popupMenu);
 	}
 
-	public ArrayList<Double> getOutlierRegion()
+	public JTextArea getExplainConsole()
 	{
-		return outlierRegion;
+		return explainConsole;
+	}
+
+	public JMenuItem getShowPredicatesMenuItem()
+	{
+		return showPredicatesMenuItem;
+	}
+
+	public JMenuItem getSavePredicatesMenuItem()
+	{
+		return savePredicatesMenuItem;
+	}
+
+	public ArrayList<Double> getNormalRegion()
+	{
+		return normalRegion;
+	}
+
+	public ArrayList<Double> getAnomalyRegion()
+	{
+		return anomalyRegion;
+	}
+
+	public Set<XYItemEntity> getSelectedItems()
+	{
+		return selectedItems;
+	}
+
+	public void clearRectangle()
+	{
+		this.width = 0;
+		this.height = 0;
+	}
+
+	public DBSeerExplainControlPanel getControlPanel()
+	{
+		return controlPanel;
 	}
 
 	@Override
@@ -101,9 +169,9 @@ public class DBSeerExplainChartPanel extends ChartPanel
 		double ymin = Math.min(startY, endY);
 		double xmax = Math.max(startX, endX);
 		double ymax = Math.max(startY, endY);
-		this.selectRectangle = new Rectangle2D.Double(
-				xmin, ymin,
-				xmax - xmin, ymax - ymin);
+//		this.selectRectangle = new Rectangle2D.Double(
+//				xmin, ymin,
+//				xmax - xmin, ymax - ymin);
 		this.x = xmin;
 		this.y = ymin;
 		this.width = xmax  - xmin;
@@ -180,31 +248,33 @@ public class DBSeerExplainChartPanel extends ChartPanel
 //			}
 //		}
 
-		outlierRegion.clear();
-		for (XYItemEntity entity : foundItem)
-		{
-			//testLog.append(entity.toString() + "\n");
-			//testLog.append("Series = " + entity.getSeriesIndex() + ", ");
-			//testLog.append("X = " + entity.getDataset().getX(entity.getSeriesIndex(), entity.getItem()) + ", ");
-			//testLog.append("Y = " + entity.getDataset().getY(entity.getSeriesIndex(), entity.getItem()) + "\n");
-			outlierRegion.add(entity.getDataset().getX(entity.getSeriesIndex(), entity.getItem()).doubleValue());
-		}
+		selectedItems = foundItem;
 
-		Collections.sort(outlierRegion);
-		if (!outlierRegion.isEmpty())
-		{
-			testLog.setText("");
-			testLog.append("Outlier time selected = [");
-			for (int i = 0; i < outlierRegion.size(); ++i)
-			{
-				testLog.append(outlierRegion.get(i).toString());
-				if (i < outlierRegion.size() - 1)
-				{
-					testLog.append(" ");
-				}
-			}
-			testLog.append("]\n");
-		}
+//		outlierRegion.clear();
+//		for (XYItemEntity entity : foundItem)
+//		{
+//			//testLog.append(entity.toString() + "\n");
+//			//testLog.append("Series = " + entity.getSeriesIndex() + ", ");
+//			//testLog.append("X = " + entity.getDataset().getX(entity.getSeriesIndex(), entity.getItem()) + ", ");
+//			//testLog.append("Y = " + entity.getDataset().getY(entity.getSeriesIndex(), entity.getItem()) + "\n");
+//			outlierRegion.add(entity.getDataset().getX(entity.getSeriesIndex(), entity.getItem()).doubleValue());
+//		}
+//
+//		Collections.sort(outlierRegion);
+//		if (!outlierRegion.isEmpty())
+//		{
+//			testLog.setText("");
+//			testLog.append("Outlier time selected = [");
+//			for (int i = 0; i < outlierRegion.size(); ++i)
+//			{
+//				testLog.append(outlierRegion.get(i).toString());
+//				if (i < outlierRegion.size() - 1)
+//				{
+//					testLog.append(" ");
+//				}
+//			}
+//			testLog.append("]\n");
+//		}
 	}
 
 	private void drawSelectRectangle(Graphics2D g2)

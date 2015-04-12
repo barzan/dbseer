@@ -3,9 +3,13 @@ package dbseer.comp;
 import dbseer.comp.data.*;
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.DBSeerGUI;
+import dbseer.gui.user.DBSeerTransactionSample;
+import dbseer.gui.user.DBSeerTransactionSampleList;
+import dbseer.gui.xml.XStreamHelper;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
+import javax.swing.*;
 import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -38,14 +42,15 @@ public class DataCenter
 	{
 		this.doDBSCAN = doDBSCAN;
 		this.rawPath = path + File.separator + name;
-		if (doDBSCAN)
-		{
-			this.processedPath = this.rawPath + File.separator + "processed";
-		}
-		else
-		{
-			this.processedPath = this.rawPath + File.separator + "processed_no_dbscan";
-		}
+		this.processedPath = this.rawPath;
+//		if (doDBSCAN)
+//		{
+//			this.processedPath = this.rawPath + File.separator + "processed";
+//		}
+//		else
+//		{
+//			this.processedPath = this.rawPath + File.separator + "processed_no_dbscan";
+//		}
 		this.datasetName = name;
 		monitor = new SystemMonitor();
 		transactionMap = new HashMap<Integer, Transaction>();
@@ -60,14 +65,15 @@ public class DataCenter
 	{
 		this.doDBSCAN = doDBSCAN;
 		this.rawPath = fullPath;
-		if (doDBSCAN)
-		{
-			this.processedPath = this.rawPath + File.separator + "processed";
-		}
-		else
-		{
-			this.processedPath = this.rawPath + File.separator + "processed_no_dbscan";
-		}
+//		if (doDBSCAN)
+//		{
+//			this.processedPath = this.rawPath + File.separator + "processed";
+//		}
+//		else
+//		{
+//			this.processedPath = this.rawPath + File.separator + "processed_no_dbscan";
+//		}
+		this.processedPath = this.rawPath;
 
 		File rawPathFile = new File(fullPath);
 		if (rawPathFile.getName() != null)
@@ -104,12 +110,19 @@ public class DataCenter
 
 	public boolean parseLogs()
 	{
-		if (!parseMonitorLogs()) return false;
-		if (!parseTransactionLogs()) return false;
-		if (!parseStatementLogs()) return false;
-		if (!parseQueryLogs()) return false;
+		try
+		{
+			if (!parseMonitorLogs()) return false;
+			if (!parseTransactionLogs()) return false;
+			if (!parseStatementLogs()) return false;
+			if (!parseQueryLogs()) return false;
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 
-		System.out.println("Log parsing completed.");
+		DBSeerGUI.status.setText("Processing Dataset: Log parsing completed.");
 		return true;
 	}
 
@@ -126,7 +139,7 @@ public class DataCenter
 		}
 		writeHeader();
 		writeTransactionInfo();
-		writePageInfo();
+//		writePageInfo();
 		return true;
 	}
 
@@ -158,7 +171,7 @@ public class DataCenter
 
 	private boolean writeTransactionInfo()
 	{
-		System.out.println("Writing transaction info...");
+		DBSeerGUI.status.setText("Processing Dataset: Writing transaction information.");
 		List<MonitorLog> monitorLogs = monitor.getLogs();
 		long startTime = monitor.getStartTimestamp();
 		long endTime = monitor.getEndTimestamp();
@@ -216,34 +229,63 @@ public class DataCenter
 			e.printStackTrace();
 		}
 
+		XStreamHelper xmlHelper = new XStreamHelper();
 		for (int i = 0; i < clusters.size(); ++i)
 		{
-			File file = new File(processedPath + File.separator + "transaction_" + (clusters.get(i).getId()+1) + ".latency");
-			PrintWriter writer = null;
+			String file = processedPath + File.separator + "transaction_" + (clusters.get(i).getId()+1) + ".stmt";
+			String sampleFile = processedPath + File.separator + "transaction_" + (clusters.get(i).getId()+1) + ".xml";
+			File txStatements = new File(file);
+			PrintWriter txStatementsWriter = null;
 
 			try
 			{
-				writer =  new PrintWriter(new BufferedWriter(new FileWriter(file)));
+				txStatementsWriter = new PrintWriter(new BufferedWriter(new FileWriter(txStatements)));
 			}
 			catch (IOException e)
 			{
-				e.printStackTrace();
+				JOptionPane.showMessageDialog(null, e.getMessage(), "Error while processing sample transactions.", JOptionPane.ERROR_MESSAGE);
+				return false;
 			}
 
 			List<Transaction> transactionList = clusters.get(i).getTransactions();
 
-			Collections.sort(transactionList, new TransactionComparatorByEndTime());
+			DBSeerTransactionSampleList sampleList = new DBSeerTransactionSampleList();
+			ArrayList<DBSeerTransactionSample> samples = sampleList.getSamples();
 
-			for (Transaction t : transactionList)
+			for (long t = startTime; t <= endTime; ++t)
 			{
-				writer.print(t.getId() + "," + t.getEndTime() + "," + t.getLatency() + ",");
-				for (Statement s : t.getStatements())
+				txStatementsWriter.printf("%d,", t - startTime);
+				List<Transaction> executingTransactions = new ArrayList<Transaction>();
+				for (Transaction tx : transactionList)
 				{
-					writer.print(s.getId() + ",");
+					if (tx.getEndTime() == t)
+					{
+						tx.updateQueryMinMaxOffset();
+						txStatementsWriter.printf("%d,%d,%d,%d,%d,", tx.getId(), tx.getMinStatementOffset(), tx.getMaxStatementOffset(),
+							tx.getMinQueryOffset(), tx.getMaxQueryOffset());
+						executingTransactions.add(tx);
+					}
 				}
-				writer.println();
+				txStatementsWriter.println();
+				if (executingTransactions.size() > 0)
+				{
+					Transaction sampleTx = executingTransactions.get(0);
+					DBSeerTransactionSample sample = new DBSeerTransactionSample((int) (t - startTime), sampleTx.getEntireStatement());
+					samples.add(sample);
+				}
 			}
-			writer.close();
+			txStatementsWriter.flush();
+			txStatementsWriter.close();
+
+			try
+			{
+				xmlHelper.toXML(sampleList, sampleFile);
+			}
+			catch (FileNotFoundException e)
+			{
+				JOptionPane.showMessageDialog(null, e.getMessage(), "Error while processing sample transactions.", JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
 		}
 
 		// write list of tables to statement count file.
@@ -355,14 +397,14 @@ public class DataCenter
 
 	private boolean writeLatencyPercentile(ArrayList<Double>[][] latencies, int logSize, int varSize)
 	{
-		System.out.println("Writing latency percentile...");
+		DBSeerGUI.status.setText("Processing Dataset: Writing percentile latencies.");
 		MatlabProxy      proxy                 = DBSeerGUI.proxy;
 		List<MonitorLog> monitorLogs           = monitor.getLogs();
 		File             percentileLatencyFile = new File(processedPath + File.separator + "prctile_latencies.mat");
 
 		if (proxy == null)
 		{
-			System.out.println("MatlabProxy uninitialized.");
+			JOptionPane.showMessageDialog(null, "MatlabProxy uninitialized.", "Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -400,7 +442,7 @@ public class DataCenter
 			}
 			proxy.eval("save('" + percentileLatencyFile.getAbsolutePath() + "', 'latenciesPCtile');");
 		}
-		catch (MatlabInvocationException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
@@ -445,7 +487,7 @@ public class DataCenter
 		Set<Integer>         netRecvSet   = new LinkedHashSet<Integer>();
 		Map<String, Integer> interruptMap = new TreeMap<String, Integer>();
 
-		System.out.println("Writing header...");
+		DBSeerGUI.status.setText("Processing Dataset: Writing header file.");
 		try
 		{
 			if (!file.getParentFile().exists())
@@ -754,11 +796,16 @@ public class DataCenter
 
 	private boolean parseMonitorLogs()
 	{
-		System.out.println("Parsing monitor logs...");
+		DBSeerGUI.status.setText("Processing Dataset: Parsing monitor logs.");
 		File monitorPath = new File(this.rawPath);
 		File monitorFile = null;
 
 		File[] files = monitorPath.listFiles();
+
+		if (files == null)
+		{
+			return false;
+		}
 
 		for (File file : files)
 		{
@@ -790,7 +837,7 @@ public class DataCenter
 		{
 			if (!monitor.parseMonitorFile(monitorFile, processFile))
 			{
-				System.out.println("parse monitor file failed");
+				JOptionPane.showMessageDialog(null, "Failed to parse monitoring logs.", "Error", JOptionPane.ERROR_MESSAGE);
 			    return false;
 			}
 		}
@@ -800,24 +847,42 @@ public class DataCenter
 
 	private boolean parseTransactionLogs()
 	{
-		System.out.println("parsing transaction logs...");
-		File file = new File(this.rawPath + File.separator + "allLogs-t.txt");
+		DBSeerGUI.status.setText("Processing Dataset: Parsing transaction logs.");
+		File rawFile = new File(this.rawPath + File.separator + "allLogs-t.txt");
 
-		if (!file.exists())
+//		if (!rawFile.exists())
+//		{
+//			JOptionPane.showMessageDialog(null, "Failed to parse transaction logs. File does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+//			return false;
+//		}
+
+		RandomAccessFile file = null;
+
+		try
 		{
-			System.out.println("transaction log does not exist.");
+			file = new RandomAccessFile(rawFile, "r");
+		}
+		catch (FileNotFoundException e)
+		{
+			JOptionPane.showMessageDialog(null, "Failed to parse transaction logs. File does not exist.",
+					"Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
 		try
 		{
 			String line = null;
-			BufferedReader br = new BufferedReader(new FileReader(file));
+//			BufferedReader br = new BufferedReader(new FileReader(file));
 
-			while ((line = br.readLine()) != null)
+			while ((line = file.readLine()) != null)
 			{
 				Transaction transaction = new Transaction();
 				String[] columns = line.split(",");
+
+				if (columns.length < 6)
+				{
+					continue;
+				}
 
 				// 0 - id, 1 - port, 2 - user, 3 - start timestamp, 4 - end timestamp, 5 - latency
 				Integer id = new Integer(Integer.parseInt(columns[0]));
@@ -830,7 +895,7 @@ public class DataCenter
 
 				if (transactionMap.put(id, transaction) != null)
 				{
-					System.out.println("Duplicate transaction id: " + id.intValue());
+//					System.out.println("Duplicate transaction id: " + id.intValue());
 				}
 			}
 		}
@@ -842,31 +907,54 @@ public class DataCenter
 		{
 			e.printStackTrace();
 		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 
 		return true;
 	}
 
 	private boolean parseStatementLogs()
 	{
-		System.out.println("parsing statement logs...");
-		File file = new File(this.rawPath + File.separator + "allLogs-s.txt");
+		DBSeerGUI.status.setText("Processing Dataset: Parsing statement logs.");
+		File rawFile = new File(this.rawPath + File.separator + "allLogs-s.txt");
 
-		if (!file.exists())
+//		if (!file.exists())
+//		{
+//			JOptionPane.showMessageDialog(null, "Failed to parse statement logs. File does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+//			return false;
+//		}
+
+		RandomAccessFile file = null;
+
+		try
 		{
-			System.out.println("statement log does not exist.");
+			file = new RandomAccessFile(rawFile, "r");
+		}
+		catch (FileNotFoundException e)
+		{
+			JOptionPane.showMessageDialog(null, "Failed to parse transaction logs. File does not exist.",
+					"Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
 		try
 		{
 			String line = null;
-			BufferedReader br = new BufferedReader(new FileReader(file));
+//			BufferedReader br = new BufferedReader(new FileReader(file));
 
-			while ((line = br.readLine()) != null)
+			long offset = file.getFilePointer();
+			while ((line = file.readLine()) != null)
 			{
 				Statement stmt = new Statement();
 
 				String[] columns = line.split(",");
+
+				if (columns.length < 6)
+				{
+					continue;
+				}
 
 				Integer transactionId = Integer.parseInt(columns[0]);
 				int id = Integer.parseInt(columns[2]);
@@ -874,6 +962,7 @@ public class DataCenter
 				stmt.setStartTime(Long.parseLong(columns[3]));
 				stmt.setEndTime(Long.parseLong(columns[4]));
 				stmt.setLatency(Long.parseLong(columns[5]));
+				stmt.setFileOffset(offset);
 
 				Transaction transaction = transactionMap.get(transactionId);
 
@@ -886,8 +975,9 @@ public class DataCenter
 
 				if (statementMap.put(id, stmt) != null)
 				{
-					System.out.println("Duplicate statement with id: " + id);
+//					System.out.println("Duplicate statement with id: " + id);
 				}
+				offset = file.getFilePointer();
 			}
 		}
 		catch (FileNotFoundException e)
@@ -904,45 +994,68 @@ public class DataCenter
 
 	private boolean parseQueryLogs()
 	{
-		System.out.println("parsing query logs...");
-		File file = new File(this.rawPath + File.separator + "allLogs-q.txt");
+		DBSeerGUI.status.setText("Processing Dataset: Parsing query logs.");
+//		File file = new File(this.rawPath + File.separator + "allLogs-q.txt");
+		RandomAccessFile file;
 
-		if (!file.exists())
+		try
 		{
-			System.out.println("query log does not exist.");
+			file = new RandomAccessFile(this.rawPath + File.separator + "allLogs-q.txt", "r");
+		}
+		catch (FileNotFoundException e)
+		{
+			JOptionPane.showMessageDialog(null, "Failed to parse query logs. File does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
+
+//		if (!file.exists())
+//		{
+//			JOptionPane.showMessageDialog(null, "Failed to parse query logs. File does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+//			return false;
+//		}
 
 		long count = 0;
 		SQLStatementParser parser = new SQLStatementParser();
 
 		try
 		{
-			Scanner scanner = new Scanner(file);
-			scanner.useDelimiter("\0");
+			long offset = file.getFilePointer();
+			String line = file.readLine();
 
-			while (scanner.hasNext())
+			while (line != null)
 			{
-				String line = scanner.next();
-				String[] columns = line.split(",");
-
-				String idColumn = columns[0].trim();
-				if (idColumn.isEmpty()) continue;
-				int id = Integer.parseInt(idColumn);
+				int commaIndex = line.indexOf(",");
+				if (commaIndex == -1)
+				{
+					offset = file.getFilePointer();
+					line = file.readLine();
+					continue;
+				}
+				int id = Integer.parseInt(line.substring(0,commaIndex));
+				String statement = line.substring(commaIndex+1);
+				statement = statement.replaceAll("\0", "\n");
 				Statement stmt = statementMap.get(id);
 
 				if (stmt == null)
 				{
-//					System.out.println("Statement with id: " + id + " is unavailable.");
+					offset = file.getFilePointer();
+					line = file.readLine();
 					continue;
-					//return false;
 				}
 
 				List<MonitorLog> logs = monitor.getLogs(stmt.getStartTime(), stmt.getEndTime() + 1);
 
-				String statement = line.substring(line.indexOf(",") + 1);
+//				String statement = line.substring(line.indexOf(",") + 1);
+
+				if (statement.isEmpty())
+				{
+					offset = file.getFilePointer();
+					line = file.readLine();
+					continue;
+				}
 
 				stmt.setContent(statement);
+				stmt.setQueryOffset(offset);
 				int mode = parser.parseStatement(statement);
 
 				if (statement.toLowerCase().contains("for update"))
@@ -966,6 +1079,8 @@ public class DataCenter
 
 				if (logs == null)
 				{
+					offset = file.getFilePointer();
+					line = file.readLine();
 					continue;
 				}
 
@@ -995,13 +1110,18 @@ public class DataCenter
 				++count;
 				if (count % 10000 == 0)
 				{
-					System.out.println (count + " queries processed.");
+//					System.out.println (count + " queries processed.");
+					DBSeerGUI.status.setText("Processing Dataset: " + count + " queries processed.");
 				}
+
+				offset = file.getFilePointer();
+				line = file.readLine();
 			}
 		}
-		catch (FileNotFoundException e)
+		catch (IOException e)
 		{
 			e.printStackTrace();
+			return false;
 		}
 
 		return true;
@@ -1009,7 +1129,8 @@ public class DataCenter
 
 	private void prepareTransactionClustering()
 	{
-		System.out.println("Preparing for transaction clustering.");
+//		System.out.println("Preparing for transaction clustering.");
+		DBSeerGUI.status.setText("Processing Dataset: Preparing for transaction clustering.");
 		globalTableList = globalTableSet.toArray(new String[globalTableSet.size()]);
 		for (int i = 0; i < globalTableList.length; ++i)
 		{
@@ -1051,7 +1172,8 @@ public class DataCenter
 
 	public void performDBSCAN()
 	{
-		System.out.println("Starting DBSCAN");
+//		System.out.println("Starting DBSCAN");
+		DBSeerGUI.status.setText("Processing Dataset: Performing DBSCAN.");
 
 		clusters.clear();
 		actualTransactions.clear();
@@ -1060,7 +1182,7 @@ public class DataCenter
 
 		if (transactions.length == 0)
 		{
-			System.out.println("DBSCAN terminates: no transactions.");
+//			System.out.println("DBSCAN terminates: no transactions.");
 			return;
 		}
 
@@ -1109,7 +1231,8 @@ public class DataCenter
 		// Sort clusters in descending order in # of transactions.
 		Collections.sort(clusters, Collections.reverseOrder(new ClusterSizeComparator()));
 
-		System.out.println("DBSCAN complete");
+//		System.out.println("DBSCAN complete");
+		DBSeerGUI.status.setText("Processing Dataset: DBSCAN has completed.");
 //		printClusterAccAnalysisTPCC();
 	}
 
@@ -1136,7 +1259,7 @@ public class DataCenter
 		Transaction[] neighbors = findNeighbors(transactions, source, eps);
 		Queue<Transaction> neighborsToExpand = new LinkedList<Transaction>();
 
-		if (neighbors.length < minTransactions)
+		if (neighbors.length < minTransactions || clusters.size() >= DBSeerConstants.DBSCAN_MAX_CLUSTERS)
 		{
 			source.setClassification(Transaction.NOISE);
 			return null;
@@ -1221,7 +1344,8 @@ public class DataCenter
 
 	private void writePageInfo()
 	{
-		System.out.println("Writing Page Info...");
+//		System.out.println("Writing Page Info...");
+		DBSeerGUI.status.setText("Processing Dataset: Writing page information.");
 		File pageFile = new File(processedPath + File.separator + "page_info.m");
 
 		double[] transactionMix = new double[clusters.size()];

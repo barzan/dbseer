@@ -17,6 +17,6 @@ public class TransactionCountsToIOPanel extends JPanel
 	private void initializeGUI()
 	{
 		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: TransactionCountsToIO"));
+//		this.add(new JLabel("Prediction: TransactionCountsToIO"));
 	}
 }

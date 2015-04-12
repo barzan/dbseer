@@ -28,16 +28,21 @@ classdef PredictionCenter < handle
     end
     
     methods
+		function set.testMixture(this, value)
+			this.testMixture = value ./ sum(value);
+		end
+
         function calculateTestTPSMixture(this)
             this.testSampleTPS = (this.testMaxTPS - this.testMinTPS) .* rand(this.NUM_TPS_SAMPLES, 1) + this.testMinTPS;
             this.testSampleTPS(1) = this.testMinTPS;
             this.testSampleTPS(2) = this.testMaxTPS;
+			this.testSampleTPS = sortrows(this.testSampleTPS, 1);
             for i=1:this.NUM_TPS_SAMPLES
                 this.testSampleTransactionCount(i,:) = this.testMixture .* this.testSampleTPS(i);
             end
         end
 
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = performPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = performPrediction(this)
 
             if ~this.trainConfig.isInitialized
                 this.trainConfig.initialize;
@@ -51,39 +56,48 @@ classdef PredictionCenter < handle
             end
 
             if strcmp(this.taskName, 'FlushRatePredictionByTPS')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.flushRatePredictionByTPS;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.flushRatePredictionByTPS;
             elseif strcmp(this.taskName, 'FlushRatePredictionByCounts')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.flushRatePredictionByCounts;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.flushRatePredictionByCounts;
             elseif strcmp(this.taskName, 'MaxThroughputPrediction')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.maxThroughputPrediction;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.maxThroughputPrediction;
             elseif strcmp(this.taskName, 'TransactionCountsToCpuByTPS')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsToCpuByTPS;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsToCpuByTPS;
             elseif strcmp(this.taskName, 'TransactionCountsToCpuByCounts')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsToCpuByCounts;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsToCpuByCounts;
             elseif strcmp(this.taskName, 'TransactionCountsToIO')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsToIO;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsToIO;
             elseif strcmp(this.taskName, 'TransactionCountsToLatency')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsToLatency;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsToLatency;
+            elseif strcmp(this.taskName, 'TransactionCountsToLatency99')
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsToLatency99;
+            elseif strcmp(this.taskName, 'TransactionCountsToLatencyMedian')
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsToLatencyMedian;
             elseif strcmp(this.taskName, 'TransactionCountsWaitTimeToLatency')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.transactionCountsWaitTimeToLatency;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsWaitTimeToLatency;
+            elseif strcmp(this.taskName, 'TransactionCountsWaitTimeToLatency99')
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsWaitTimeToLatency99;
+            elseif strcmp(this.taskName, 'TransactionCountsWaitTimeToLatencyMedian')
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.transactionCountsWaitTimeToLatencyMedian;
             elseif strcmp(this.taskName, 'BlownTransactionCountsToCpu')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.blownTransactionCountsToCpu;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.blownTransactionCountsToCpu;
             elseif strcmp(this.taskName, 'BlownTransactionCountsToIO')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.blownTransactionCountsToIO;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.blownTransactionCountsToIO;
             elseif strcmp(this.taskName, 'LinearPrediction')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.linearPrediction;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.linearPrediction;
             elseif strcmp(this.taskName, 'PhysicalReadPrediction')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.physicalReadPrediction;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.physicalReadPrediction;
             elseif strcmp(this.taskName, 'LockPrediction')
-                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = this.lockPrediction;
+                [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = this.lockPrediction;
             else
                 error(strcat('Unsupported task name: ', this.taskName));
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = flushRatePredictionByTPS(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = flushRatePredictionByTPS(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 mv = this.testConfig.mv;
@@ -125,6 +139,7 @@ classdef PredictionCenter < handle
                 end
 
                 legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+				errorHeader = legends(2:6);
 
                 title = horzcat('Flush rate prediction with # test points = ', num2str(size(this.testConfig.TPS,1)));
                 Ylabel = 'Average # of page flush per seconds';
@@ -176,10 +191,11 @@ classdef PredictionCenter < handle
             end
         end
 
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = flushRatePredictionByCounts(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = flushRatePredictionByCounts(this)
             
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
 
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 mv = this.testConfig.mv;
@@ -195,7 +211,7 @@ classdef PredictionCenter < handle
 
                 kccaGroupParams = struct('groupByTPSinsteadOfIndivCounts', false, 'byWhichTranTypes', this.trainConfig.transactionType,  'nClusters', 30, 'minFreq', 50, 'minTPS', 30, 'maxTPS', 950);
                 emp = zeros(size(this.trainConfig.transactionCount,1), 0);
-                [emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
+                %[emp1 emp2 kccaTrainC kccaTrainPagesFlushed] = applyGroupingPolicy(struct('groupParams', kccaGroupParams), emp, emp, this.trainConfig.transactionCount, this.trainConfig.pagesFlushed);
 
                 %kccaModel = barzanKccaLearn(kccaTrainPagesFlushed, kccaTrainC);
                 %kccaPred = barzanKccaInvoke(kccaModel, testC);
@@ -222,10 +238,11 @@ classdef PredictionCenter < handle
                 end
 
                 legends = {'Actual', 'LR', 'LR+classification', 'Our model', 'Tree regression', 'Neural Net'};
+				errorHeader = legends(2:6);
 
                 title = horzcat('Flush rate prediction with # test points = ', num2str(size(this.testConfig.transactionCount,1)));
                 Ylabel = 'Average # of page flush per seconds';
-                Xlabel = ['Ratio of transaction ' num2str(this.whichTransactionToPlot)];
+                Xlabel = ['Ratio of transaction ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
                 % testTPS = [this.testMinTPS:(this.testMaxTPS-this.testMinTPS)/(this.NUM_TPS_VALUES-1):this.testMaxTPS];
                 % testTransactionCount(1,:) = this.testMixture * this.testMinTPS;
@@ -272,19 +289,20 @@ classdef PredictionCenter < handle
 
                 title = horzcat('Flush rate prediction with transaction mixture = ', mat2str(this.testMixture), ', Min TPS = ', num2str(this.testMinTPS), ', Max TPS = ', num2str(this.testMaxTPS));
                 Ylabel = 'Average # of page flush per seconds';
-                Xlabel = ['# of transaction ' num2str(this.whichTransactionToPlot)];
+                Xlabel = ['# of transaction ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
                 
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = maxThroughputPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = maxThroughputPrediction(this)
 
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
 
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 range = (1:15000)';
-                maxFlushRate = 1000;
+                maxFlushRate = 300; % DY: This is hard-coded... should we do something about this?
                 
                 % cfFlushRateApprox_conf = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.workloadName);
                 cfFlushRateApprox_conf = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
@@ -356,6 +374,7 @@ classdef PredictionCenter < handle
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(cpuCLThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on adjusted LR for CPU+classification';
+                    errorHeader{end+1} = 'Max Throughput based on adjusted LR for CPU+classification';
                     meanAbsError{end+1} = mae(cpuCLThroughput, actualThr);
                     meanRelError{end+1} = mre(cpuCLThroughput, actualThr);
                 end
@@ -363,6 +382,7 @@ classdef PredictionCenter < handle
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(cpuCUThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput on LR for CPU+classification';
+                    errorHeader{end+1} = 'Max Throughput on LR for CPU+classification';
                     meanAbsError{end+1} = mae(cpuCUThroughput, actualThr);
                     meanRelError{end+1} = mre(cpuCUThroughput, actualThr);
                 end
@@ -370,6 +390,7 @@ classdef PredictionCenter < handle
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(cpuTLThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput on adjusted LR for CPU';
+                    errorHeader{end+1} = 'Max Throughput on adjusted LR for CPU';
                     meanAbsError{end+1} = mae(cpuTLThroughput, actualThr);
                     meanRelError{end+1} = mre(cpuTLThroughput, actualThr);
                 end
@@ -377,6 +398,7 @@ classdef PredictionCenter < handle
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(cpuTUThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on LR for CPU';
+                    errorHeader{end+1} = 'Max Throughput based on LR for CPU';
                     meanAbsError{end+1} = mae(cpuTUThroughput, actualThr);
                     meanRelError{end+1} = mre(cpuTUThroughput, actualThr);
                 end
@@ -384,6 +406,7 @@ classdef PredictionCenter < handle
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(myFlushRateThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on our flush rate model';
+                    errorHeader{end+1} = 'Max Throughput based on our flush rate model';
                     meanAbsError{end+1} = mae(myFlushRateThroughput, actualThr);
                     meanRelError{end+1} = mre(myFlushRateThroughput, actualThr);
                 end
@@ -391,6 +414,7 @@ classdef PredictionCenter < handle
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(linFlushRateThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on LR for flush rate'; 
+                    errorHeader{end+1} = 'Max Throughput based on LR for flush rate'; 
                     meanAbsError{end+1} = mae(linFlushRateThroughput, actualThr);
                     meanRelError{end+1} = mre(linFlushRateThroughput, actualThr);
                 end
@@ -398,6 +422,7 @@ classdef PredictionCenter < handle
                     Xdata{end+1} = [1:size(this.testConfig.TPS, 1)]';
                     Ydata{end+1} = repmat(concurrencyThroughput, num_row, num_col);
                     legends{end+1} = 'Max Throughput based on our contention model';
+                    errorHeader{end+1} = 'Max Throughput based on our contention model';
                     meanAbsError{end+1} = mae(concurrencyThroughput, actualThr);
                     meanRelError{end+1} = mre(concurrencyThroughput, actualThr);
                 end
@@ -526,9 +551,10 @@ classdef PredictionCenter < handle
 
         end % end function
 
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = lockPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = lockPrediction(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 if strcmp(this.lockType, 'waitTime')
                     my_train_lock = this.trainConfig.lockWaitTime;
@@ -626,6 +652,7 @@ classdef PredictionCenter < handle
                 Xlabel = 'TPS';
                 Ylabel = 'Total time spent acquiring row locks (seconds)';
                 legends = {'Actual', 'Our contention model', 'LR+class', 'quad+class', 'Dec. tree regression', 'Orig. Thomasian'};
+				errorHeader = legends(2:6);
                 title = 'Lock Prediction';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
                 testTPS = this.testSampleTPS;
@@ -723,13 +750,15 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsToCpuByTPS(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsToCpuByTPS(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
-                [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
-                [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(this.testConfig.TPSUngrouped);
-                idx=1:trainMaxThroughputIdx;
+                %[trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
+                %[testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(this.testConfig.TPSUngrouped);
+                %idx=1:trainMaxThroughputIdx;
+				idx=1:size(this.trainConfig.averageCpuUsage, 1);
                 myModelP = barzanLinSolve(this.trainConfig.averageCpuUsage(idx,:), this.trainConfig.transactionCount(idx,:));
                 myCpuPred = barzanLinInvoke(myModelP, this.testConfig.transactionCount);
         
@@ -743,25 +772,29 @@ classdef PredictionCenter < handle
                 temp = [xValuesTest this.testConfig.averageCpuUsage predictionsP myCpuPred];
                 
                 Xdata = {temp(:,1)};
-                Ydata = {[temp(:,2) temp(:,3) temp(:,4)]}
-                Xdata{end+1} = xValuesTrain;
-                Ydata{end+1} = this.trainConfig.averageCpuUsage;
+                Ydata = {[temp(:,2) temp(:,3) temp(:,4)]};
+				% temporary remove
+                %Xdata{end+1} = xValuesTrain;
+                %Ydata{end+1} = this.trainConfig.averageCpuUsage;
 
                 for i=3:4
                     meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
                     meanRelError{i-2} = mre(temp(:,i), temp(:,2));
                 end
                 
-                legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions', 'Training data'};
+                legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions'};
+                %legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions', 'Training data'};
+				errorHeader = legends(2:3);
                 Ylabel = 'Average CPU (%)';
                 title = 'Linear model: Avg CPU';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
                 testTPS = this.testSampleTPS;
                 testTransactionCount = this.testSampleTransactionCount;
 
-                [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
-                [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
-                idx=1:trainMaxThroughputIdx;
+                %[trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
+                %[testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
+                %idx=1:trainMaxThroughputIdx;
+				idx=1:size(this.trainConfig.averageCpuUsage, 1);
                 myModelP = barzanLinSolve(this.trainConfig.averageCpuUsage(idx,:), this.trainConfig.transactionCount(idx,:));
                 myCpuPred = barzanLinInvoke(myModelP, testTransactionCount);
         
@@ -785,52 +818,65 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsToCpuByCounts(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsToCpuByCounts(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
-                [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
-                [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(this.testConfig.TPSUngrouped);
-                idx=1:trainMaxThroughputIdx;
+                %[trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
+                %[testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(this.testConfig.TPSUngrouped);
+                %idx=1:trainMaxThroughputIdx;
+				idx=1:size(this.trainConfig.averageCpuUsage, 1);
                 myModelP = barzanLinSolve(this.trainConfig.averageCpuUsage(idx,:), this.trainConfig.transactionCount(idx,:));
                 myCpuPred = barzanLinInvoke(myModelP, this.testConfig.transactionCount);
         
                 xValuesTest = this.testConfig.transactionCount(:,this.whichTransactionToPlot) ./ this.testConfig.TPS;
                 xValuesTrain = this.trainConfig.transactionCount(:,this.whichTransactionToPlot) ./ this.trainConfig.TPS;
-                Xlabel = ['Fraction of transaction ' num2str(this.whichTransactionToPlot)];
+                Xlabel = ['Fraction of transaction ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
                 
                 modelP = barzanLinSolve(this.trainConfig.averageCpuUsage, this.trainConfig.transactionCount);
                 predictionsP  = barzanLinInvoke(modelP, this.testConfig.transactionCount);
                 
                 temp = [xValuesTest this.testConfig.averageCpuUsage predictionsP myCpuPred];
+				temp = sortrows(temp, 1);
+
+				temp2 = [xValuesTrain this.trainConfig.averageCpuUsage];
+				temp2 = sortrows(temp2, 1);
                 
                 Xdata = {temp(:,1)};
-                Ydata = {[temp(:,2) temp(:,3) temp(:,4)]}
-                Xdata{end+1} = xValuesTrain;
-                Ydata{end+1} = this.trainConfig.averageCpuUsage;
+                Ydata = {[temp(:,2) temp(:,3) temp(:,4)]};
+                %Xdata{end+1} = xValuesTrain;
+                %Ydata{end+1} = this.trainConfig.averageCpuUsage;
+
+				% temporary remove
+                %Xdata{end+1} = temp2(:,1);
+                %Ydata{end+1} = temp2(:,2);
 
                 for i=3:4
                     meanAbsError{i-2} = mae(temp(:,i), temp(:,2));
-                    meanRelError{i-2} = mre(temp(:,i). temp(:,2));
+                    meanRelError{i-2} = mre(temp(:,i), temp(:,2));
                 end
                 
-                legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions', 'Training data'}; 
+                %legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions', 'Training data'}; 
+                legends = {'Actual CPU usage', 'LR Predictions', 'LR+noise removal Predictions'};
+				errorHeader = legends(2:3);
                 Ylabel = 'Average CPU (%)';
                 title = 'Linear model: Avg CPU';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
                 testTPS = this.testSampleTPS;
                 testTransactionCount = this.testSampleTransactionCount;
 
-                [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
-                [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
+                %[trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
+                %[testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
 
-                idx=1:trainMaxThroughputIdx;
+                %idx=1:trainMaxThroughputIdx;
+				idx=1:size(this.trainConfig.averageCpuUsage, 1);
                 myModelP = barzanLinSolve(this.trainConfig.averageCpuUsage(idx,:), this.trainConfig.transactionCount(idx,:));
                 myCpuPred = barzanLinInvoke(myModelP, testTransactionCount);
         
                 xValuesTest = testTransactionCount(:,this.whichTransactionToPlot);
                 xValuesTrain = this.trainConfig.transactionCount(:,this.whichTransactionToPlot);
-                Xlabel = ['Counts of Transaction ' num2str(this.whichTransactionToPlot)];
+                Xlabel = ['Counts of Transaction ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
                 
                 modelP = barzanLinSolve(this.trainConfig.averageCpuUsage, this.trainConfig.transactionCount);
                 predictionsP  = barzanLinInvoke(modelP, testTransactionCount);
@@ -848,9 +894,10 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsToIO(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsToIO(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 modelIO = barzanLinSolve(this.trainConfig.diskWrite, this.trainConfig.transactionCount);
                 predictionsIO = barzanLinInvoke(modelIO, this.testConfig.transactionCount);
@@ -858,9 +905,10 @@ classdef PredictionCenter < handle
                 Xdata = {this.testConfig.TPS};
                 Ydata = {[this.testConfig.diskWrite predictionsIO]};
                 title = 'Linear model: Avg Physical Writes';
-                legends = {'actual writes', 'predicted writes'};
+                legends = {'Actual Writes', 'Predicted Writes'};
                 meanAbsError{1} = mae(predictionsIO, this.testConfig.diskWrite);
                 meanRelError{1} = mre(predictionsIO, this.testConfig.diskWrite);
+				errorHeader(1) = legends(2);
                 Ylabel = 'Written data (MB)';
                 Xlabel = 'TPS';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
@@ -873,15 +921,16 @@ classdef PredictionCenter < handle
                 Xdata = {testTPS};
                 Ydata = {[predictionsIO]};
                 title = 'Linear model: Avg Physical Writes';
-                legends = {'predicted writes'};
+                legends = {'Predicted Writes'};
                 Ylabel = 'Written data (MB)';
                 Xlabel = 'TPS';
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsToLatency(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsToLatency(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 modelL = barzanLinSolve(this.trainConfig.transactionLatency, this.trainConfig.transactionCount);
                 predictionsL  = barzanLinInvoke(modelL, this.testConfig.transactionCount);
@@ -892,15 +941,16 @@ classdef PredictionCenter < handle
                 % legends = {'actual latency', 'predicted latency'};
                 legends = {};
                 for i = 1:size(this.testConfig.transactionLatency, 2)
-                    legends{end+1} = ['actual latency of transaction ' num2str(i)];
+                    legends{end+1} = ['Actual Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction'];
                 end
                 for i = 1:size(predictionsL, 2)
-                    legends{end+1} = ['predicted latency of transaction ' num2str(i)];
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
+                    errorHeader{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
                     meanAbsError{i} = mae(predictionsL(:,i), this.testConfig.transactionLatency(:,i));
                     meanRelError{i} = mre(predictionsL(:,i), this.testConfig.transactionLatency(:,i));
                 end
-                Ylabel = 'Time (seconds)';
-                Xlabel = '';
+                Ylabel = 'Latency (seconds)';
+                Xlabel = 'Time (seconds)';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
                 testTPS = this.testSampleTPS;
                 testTransactionCount = this.testSampleTransactionCount;
@@ -908,23 +958,134 @@ classdef PredictionCenter < handle
                 modelL = barzanLinSolve(this.trainConfig.transactionLatency, this.trainConfig.transactionCount);
                 predictionsL  = barzanLinInvoke(modelL, testTransactionCount);
                 
-                Xdata = {[1:size(predictionsL, 1)]'};
+                %Xdata = {[1:size(predictionsL, 1)]'};
+                Xdata = {[testTPS]};
                 Ydata = {[predictionsL]};
                 title = 'Linear model (counts only): Latency';
                 % legends = {'actual latency', 'predicted latency'};
                 legends = {};
                 
                 for i = 1:size(predictionsL, 2)
-                    legends{end+1} = ['predicted latency of transaction ' num2str(i)];
+                    %legends{end+1} = ['predicted latency of transaction ' num2str(i)];
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
                 end
-                Ylabel = 'Time (seconds)';
-                Xlabel = '';
+                Ylabel = 'Latency (seconds)';
+                Xlabel = 'TPS';
+            end
+        end % end function
+
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsToLatency99(this)
+            meanAbsError = {};
+            meanRelError = {};
+			errorHeader = {};
+
+			train_latencies = this.trainConfig.transactionLatencyPercentile.latenciesPCtile(:,[this.trainConfig.transactionType+1],7);
+			train_latencies(isnan(train_latencies)) = 0;
+			
+            if this.testMode == PredictionCenter.TEST_MODE_DATASET
+				test_latencies = this.testConfig.transactionLatencyPercentile.latenciesPCtile(:,[this.testConfig.transactionType+1],7);
+				test_latencies(isnan(test_latencies)) = 0;
+
+                modelL = barzanLinSolve(train_latencies, this.trainConfig.transactionCount);
+                predictionsL  = barzanLinInvoke(modelL, this.testConfig.transactionCount);
+                
+                Xdata = {[1:size(train_latencies, 1)]'};
+                Ydata = {[test_latencies predictionsL]};
+                title = 'Linear model (counts only): Latency (99% Quantile)';
+                % legends = {'actual latency', 'predicted latency'};
+                legends = {};
+                for i = 1:size(train_latencies, 2)
+                    %legends{end+1} = ['actual latency of transaction ' num2str(i)];
+                    legends{end+1} = ['Actual Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction'];
+                end
+                for i = 1:size(predictionsL, 2)
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
+                    errorHeader{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
+                    meanAbsError{i} = mae(predictionsL(:,i), test_latencies(:,i));
+                    meanRelError{i} = mre(predictionsL(:,i), test_latencies(:,i));
+                end
+                Ylabel = 'Latency (seconds)';
+                Xlabel = 'Time (seconds)';
+            elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
+                testTPS = this.testSampleTPS;
+                testTransactionCount = this.testSampleTransactionCount;
+
+                modelL = barzanLinSolve(train_latencies, this.trainConfig.transactionCount);
+                predictionsL  = barzanLinInvoke(modelL, testTransactionCount);
+                
+                %Xdata = {[1:size(predictionsL, 1)]'};
+                Xdata = {[testTPS]};
+                Ydata = {[predictionsL]};
+                title = 'Linear model (counts only): Latency (99% Quantile)';
+                % legends = {'actual latency', 'predicted latency'};
+                legends = {};
+                
+                for i = 1:size(predictionsL, 2)
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
+                end
+                Ylabel = 'Latency (seconds)';
+                Xlabel = 'TPS';
+            end
+        end % end function
+
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsToLatencyMedian(this)
+            meanAbsError = {};
+            meanRelError = {};
+			errorHeader = {};
+
+			train_latencies = this.trainConfig.transactionLatencyPercentile.latenciesPCtile(:,[this.trainConfig.transactionType+1],3);
+			train_latencies(isnan(train_latencies)) = 0;
+
+            if this.testMode == PredictionCenter.TEST_MODE_DATASET
+
+				test_latencies = this.testConfig.transactionLatencyPercentile.latenciesPCtile(:,[this.testConfig.transactionType+1],3);
+				test_latencies(isnan(test_latencies)) = 0;
+
+                modelL = barzanLinSolve(train_latencies, this.trainConfig.transactionCount);
+                predictionsL  = barzanLinInvoke(modelL, this.testConfig.transactionCount);
+                
+                Xdata = {[1:size(test_latencies, 1)]'};
+                Ydata = {[test_latencies predictionsL]};
+                title = 'Linear model (counts only): Latency (Median)';
+                % legends = {'actual latency', 'predicted latency'};
+                legends = {};
+                for i = 1:size(test_latencies, 2)
+                    legends{end+1} = ['Actual Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction'];
+                end
+                for i = 1:size(predictionsL, 2)
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
+                    errorHeader{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
+                    meanAbsError{i} = mae(predictionsL(:,i), test_latencies(:,i));
+                    meanRelError{i} = mre(predictionsL(:,i), test_latencies(:,i));
+                end
+                Ylabel = 'Latency (seconds)';
+                Xlabel = 'Time (seconds)';
+            elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
+                testTPS = this.testSampleTPS;
+                testTransactionCount = this.testSampleTransactionCount;
+
+                modelL = barzanLinSolve(train_latencies, this.trainConfig.transactionCount);
+                predictionsL  = barzanLinInvoke(modelL, testTransactionCount);
+                
+                %Xdata = {[1:size(predictionsL, 1)]'};
+                Xdata = {[testTPS]};
+                Ydata = {[predictionsL]};
+                title = 'Linear model (counts only): Latency (Median)';
+                % legends = {'actual latency', 'predicted latency'};
+                legends = {};
+                
+                for i = 1:size(predictionsL, 2)
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i)) ' Transaction '];
+                end
+                Ylabel = 'Latency (seconds)';
+                Xlabel = 'TPS';
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = transactionCountsWaitTimeToLatency(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsWaitTimeToLatency(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 modelLw = barzanLinSolve(this.trainConfig.transactionLatency, [this.trainConfig.transactionCount this.trainConfig.lockWaitTime]);
                 predictionsLw  = barzanLinInvoke(modelLw, [this.testConfig.transactionCount this.testConfig.lockWaitTime]);
@@ -942,16 +1103,17 @@ classdef PredictionCenter < handle
                 title = 'Linear model (counts + waiting time): Latency';
                 legends = {};
                 for i = 2:size(tempActual, 2)
-                    legends{end+1} = ['actual latency of transaction ' num2str(i-1)];
+                    legends{end+1} = ['Actual Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction'];
                 end
                 for i = 2:size(tempPred, 2)
-                    legends{end+1} = ['predicted latency of transaction ' num2str(i-1)];
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
+                    errorHeader{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
                     meanAbsError{i-1} = mae(tempPred(:,i), tempActual(:,i));
                     meanRelError{i-1} = mre(tempPred(:,i), tempActual(:,i));
                 end
 
-                Xlabel = horzcat('Transaction counts of type ', num2str(this.whichTransactionToPlot));
-                Ylabel = 'Time (seconds)';
+                Xlabel = horzcat('Transaction Counts of Type ', num2str(this.trainConfig.transactionType(this.whichTransactionToPlot)));
+                Ylabel = 'Latency (seconds)';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
                 
                 % Sample again just for this prediction.
@@ -981,17 +1143,171 @@ classdef PredictionCenter < handle
                 legends = {};
                 
                 for i = 2:size(tempPred, 2)
-                    legends{end+1} = ['predicted latency of transaction ' num2str(i-1)];
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
                 end
 
-                Xlabel = ['Transaction counts of type ' num2str(this.whichTransactionToPlot)];
-                Ylabel = 'Time (seconds)';
+                Xlabel = ['Transaction Counts of Type ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
+                Ylabel = 'Latency (seconds)';
+            end
+        end % end function
+
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsWaitTimeToLatency99(this)
+            meanAbsError = {};
+            meanRelError = {};
+			errorHeader = {};
+
+			train_latencies = this.trainConfig.transactionLatencyPercentile.latenciesPCtile(:,[this.trainConfig.transactionType+1],7);
+			train_latencies(isnan(train_latencies)) = 0;
+
+			title = 'Linear model (counts + waiting time): Latency (99% Quantile)';
+			
+            if this.testMode == PredictionCenter.TEST_MODE_DATASET
+				test_latencies = this.testConfig.transactionLatencyPercentile.latenciesPCtile(:,[this.testConfig.transactionType+1],7);
+				test_latencies(isnan(test_latencies)) = 0;
+
+                modelLw = barzanLinSolve(train_latencies, [this.trainConfig.transactionCount this.trainConfig.lockWaitTime]);
+                predictionsLw  = barzanLinInvoke(modelLw, [this.testConfig.transactionCount this.testConfig.lockWaitTime]);
+                
+                ok=[this.testConfig.transactionCount test_latencies];
+                tempActual = [this.testConfig.transactionCount(:,this.whichTransactionToPlot) test_latencies];
+                tempPred = [this.testConfig.transactionCount(:,this.whichTransactionToPlot) predictionsLw];
+                tempActual = sortrows(tempActual, 1);
+                tempPred = sortrows(tempPred, 1);
+                
+                Xdata = {tempActual(:,1)};
+                Ydata = {tempActual(:,2:end)};
+                Xdata{end+1} = tempPred(:,1);
+                Ydata{end+1} = tempPred(:,2:end);
+                legends = {};
+                for i = 2:size(tempActual, 2)
+                    legends{end+1} = ['Actual Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction'];
+                end
+                for i = 2:size(tempPred, 2)
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
+                    errorHeader{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
+                    meanAbsError{i-1} = mae(tempPred(:,i), tempActual(:,i));
+                    meanRelError{i-1} = mre(tempPred(:,i), tempActual(:,i));
+                end
+
+                Xlabel = horzcat('Transaction Counts of Type ', num2str(this.trainConfig.transactionType(this.whichTransactionToPlot)));
+                Ylabel = 'Latency (seconds)';
+            elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
+                
+                % Sample again just for this prediction.
+                this.testSampleTPS = (this.testMaxTPS - this.testMinTPS) .* rand(size(this.trainConfig.lockWaitTime, 1), 1) + this.testMinTPS;
+                this.testSampleTPS(1) = this.testMinTPS;
+                this.testSampleTPS(2) = this.testMaxTPS;
+                for i=1:size(this.trainConfig.lockWaitTime, 1)
+                    this.testSampleTransactionCount(i,:) = this.testMixture .* this.testSampleTPS(i);
+                end
+
+                testTPS = this.testSampleTPS;
+                testTransactionCount = this.testSampleTransactionCount;    
+
+                modelLw = barzanLinSolve(train_latencies, [this.trainConfig.transactionCount this.trainConfig.lockWaitTime]);
+                predictionsLw  = barzanLinInvoke(modelLw, [testTransactionCount this.trainConfig.lockWaitTime]); % use lockWaitTime from trainConfig
+                
+                ok=[testTransactionCount train_latencies];
+                % tempActual = [this.testConfig.transactionCount(:,1) this.testConfig.transactionLatency];
+                tempPred = [testTransactionCount(:,this.whichTransactionToPlot) predictionsLw];
+                % tempActual = sortrows(tempActual, 1);
+                tempPred = sortrows(tempPred, 1);
+                
+                Xdata = {tempPred(:,1)};
+                Ydata = {tempPred(:,2:end)};
+                
+                legends = {};
+                
+                for i = 2:size(tempPred, 2)
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
+                end
+
+                Xlabel = ['Transaction Counts of Type ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
+                Ylabel = 'Latency (seconds)';
+            end
+        end % end function
+
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = transactionCountsWaitTimeToLatencyMedian(this)
+            meanAbsError = {};
+            meanRelError = {};
+			errorHeader = {};
+
+			train_latencies = this.trainConfig.transactionLatencyPercentile.latenciesPCtile(:,[this.trainConfig.transactionType+1],3);
+			train_latencies(isnan(train_latencies)) = 0;
+
+			title = 'Linear model (counts + waiting time): Latency (Median)';
+			
+            if this.testMode == PredictionCenter.TEST_MODE_DATASET
+
+				test_latencies = this.testConfig.transactionLatencyPercentile.latenciesPCtile(:,[this.testConfig.transactionType+1],3);
+				test_latencies(isnan(test_latencies)) = 0;
+
+                modelLw = barzanLinSolve(train_latencies, [this.trainConfig.transactionCount this.trainConfig.lockWaitTime]);
+                predictionsLw  = barzanLinInvoke(modelLw, [this.testConfig.transactionCount this.testConfig.lockWaitTime]);
+                
+                ok=[this.testConfig.transactionCount test_latencies];
+                tempActual = [this.testConfig.transactionCount(:,this.whichTransactionToPlot) test_latencies];
+                tempPred = [this.testConfig.transactionCount(:,this.whichTransactionToPlot) predictionsLw];
+                tempActual = sortrows(tempActual, 1);
+                tempPred = sortrows(tempPred, 1);
+                
+                Xdata = {tempActual(:,1)};
+                Ydata = {tempActual(:,2:end)};
+                Xdata{end+1} = tempPred(:,1);
+                Ydata{end+1} = tempPred(:,2:end);
+                legends = {};
+                for i = 2:size(tempActual, 2)
+                    legends{end+1} = ['Actual Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction'];
+                end
+                for i = 2:size(tempPred, 2)
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
+                    errorHeader{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
+                    meanAbsError{i-1} = mae(tempPred(:,i), tempActual(:,i));
+                    meanRelError{i-1} = mre(tempPred(:,i), tempActual(:,i));
+                end
+
+                Xlabel = horzcat('Transaction Counts of Type ', num2str(this.trainConfig.transactionType(this.whichTransactionToPlot)));
+                Ylabel = 'Latency (seconds)';
+            elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
+                
+                % Sample again just for this prediction.
+                this.testSampleTPS = (this.testMaxTPS - this.testMinTPS) .* rand(size(this.trainConfig.lockWaitTime, 1), 1) + this.testMinTPS;
+                this.testSampleTPS(1) = this.testMinTPS;
+                this.testSampleTPS(2) = this.testMaxTPS;
+                for i=1:size(this.trainConfig.lockWaitTime, 1)
+                    this.testSampleTransactionCount(i,:) = this.testMixture .* this.testSampleTPS(i);
+                end
+
+                testTPS = this.testSampleTPS;
+                testTransactionCount = this.testSampleTransactionCount;    
+
+                modelLw = barzanLinSolve(train_latencies, [this.trainConfig.transactionCount this.trainConfig.lockWaitTime]);
+                predictionsLw  = barzanLinInvoke(modelLw, [testTransactionCount this.trainConfig.lockWaitTime]); % use lockWaitTime from trainConfig
+                
+                ok=[testTransactionCount train_latencies];
+                % tempActual = [this.testConfig.transactionCount(:,1) this.testConfig.transactionLatency];
+                tempPred = [testTransactionCount(:,this.whichTransactionToPlot) predictionsLw];
+                % tempActual = sortrows(tempActual, 1);
+                tempPred = sortrows(tempPred, 1);
+                
+                Xdata = {tempPred(:,1)};
+                Ydata = {tempPred(:,2:end)};
+                
+                legends = {};
+                
+                for i = 2:size(tempPred, 2)
+                    legends{end+1} = ['Predicted Latency of Type ' num2str(this.trainConfig.transactionType(i-1)) ' Transaction '];
+                end
+
+                Xlabel = ['Transaction Counts of Type ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
+                Ylabel = 'Latency (seconds)';
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = blownTransactionCountsToCpu(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = blownTransactionCountsToCpu(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 range=1:1:size(this.trainConfig.transactionCount, 2);
                 combs = combnk(range, 2);
@@ -1006,10 +1322,11 @@ classdef PredictionCenter < handle
                 
                 Xdata = {[1:size(this.testConfig.averageCpuUsage, 1)]'};
                 Ydata = {[this.testConfig.averageCpuUsage blownPredictionsP]};
-                legends = {'Actual CPU usage', 'Predicted CPU usage]'};
+                legends = {'Actual CPU usage', 'Predicted CPU usage'};
                 title = 'Quadratic Model: Average CPU';
                 meanAbsError{1} = mae(blownPredictionsP, this.testConfig.averageCpuUsage);
                 meanRelError{1} = mre(blownPredictionsP, this.testConfig.averageCpuUsage);
+				errorHeader(1) = legends(2);
                 Xlabel = 'Time';
                 Ylabel = 'Average CPU (%)';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
@@ -1036,9 +1353,10 @@ classdef PredictionCenter < handle
             end
         end % end function
         
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = blownTransactionCountsToIO(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = blownTransactionCountsToIO(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 range=1:1:size(this.trainConfig.transactionCount,2);
                 combs = combnk(range, 2);
@@ -1059,6 +1377,7 @@ classdef PredictionCenter < handle
 
                 title = 'Quadratic Model: Average Physical Writes';
                 legends = {'Actual Writes', 'Predicted Writes'};
+				errorHeader(1) = legends(2);
                 Ylabel = 'Written Data (MB)';
                 Xlabel = '';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
@@ -1086,9 +1405,10 @@ classdef PredictionCenter < handle
             end
         end % end function
 
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = linearPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = linearPrediction(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 trainY = this.trainConfig.logWriteMB;
                 testY = this.testConfig.logWriteMB;
@@ -1115,8 +1435,9 @@ classdef PredictionCenter < handle
                 Ydata{end+1} = trainY;
 
                 Ylabel = 'Log Writes (MB)';
-                Xlabel = ['Counts of transaction type ' num2str(this.whichTransactionToPlot)];
+                Xlabel = ['Counts of Transaction Type ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
                 legends = {'Actual', 'Predicted', 'Training Data'};
+				errorHeader(1) = legends(2);
                 title = 'Linear Prediction';
             elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
                 testTPS = this.testSampleTPS;
@@ -1140,16 +1461,17 @@ classdef PredictionCenter < handle
                 Ydata{end+1} = trainY;
 
                 Ylabel = 'Log Writes (MB)';
-                Xlabel = ['Counts of transaction type ' num2str(this.whichTransactionToPlot)];
+                Xlabel = ['Counts of Transaction Type ' num2str(this.trainConfig.transactionType(this.whichTransactionToPlot))];
                 legends = {'Predicted', 'Training Data'};
                 title = 'Linear Prediction';
             end
 
         end % end function
 
-        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError] = physicalReadPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader] = physicalReadPrediction(this)
             meanAbsError = {};
             meanRelError = {};
+			errorHeader = {};
             if this.testMode == PredictionCenter.TEST_MODE_DATASET
                 cacheMissRate = this.testConfig.logicalReads ./ this.testConfig.physicalReads;
                 normalization = mean(this.testConfig.physicalReadsMB) ./ mean(cacheMissRate);
@@ -1162,14 +1484,22 @@ classdef PredictionCenter < handle
                 Xdata = {temp(:,1)};
                 Ydata = {[temp(:,2) temp(:,3)]};
 
-                meanAbsError{1} = mae(cacheMissRate*normalization, this.testConfig.physicalReadsMB);
-                meanRelError{1} = mre(cacheMissRate*normalization, this.testConfig.physicalReadsMB);
+                %meanAbsError{1} = mae(cacheMissRate*normalization, this.testConfig.physicalReadsMB);
+                %meanRelError{1} = mre(cacheMissRate*normalization, this.testConfig.physicalReadsMB);
 
                 title = 'Physical read volume and cache miss rate';
                 legends = {'Physical Read Volume', 'Cache Miss Rate'};
                 Ylabel = 'Data Read (MB per sec)';
                 Xlabel = 'TPS';
-            end
+            elseif this.testMode == PredictionCenter.TEST_MODE_MIXTURE_TPS
+				% Original DBSeer does not support this case currently...
+				Xdata = {};
+				Ydata = {};
+                title = 'Physical read volume and cache miss rate';
+                legends = {'Physical Read Volume', 'Cache Miss Rate'};
+                Ylabel = 'Data Read (MB per sec)';
+                Xlabel = 'TPS';
+			end
         end % end function
         
     end % end methods

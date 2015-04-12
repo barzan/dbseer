@@ -1,6 +1,7 @@
 package dbseer.gui.panel.prediction;
 
 import dbseer.gui.DBSeerConstants;
+import dbseer.gui.actions.ManuallyChangeFieldAction;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -17,6 +18,8 @@ public class LockPredictionPanel extends JPanel
 	private JLabel lockTypeLabel;
 	private JComboBox lockTypeComboBox;
 
+	private JButton changeLockConfButton;
+
 	public LockPredictionPanel()
 	{
 		initializeGUI();
@@ -25,7 +28,7 @@ public class LockPredictionPanel extends JPanel
 	private void initializeGUI()
 	{
 		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: LockPrediction"), "wrap");
+//		this.add(new JLabel("Prediction: LockPrediction"), "wrap");
 
 		lockConfLabel = new JLabel("Lock Configuration");
 		lockConfTextField = new JTextField();
@@ -36,8 +39,11 @@ public class LockPredictionPanel extends JPanel
 		lockTypeLabel = new JLabel("Lock Type: ");
 		lockTypeComboBox = new JComboBox(DBSeerConstants.LOCK_TYPES);
 
+		changeLockConfButton = new JButton(new ManuallyChangeFieldAction(lockConfTextField));
+
 		this.add(lockConfLabel, "wrap");
-		this.add(lockConfTextField, "spanx 2, growx, wrap");
+		this.add(lockConfTextField, "spanx 2, growx");
+		this.add(changeLockConfButton, "wrap");
 		this.add(learnLockLabel);
 		this.add(learnLockComboBox, "growx, wrap");
 		this.add(lockTypeLabel);
@@ -49,6 +55,10 @@ public class LockPredictionPanel extends JPanel
 	public void setLockConf(String conf)
 	{
 		lockConfTextField.setText(conf);
+		if (!conf.isEmpty())
+		{
+			lockConfTextField.setEnabled(false);
+		}
 	}
 
 	public boolean getLearnLock()

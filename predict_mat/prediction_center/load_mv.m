@@ -1,4 +1,4 @@
-function [mvGrouped mvUngrouped] = load_mv(header, monitor, avglat, prclat, IndividualCounts, dM, statementStat, groupingStrategy)
+function [mvGrouped mvUngrouped] = load_mv(header, monitor, avglat, prclat, IndividualCounts, dM, groupingStrategy)
 overallTime = tic;
 
 mvGrouped = struct();
@@ -7,10 +7,7 @@ mvUngrouped = struct();
 mvUngrouped.prclat = prclat;
 mvGrouped.prclat = prclat;
 
-mvUngrouped.statementStat = statementStat;
-mvGrouped.statementStat = statementStat;
-
-if nargin > 7
+if nargin > 6
     [monitor_grouped avglat_grouped IndividualCounts_grouped dM_grouped] = applyGroupingPolicy(groupingStrategy, monitor, avglat, IndividualCounts, dM);
 else
     monitor_grouped = monitor;
@@ -78,7 +75,9 @@ mvUngrouped.clientIndividualSubmittedTrans=IndividualCounts;
 
 %Init
 if strcmpi(header.dbms, 'mysql')
-    mvUngrouped.dbmsMeasuredCPU = monitor(:, header.columns.mysql_cpu);
+	if isfield(header.columns, 'mysql_cpu')
+		mvUngrouped.dbmsMeasuredCPU = monitor(:, header.columns.mysql_cpu);
+	end
     mvUngrouped.dbmsChangedRows = sum(dM(:,[header.columns.Innodb_rows_deleted header.columns.Innodb_rows_updated header.columns.Innodb_rows_inserted]),2);
     mvUngrouped.dbmsCumChangedRows=cumsum(mvUngrouped.dbmsChangedRows);
     mvUngrouped.dbmsCumFlushedPages = monitor(:, header.columns.Innodb_buffer_pool_pages_flushed);

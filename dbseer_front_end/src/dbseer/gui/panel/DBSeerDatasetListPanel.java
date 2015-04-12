@@ -11,14 +11,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 /**
  * Created by dyoon on 2014. 6. 3..
  */
-public class DBSeerDatasetListPanel extends JPanel implements ActionListener
+public class DBSeerDatasetListPanel extends JPanel implements ActionListener, MouseListener
 {
 	private JList list;
 	private JButton addButton;
+
 	private JButton editButton;
 	private JButton removeButton;
 
@@ -46,6 +49,12 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener
 		addButton.addActionListener(this);
 		editButton.addActionListener(this);
 		removeButton.addActionListener(this);
+		list.addMouseListener(this);
+
+		if (DBSeerGUI.datasets.size() == 0)
+		{
+			editButton.setEnabled(false);
+		}
 
 		this.add(scrollPane, "wrap, growx");
 		this.add(addButton, "split 3");
@@ -56,6 +65,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
+		final DBSeerDatasetListPanel currentPanel = this;
 		if (actionEvent.getSource() == this.addButton)
 		{
 			SwingUtilities.invokeLater(new Runnable()
@@ -64,7 +74,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener
 				public void run()
 				{
 					DBSeerDataSet newProfile = new DBSeerDataSet();
-					DBSeerDataSetFrame profileFrame = new DBSeerDataSetFrame("Add dataset", newProfile, list);
+					DBSeerDataSetFrame profileFrame = new DBSeerDataSetFrame("Add dataset", newProfile, list, false, currentPanel);
 					profileFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 					profileFrame.pack();
 					profileFrame.setVisible(true);
@@ -81,7 +91,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener
 					DBSeerDataSet profile = (DBSeerDataSet)list.getSelectedValue();
 					if ( profile != null )
 					{
-						DBSeerDataSetFrame profileFrame = new DBSeerDataSetFrame("Edit dataset", profile, list, true);
+						DBSeerDataSetFrame profileFrame = new DBSeerDataSetFrame("Edit dataset", profile, list, true, currentPanel);
 						profileFrame.pack();
 						profileFrame.setVisible(true);
 					}
@@ -127,6 +137,63 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener
 					DBSeerGUI.datasets.removeElement(profile);
 				}
 			}
+
+			if (DBSeerGUI.datasets.size() == 0)
+			{
+				editButton.setEnabled(false);
+			}
 		}
+	}
+
+	public JButton getEditButton()
+	{
+		return editButton;
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent mouseEvent)
+	{
+		final DBSeerDatasetListPanel currentPanel = this;
+		if (mouseEvent.getClickCount() == 2)
+		{
+			SwingUtilities.invokeLater(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					DBSeerDataSet profile = (DBSeerDataSet)list.getSelectedValue();
+					if ( profile != null )
+					{
+						DBSeerDataSetFrame profileFrame = new DBSeerDataSetFrame("Edit dataset", profile, list, true, currentPanel);
+						profileFrame.pack();
+						profileFrame.setVisible(true);
+					}
+				}
+			});
+		}
+	}
+
+	@Override
+	public void mousePressed(MouseEvent mouseEvent)
+	{
+
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent mouseEvent)
+	{
+
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent mouseEvent)
+	{
+
+	}
+
+	@Override
+	public void mouseExited(MouseEvent mouseEvent)
+	{
+
 	}
 }

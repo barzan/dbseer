@@ -20,7 +20,7 @@ public class TransactionCountsWaitTimeToLatencyPanel extends JPanel
 	private void initializeGUI()
 	{
 		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: TransactionCountsWaitTimeToLatency"), "wrap");
+//		this.add(new JLabel("Prediction: TransactionCountsWaitTimeToLatency"), "wrap");
 
 		whichTransactionToPlotLabel = new JLabel("Which transaction type to plot:");
 		whichTransactionToPlotTextField = new JTextField();

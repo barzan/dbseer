@@ -7,18 +7,19 @@ import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 /**
  * Created by dyoon on 2014. 6. 3..
  */
-public class DBSeerConfigListPanel extends JPanel implements ActionListener
+public class DBSeerConfigListPanel extends JPanel implements ActionListener, MouseListener
 {
 	private JList list;
+
 	private JButton addButton;
 	private JButton editButton;
 	private JButton removeButton;
+	private JScrollPane scrollPane;
 
 	public DBSeerConfigListPanel()
 	{
@@ -31,7 +32,7 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener
 
 		list = new JList(DBSeerGUI.configs);
 		list.setVisibleRowCount(8);
-		JScrollPane scrollPane = new JScrollPane();
+		scrollPane = new JScrollPane();
 		scrollPane.setViewportView(list);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setPreferredSize(new Dimension(100, 100));
@@ -43,6 +44,12 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener
 		addButton.addActionListener(this);
 		editButton.addActionListener(this);
 		removeButton.addActionListener(this);
+		list.addMouseListener(this);
+
+		if (DBSeerGUI.configs.size() == 0)
+		{
+			editButton.setEnabled(false);
+		}
 
 		this.add(scrollPane, "wrap, growx");
 		this.add(addButton, "split 3");
@@ -53,6 +60,7 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
+		final DBSeerConfigListPanel currentPanel = this;
 		if (actionEvent.getSource() == addButton)
 		{
 			SwingUtilities.invokeLater(new Runnable()
@@ -61,7 +69,7 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener
 				public void run()
 				{
 					DBSeerConfiguration newConfig = new DBSeerConfiguration();
-					DBSeerConfigFrame configFrame = new DBSeerConfigFrame("Add configuration", newConfig, list, false);
+					DBSeerConfigFrame configFrame = new DBSeerConfigFrame("Add configuration", newConfig, list, false, currentPanel);
 					configFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 					configFrame.pack();
 					configFrame.setVisible(true);
@@ -78,7 +86,7 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener
 					DBSeerConfiguration config = (DBSeerConfiguration)list.getSelectedValue();
 					if (config != null)
 					{
-						DBSeerConfigFrame configFrame = new DBSeerConfigFrame("Edit configuration", config, list, true);
+						DBSeerConfigFrame configFrame = new DBSeerConfigFrame("Edit configuration", config, list, true, currentPanel);
 						configFrame.pack();
 						configFrame.setVisible(true);
 					}
@@ -107,6 +115,69 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener
 					DBSeerGUI.configs.removeElement(config);
 				}
 			}
+
+			if (DBSeerGUI.configs.size() == 0)
+			{
+				editButton.setEnabled(false);
+			}
+
 		}
+	}
+
+	public JButton getEditButton()
+	{
+		return editButton;
+	}
+
+	public JButton getAddButton()
+	{
+		return addButton;
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent mouseEvent)
+	{
+		final DBSeerConfigListPanel currentPanel = this;
+		if (mouseEvent.getClickCount() == 2)
+		{
+			SwingUtilities.invokeLater(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					DBSeerConfiguration config = (DBSeerConfiguration)list.getSelectedValue();
+					if (config != null)
+					{
+						DBSeerConfigFrame configFrame = new DBSeerConfigFrame("Edit configuration", config, list, true, currentPanel);
+						configFrame.pack();
+						configFrame.setVisible(true);
+					}
+				}
+			});
+		}
+	}
+
+	@Override
+	public void mousePressed(MouseEvent mouseEvent)
+	{
+
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent mouseEvent)
+	{
+
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent mouseEvent)
+	{
+
+	}
+
+	@Override
+	public void mouseExited(MouseEvent mouseEvent)
+	{
+
 	}
 }

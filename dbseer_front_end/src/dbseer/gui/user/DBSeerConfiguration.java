@@ -3,6 +3,7 @@ package dbseer.gui.user;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import com.thoughtworks.xstream.annotations.XStreamOmitField;
+import dbseer.comp.UserInputValidator;
 import dbseer.gui.DBSeerGUI;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
@@ -11,6 +12,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -162,14 +164,14 @@ public class DBSeerConfiguration
 		return this;
 	}
 
-	public void initialize()
+	public boolean initialize()
 	{
 		if (uniqueVariableName == "")
 		{
 			uniqueVariableName = "config_" + UUID.randomUUID().toString().replace('-', '_');
 		}
 
-		if (!isInitialized)
+//		if (!isInitialized)
 		{
 			MatlabProxy proxy = DBSeerGUI.proxy;
 
@@ -177,6 +179,12 @@ public class DBSeerConfiguration
 			{
 				proxy.eval(this.uniqueVariableName + " = PredictionConfig;");
 				proxy.eval(this.uniqueVariableName + ".cleanDataset;");
+				if (datasetList.getSize() == 0)
+				{
+					JOptionPane.showMessageDialog(null, "Please add datasets to the train config.", "Warning",
+							JOptionPane.WARNING_MESSAGE);
+					return false;
+				}
 				for (int i = 0; i < datasetList.getSize(); ++i)
 				{
 					DBSeerDataSet profile = (DBSeerDataSet) datasetList.getElementAt(i);
@@ -196,8 +204,61 @@ public class DBSeerConfiguration
 				e.printStackTrace();
 			}
 
-			isInitialized = true;
+//			isInitialized = true;
 		}
+		return true;
+	}
+
+	public String mapTransactionTypes(DBSeerDataSet testDataset)
+	{
+		// align transactions with the test dataset. (with the first dataset in the config)
+		DBSeerDataSet trainDataset = this.getDataset(0);
+
+		ArrayList<Integer> currentTransactionTypes = new ArrayList<Integer>();
+		ArrayList<Integer> newTransactionTypes = new ArrayList<Integer>();
+
+		String transactionTypeString = this.transactionTypes.trim();
+		String newTransactionType = "[";
+		String[] tokens = transactionTypeString.trim().split("[\\[\\]\\s]+");
+
+		for (String token : tokens)
+		{
+			if (!token.isEmpty())
+			{
+				currentTransactionTypes.add(Integer.parseInt(token));
+			}
+		}
+
+		List<String> testTransactionTypeNames = testDataset.getTransactionTypeNames();
+
+		for (Integer i : currentTransactionTypes)
+		{
+			int idx = i.intValue();
+			String transactionName = trainDataset.getTransactionTypeNames().get(idx-1);
+
+			int matchIndex = testTransactionTypeNames.indexOf(transactionName);
+
+			if (matchIndex >= 0)
+			{
+				newTransactionTypes.add(matchIndex+1);
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, "Transaction types between the test dataset and datasets in the train config must match.\n" +
+						"'" + transactionName + "' is not found in the test dataset.", "Error",
+						JOptionPane.ERROR_MESSAGE);
+				return null;
+			}
+		}
+
+		for (Integer i : newTransactionTypes)
+		{
+			int idx = i.intValue();
+			newTransactionType = newTransactionType + idx + " ";
+		}
+		newTransactionType = newTransactionType.trim() + "]";
+
+		return newTransactionType;
 	}
 
 //	private void setGroupingStrategy()
@@ -279,6 +340,56 @@ public class DBSeerConfiguration
 		{
 			datasets.add((DBSeerDataSet) this.datasetList.get(i));
 		}
+	}
+
+	public boolean validateTable()
+	{
+		for (int i = 0; i < tableModel.getRowCount(); ++i)
+		{
+			for (int j = 0; j < tableHeaders.length; ++j)
+			{
+				if (tableModel.getValueAt(i,0).equals(tableHeaders[j]))
+				{
+					switch (j)
+					{
+						case TYPE_TRANSACTION_TYPE:
+						{
+							if (!UserInputValidator.validateSingleRowMatrix((String)tableModel.getValueAt(i, 1)))
+							{
+								JOptionPane.showMessageDialog(null, "Please enter transaction types correctly.\nIt has to be in the form of a MATLAB single row matrix. e.g. [1 2 3 4 5]",
+										"Warning", JOptionPane.WARNING_MESSAGE);
+								return false;
+							}
+							break;
+						}
+						case TYPE_IO_CONFIGURATION:
+						{
+							if (!UserInputValidator.validateSingleRowMatrix((String)tableModel.getValueAt(i, 1)))
+							{
+								JOptionPane.showMessageDialog(null, "Please enter IO configuration correctly.\nIt has to be in the form of a MATLAB single row matrix. e.g. [1000000 1500 10]",
+										"Warning", JOptionPane.WARNING_MESSAGE);
+								return false;
+							}
+							break;
+						}
+						case TYPE_LOCK_CONFIGURATION:
+						{
+							if (!UserInputValidator.validateSingleRowMatrix((String)tableModel.getValueAt(i, 1)))
+							{
+								JOptionPane.showMessageDialog(null, "Please enter Lock configuration correctly.\nIt has to be in the form of a MATLAB single row matrix. e.g. [0.08 0.0001 2 0.8]",
+										"Warning", JOptionPane.WARNING_MESSAGE);
+								return false;
+							}
+							break;
+						}
+						default:
+							break;
+					}
+					break;
+				}
+			}
+		}
+		return true;
 	}
 
 	public void setFromTable()

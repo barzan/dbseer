@@ -17,6 +17,9 @@ public class Statement
 	private int mode;
 	private Set<String> tables;
 	private String content;
+	private long fileOffset;
+
+	private long queryOffset;
 
 	public Statement()
 	{
@@ -103,4 +106,24 @@ public class Statement
 	{
 		this.content = content;
 	}
+
+	public long getFileOffset()
+	{
+		return fileOffset;
+	}
+
+	public void setFileOffset(long fileOffset)
+	{
+		this.fileOffset = fileOffset;
+	}
+	public long getQueryOffset()
+	{
+		return queryOffset;
+	}
+
+	public void setQueryOffset(long queryOffset)
+	{
+		this.queryOffset = queryOffset;
+	}
+
 }

@@ -1,5 +1,6 @@
 package dbseer.gui.actions;
 
+import dbseer.gui.DBSeerGUI;
 import dbseer.gui.panel.DBSeerPlotControlPanel;
 
 import javax.swing.*;
@@ -25,14 +26,29 @@ public class CheckPlotTypeAction extends AbstractAction
 		if (source instanceof JCheckBox)
 		{
 			JCheckBox box = (JCheckBox)source;
+			String chartFunction = this.findFunction(box.getText());
 			if (box.isSelected())
 			{
-				DBSeerPlotControlPanel.chartsToDraw.add(box.getText());
+				if (chartFunction != null)
+					DBSeerPlotControlPanel.chartsToDraw.add(chartFunction);
 			}
 			else
 			{
-				DBSeerPlotControlPanel.chartsToDraw.remove(box.getText());
+				if (chartFunction != null)
+					DBSeerPlotControlPanel.chartsToDraw.remove(chartFunction);
 			}
 		}
+	}
+
+	private String findFunction(String name)
+	{
+		for (int i = 0; i < DBSeerGUI.availableChartNames.length; ++i)
+		{
+			if (name.equalsIgnoreCase(DBSeerGUI.availableChartNames[i]))
+			{
+				return DBSeerGUI.availableCharts[i];
+			}
+		}
+		return null;
 	}
 }

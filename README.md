@@ -10,15 +10,13 @@ The main DBSeer package is written in MATLAB. The middleware and GUI front-end a
 You require the following to run DBSeer:
 
 * MATLAB
-* JDK 1.6+ (for the middleware) 
-* Linux ('dstat' only runs on Linux)
+* JDK 1.6+
+* (for middleware) Linux ('dstat' only runs on Linux)
 * ant (to compile the GUI front-end manually)
-* common-libs (can be obtained from here https://github.com/barzan/common-libs)
 
 **1. DBSeer**
 
 A) INSTALLATION: You need to add the following directories to your MATLAB path: common_mat predict_data predict_mat sc
-Note that the common_mat directory in the common-libs package (https://github.com/barzan/common-libs)
 
 B) How to use DBSeer
 
@@ -128,8 +126,7 @@ Arguments details:
 C) Configure dstat if monitoring local MySQL server
 
 To make sure the middleware execute dstat to monitor system resources and get
-the log file, please first configure the variables in rs-sysmon2/setenv. Also,
-please make sure the file rs-sysmon2/dstat is executable. If not, use the
+the log file, please first configure the variables in rs-sysmon2/setenv. In the setenv file, you need to configure {mysql_user, mysql_pass, mysql_host, mysql_port} variables. Also, please make sure the file rs-sysmon2/dstat is executable. If not, use the
 following command to make it executable,
 
 	chmod 755 rs-sysmon2/dstat
@@ -138,7 +135,7 @@ D) Configure dstat if monitoring remote MySQL server
 
 To make sure the middleware is able to deploy and execute dstat on remote server
 to monitor system resources and get the log file, please first configure the
-variables in dstat_for_server/setenv.
+variables in dstat_for_server/setenv. In the setenv file, you need to configure {mysql_user, mysql_pass, mysql_host, mysql_port} variables. 
 
 E) Dependencies
 

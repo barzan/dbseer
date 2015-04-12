@@ -8,39 +8,64 @@ classdef Plotter < handle
     methods
         function obj = set.mv(self, value)
             self.mv = value;
-            self.Xdata = 1:1:value.numberOfObservations-1;
+            self.Xdata = 1:1:value.numberOfObservations;
             self.Xdata = self.Xdata';
             self.Xlabel = 'Time (seconds)';
         end
+
+		function [Xdata Ydata] = plotCustom(this, xField, yField)
+			Xdata = {this.getData(xField)};
+			Ydata = {this.getData(yField)};
+		end
+
+		function data = getData(this, field)
+			if strcmp(field, 'time')
+				data = [1:1:this.mv.numberOfObservations]';
+			elseif strcmp(field, 'averageTransLatency')
+				mv = this.mv;
+				combinedLatency = sum(mv.clientTransLatency .* mv.clientIndividualSubmittedTrans,2)./mv.clientTotalSubmittedTrans;
+				combinedLatency(isnan(combinedLatency)) = 0;
+				data = combinedLatency;
+			else
+				data = getfield(this.mv, field);
+			end
+			% this is temporary work-around.
+			if size(data,2) > 1
+				data = sum(data,2);
+			end
+		end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotIndividualCoreUsageUser(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotIndividualCoreUsageUser(this)
             Xdata = {this.Xdata};
             Ydata = {this.mv.cpu_usr};
             Xlabel = this.Xlabel;
             Ylabel = 'Individual core usr usage';
             title = 'Individual core usr usage';
             legends = {'Core with MySQL'};
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotIndividualCoreUsageSys(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotIndividualCoreUsageSys(this)
             Xdata = {this.Xdata};
             Ydata = {this.mv.cpu_sys};
             Xlabel = this.Xlabel;
             Ylabel = 'Individual core sys usage';
             title = 'Individual core sys usage';
             legends = {'Core with MySQL'};
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotInterCoreStandardDeviation(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotInterCoreStandardDeviation(this)
             Xdata = {this.Xdata};
             Ydata = {sqrt(this.mv.CoreVariance)};
             Xlabel = this.Xlabel;
             Ylabel = 'Inter-core standard deviation';
             title = 'Standard deviation of core usage';
             legends = {'Inter-core std. dev.'};
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotAvgCpuUsage(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotAvgCpuUsage(this)
             mv = this.mv;
             Xdata = {this.Xdata}
             % Ydata = {[mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq mv.measuredCPU mv.AvgCpuIdle]};
@@ -50,19 +75,22 @@ classdef Plotter < handle
             title = 'Average CPU Usage';
             % legends = {'Usr', 'Sys', 'AvgCpuWai', 'AvgCpuHiq', 'AvgCpuSiq', 'MySQL Usage', 'Idle'};
             legends = {'Usr', 'Sys', 'AvgCpuWai', 'AvgCpuHiq', 'AvgCpuSiq', 'Idle'};
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotTPSCommitRollback(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotTPSCommitRollback(this)
             mv = this.mv;
-            Xdata = {this.Xdata};
-            Ydata = {mv.clientTotalSubmittedTrans};
+			Xdata = {};
+			Ydata = {};
             legends = {};
-            legends{end+1} = 'Total client submitted transactions';
             for i=1:size(mv.clientIndividualSubmittedTrans, 2)
                 Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.clientIndividualSubmittedTrans(:,i);
-                legends{end+1} = horzcat('# Transactions ', num2str(i));
+                legends{end+1} = horzcat('# of Type ', num2str(i), ' Transactions');
             end
+			Xdata{end+1} = this.Xdata;
+			Ydata{end+1} = mv.clientTotalSubmittedTrans;
+            legends{end+1} = 'Total client submitted transactions';
             if isfield(mv, 'dbmsRollbackHandler')
                 Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.dbmsRollbackHandler;
@@ -79,9 +107,10 @@ classdef Plotter < handle
             Xlabel = this.Xlabel;
             Ylabel = 'Transactions (tps)';
             title = 'DBMS Transactions';
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotContextSwitches(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotContextSwitches(this)
             mv = this.mv;
             Xdata = {this.Xdata};
             Ydata = {mv.osNumberOfContextSwitches./1500};
@@ -95,9 +124,10 @@ classdef Plotter < handle
             Xlabel = this.Xlabel;
             Ylabel = '# of threads';
             title = 'Threads';
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotDiskWriteMB(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskWriteMB(this)
             mv = this.mv;
             Xdata = {};
             Ydata = {};
@@ -127,9 +157,10 @@ classdef Plotter < handle
             Xlabel = this.Xlabel;
             Ylabel = 'Written Data (MB/sec)';
             title = 'Write Volume (MB)';
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotDiskWriteMB_friendly(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskWriteMB_friendly(this)
             mv = this.mv;
             Xdata = {this.Xdata};
             if isfield(mv, 'dbmsDoublePageWritesMB')
@@ -147,9 +178,10 @@ classdef Plotter < handle
             Xlabel = this.Xlabel;
             Ylabel = 'Write Volume (MB/sec)';
             title = 'Write Volume (MB)';
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotDiskWriteNum(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskWriteNum(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
                 Xdata = {this.Xdata};
@@ -158,10 +190,11 @@ classdef Plotter < handle
                 Xlabel = this.Xlabel;
                 Ylabel = 'Number of';
                 title = 'Write Requests (#)';
+				timestamp = this.Xdata;
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotDiskWriteNum_friendly(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskWriteNum_friendly(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites') && isfield(mv, 'dbmsNumberOfDataWrites') && isfield(mv, 'dbmsDoubleWritesOperations') && isfield(mv, 'dbmsNumberOfLogWriteRequests')...
                 && isfield(mv, 'dbmsBufferPoolWrites') && isfield(mv, 'dbmsNumberOfFysncLogWrites')
@@ -172,11 +205,11 @@ classdef Plotter < handle
                 Xlabel = this.Xlabel;
                 Ylabel = 'Number of';
                 legends = {'DB No. Physical Log Writes','DB No. Data Writes','DB Double Writes Operations','DB No. Log Write Requests','DB Buffer Pool Writes','DB No. Fysnc Log Writes'};
-                    
+				timestamp = this.Xdata;
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotDiskReadMB(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskReadMB(this)
             mv = this.mv;
             Xdata = {};
             Ydata = {};
@@ -195,9 +228,10 @@ classdef Plotter < handle
             Xlabel = this.Xlabel;
             Ylabel = 'Read data (MB/sec)';
             title = 'Read Volume (MB)';
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotDiskReadNum(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskReadNum(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfDataReads')
                 Xdata = {this.Xdata};
@@ -206,10 +240,11 @@ classdef Plotter < handle
                 Ylabel = 'Number of';
                 legends = {'DB No. Data Reads','DB No. Logical Reads From Disk','DB No. Pending Reads'};
                 title = 'Read Requests (#)';
+				timestamp = this.Xdata;
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotCacheHit(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotCacheHit(this)
             mv = this.mv;
             allowedRelativeDiff = 0.1;
             minFreq=100;
@@ -230,6 +265,7 @@ classdef Plotter < handle
             Xlabel = 'TPS';
             Ylabel = 'Actual miss ratio';
             legends = {};
+			timestamp = this.Xdata;
             
             if isfield(mv, 'dbmsPhysicalReadsMB')
                 title = ['Avg Read(MB)=' num2str(mean(mv.dbmsPhysicalReadsMB),1) ' Actual Cache Miss Ratio=', num2str(mean(actualCacheMiss),3) '=' num2str(mean(mv.dbmsReads),3) '/' num2str(mean(mv.dbmsReadRequests),1) '=' num2str(ratio,3)];
@@ -238,7 +274,7 @@ classdef Plotter < handle
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotRowsChangedOverTime(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotRowsChangedOverTime(this)
             mv = this.mv;
             if isfield(mv, 'dbmsChangedRows')
                 Xdata = {this.Xdata};
@@ -247,10 +283,11 @@ classdef Plotter < handle
                 Ylabel = '# Rows Changed';
                 legends = {'Rows deleted','Rows updated','Rows inserted','HandlerWrite'};
                 title = 'Rows Changed';
+				timestamp = this.Xdata;
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotRowsChangedPerWriteMB(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotRowsChangedPerWriteMB(this)
             mv = this.mv;
             if isfield(mv, 'dbmsChangedRows')
                 temp = [mv.dbmsChangedRows mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites];
@@ -266,9 +303,10 @@ classdef Plotter < handle
             Xlabel = '# Rows Changed';
             Ylabel = 'Written data (MB)';
             legends = {'MySQL total IO', 'MySQL log IO', 'MySQL data IO', 'System physical IO'};
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotRowsChangedPerWriteNo(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotRowsChangedPerWriteNo(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
                 Xdata = {mv.dbmsChangedRows};
@@ -277,14 +315,15 @@ classdef Plotter < handle
                 Ylabel = 'Number of';
                 legends = {'InnodbLogWrites', 'InnodbDataWrites', 'InnodbDblwrWrites', 'InnodbLogWriteRequests', 'InnodbBufferPoolWriteRequests', 'InnodbOsLogFsyncs', 'asyncAio', 'InnodbDataPendingWrites','InnodbOsLogPendingWrites','InnodbOsLogPendingFsyncs'};
                 title = 'Rows Changed vs. # Write Requests';
+				timestamp = this.Xdata;
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotDirtyPagesPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDirtyPagesPrediction(this)
             % TODO: not done because of hard-coded numbers 
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotFlushRate(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotFlushRate(this)
             mv = this.mv
             Xdata = {this.Xdata};
             Ydata = {mv.dbmsFlushedPages};
@@ -297,9 +336,10 @@ classdef Plotter < handle
             Xlabel = this.Xlabel;
             Ylabel = 'Pages flushed per second';
             legends = {'Actual # of pages flushed'};
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotNetwork(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotNetwork(this)
             mv = this.mv;
             Xdata = {this.Xdata};
             Xlabel = this.Xlabel;
@@ -307,21 +347,22 @@ classdef Plotter < handle
             Ylabel = 'KB';
             legends = {'Network recv(KB)','Network send(KB)'};
             title = 'Network';
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLatencyPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPrediction(this)
             % TODO: not implemented due to hard-coded number in original implementation.
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLockConcurrencyPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLockConcurrencyPrediction(this)
             % TODO: not implemented due to hard-coded number in original implementation.
         end
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotBarzanPrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotBarzanPrediction(this)
             % TODO: not implemented due to hard-coded number in original implementation.
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotDirtyPagesOverTime(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDirtyPagesOverTime(this)
             % TODO: handle monitor variable.
             mv = this.mv;
             Xdata = {this.Xdata};
@@ -330,9 +371,10 @@ classdef Plotter < handle
             Ylabel = '# of Pages';
             legends = {'Rows Changed', 'Flushed pages','pages with data','dirty pages','free pages','buffer pool size (in pages)'};
             title = 'Dirty pages over time';
+			timestamp = this.Xdata;
         end
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLockAnalysis(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLockAnalysis(this)
             mv = this.mv;
             if isfield(mv, 'dbmsCurrentLockWaits')
                 Xdata = {this.Xdata};
@@ -341,10 +383,11 @@ classdef Plotter < handle
                 Ylabel = 'Locks (Normalized)';
                 legends = {'#locks being waited for','#waits, due to locks', 'time spent waiting for locks'};
                 title = 'Lock analysis';
+				timestamp = this.Xdata;
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotPagingInOut(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotPagingInOut(this)
             % TODO: handle monitor variable.
             mv = this.mv;
             Xdata = {this.Xdata};
@@ -353,9 +396,10 @@ classdef Plotter < handle
             Ylabel = 'Memory';
             title = 'Memory Analysis';
             legends = {'paging_in','paging_out','virtual_majpf'};
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotCombinedAvgLatency(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotCombinedAvgLatency(this)
             mv = this.mv;
             Xdata = {this.Xdata};
             Xlabel = this.Xlabel;
@@ -365,49 +409,105 @@ classdef Plotter < handle
             Ydata = {combinedLatency};
             %Xdata{end+1} = this.Xdata;
             %Ydata{end+1} = mean(mv.prclat.latenciesPCtile(:,2:end,6), 2);
-            Ylabel = 'latency (sec)';
-            legends = {'Average latency'}; %,'Avg 95 % latency'};
-            title = 'Latency';
+            Ylabel = 'Latency (seconds)'; % temp
+            legends = {'Average Latency'}; %,'Avg 95 % latency'};
+            title = 'Average Latency';
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLatency(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatency(this)
             % TODO: where does 'clientAvgLatencyA' come from?
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLatencyOverall(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyOverall(this)
             mv = this.mv;
             AvgLatencyAllLittle = 160 ./ mv.clientTotalSubmittedTrans;
             AcgLatencyAll = sum(mv.clientIndividualSubmittedTrans .* mv.clientTransLatency, 2) ./ mv.clientTotalSubmittedTrans;
+			AvgLatencyAllLittle(~isfinite(AvgLatencyAllLittle)) = 0;
+			AcgLatencyAll(~isfinite(AcgLatencyAll)) = 0;
             Xdata = {this.Xdata};
             Xlabel = this.Xlabel;
             Ydata = {[AvgLatencyAllLittle AcgLatencyAll]};
             Ylabel = 'Latency (sec)';
             a1= mae(AvgLatencyAllLittle, AcgLatencyAll);
             r1 = mre(AvgLatencyAllLittle, AcgLatencyAll);
-            legends = {horzcat('Little"s law MAE=', num2str(a1), ' MRE=', num2str(r1)), 'actual avg latency'};
+            legends = {horzcat('Little"s law MAE=', num2str(a1), ' MRE=', num2str(r1)), 'Actual Average Latency'};
             title = 'Overall Latency';
+			timestamp = this.Xdata;
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLatencyVersusCPU(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyVersusCPU(this)
             mv = this.mv;
             Xdata = {};
             Xlabel = 'Average CPU';
             Ydata = {};
             legends = {};
+            temp = [mean(mv.cpu_usr,2) mv.clientTransLatency this.Xdata];
+            temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
             for i=1:mv.numOfTransType
-                Xdata{end+1} = mean(mv.cpu_usr,2);
-                Ydata{end+1} = mv.clientTransLatency(:,i);
-                legends{end+1} = horzcat('tran', num2str(i));
+                Xdata{end+1} = temp(:,1);
+                Ydata{end+1} = temp(:,i+1);
+                %Xdata{end+1} = mean(mv.cpu_usr,2);
+                %Ydata{end+1} = mv.clientTransLatency(:,i);
+                legends{end+1} = horzcat('Type ', num2str(i));
             end
             Ylabel = 'latency (sec)';
             title = 'CPU vs Latency';
         end
+
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyVersusCPU99(this)
+            mv = this.mv;
+            Xdata = {};
+            Xlabel = 'Average CPU';
+            Ydata = {};
+            legends = {};
+			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],7);
+			latencies(isnan(latencies)) = 0;
+            temp = [mean(mv.cpu_usr,2) latencies this.Xdata];
+            temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
+            for i=1:mv.numOfTransType
+                Xdata{end+1} = temp(:,1);
+                Ydata{end+1} = temp(:,i+1);
+                %Xdata{end+1} = mean(mv.cpu_usr,2);
+                %Ydata{end+1} = mv.clientTransLatency(:,i);
+                legends{end+1} = horzcat('Type ', num2str(i));
+            end
+            Ylabel = 'latency (sec)';
+            title = 'CPU vs Latency (99% Quantile)';
+        end
+
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyVersusCPUMedian(this)
+            mv = this.mv;
+            Xdata = {};
+            Xlabel = 'Average CPU';
+            Ydata = {};
+            legends = {};
+			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],3);
+			latencies(isnan(latencies)) = 0;
+            temp = [mean(mv.cpu_usr,2) latencies this.Xdata];
+            temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
+            for i=1:mv.numOfTransType
+                Xdata{end+1} = temp(:,1);
+                Ydata{end+1} = temp(:,i+1);
+                %Xdata{end+1} = mean(mv.cpu_usr,2);
+                %Ydata{end+1} = mv.clientTransLatency(:,i);
+                legends{end+1} = horzcat('Type ', num2str(i));
+            end
+            Ylabel = 'latency (sec)';
+            title = 'CPU vs Latency (Median)';
+        end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLatency3D(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatency3D(this)
             % TODO: 3D support in JFreeChart?
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotWorkingSetSize(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotWorkingSetSize(this)
             mv = this.mv;
             if isfield(mv, 'dbmsRandomReadAheads')
                 temp=[ ...
@@ -419,10 +519,11 @@ classdef Plotter < handle
                 Ylabel = '?';
                 legends = {'InnodbBufferPoolReadAheadRnd', 'InnodbBufferPoolReadAheadSeq', 'InnodbBufferPoolReadRequests', 'InnodbBufferPoolReads','InnodbBufferPoolWaitFree'};
                 title = 'Working Set Analysis';
+				timestamp = this.Xdata;
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotWorkingSetSize2(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotWorkingSetSize2(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfNextRowReadRequests')
                 temp=[mv.dbmsNumberOfFirstEntryReadRequests mv.dbmsNumberOfKeyBasedReadRequests mv.dbmsNumberOfNextKeyBasedReadRequests mv.dbmsNumberOfPrevKeyBasedReadRequests mv.dbmsNumberOfRowReadRequests mv.dbmsNumberOfNextRowReadRequests];
@@ -432,13 +533,16 @@ classdef Plotter < handle
                 Ylabel = '?';
                 legends = {'Handler_read_first', 'Handler_read_key', 'Handler_read_next', 'Handler_read_prev', 'Handler_read_rnd', 'Handler_read_rnd_next'};
                 title = 'Working Set Analysis';
+				timestamp = this.Xdata;
             end
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLatencyPerTPS(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerTPS(this)
             mv = this.mv;
-            temp = [mv.clientTotalSubmittedTrans mv.clientTransLatency];
+            temp = [mv.clientTotalSubmittedTrans mv.clientTransLatency this.Xdata];
             temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
             Xdata = {};
             Xlabel = 'TPS';
             Ydata = {};
@@ -446,43 +550,147 @@ classdef Plotter < handle
             for i=1:mv.numOfTransType
                 Xdata{end+1} = temp(:,1);
                 Ydata{end+1} = temp(:,i+1);
-                legends{end+1} = horzcat('Avg Latency ', num2str(i));
+                legends{end+1} = horzcat('Avg Latency of Type ', num2str(i));
             end
             title = 'Latency vs. TPS';
             Ylabel = 'Latency (sec)';
         end
+
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerTPS99(this)
+            mv = this.mv;
+			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],7);
+			latencies(isnan(latencies)) = 0;
+            temp = [mv.clientTotalSubmittedTrans latencies this.Xdata];
+            temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
+            Xdata = {};
+            Xlabel = 'TPS';
+            Ydata = {};
+            legends = {};
+            for i=1:mv.numOfTransType
+                Xdata{end+1} = temp(:,1);
+                Ydata{end+1} = temp(:,i+1);
+                legends{end+1} = horzcat('Avg Latency of Type ', num2str(i));
+            end
+            title = 'Latency vs. TPS (99% Quantile)';
+            Ylabel = 'Latency (sec)';
+        end
+
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerTPSMedian(this)
+            mv = this.mv;
+			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],3);
+			latencies(isnan(latencies)) = 0;
+            temp = [mv.clientTotalSubmittedTrans latencies this.Xdata];
+            temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
+            Xdata = {};
+            Xlabel = 'TPS';
+            Ydata = {};
+            legends = {};
+            for i=1:mv.numOfTransType
+                Xdata{end+1} = temp(:,1);
+                Ydata{end+1} = temp(:,i+1);
+                legends{end+1} = horzcat('Avg Latency of Type ', num2str(i));
+            end
+            title = 'Latency vs. TPS (Median)';
+            Ylabel = 'Latency (sec)';
+        end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotLatencyPerLocktime(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerLocktime(this)
             mv = this.mv;
             CurrentRowLockTime=mv.dbmsCurrentLockWaits;
     
-            temp = [CurrentRowLockTime mv.clientTransLatency];
+            temp = [CurrentRowLockTime mv.clientTransLatency this.Xdata];
             temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
             Xdata = {temp(:,1)};
             Xlabel = 'Row lock time';
             Ydata = {temp(:,2:end)};
             Ylabel = '';
             title = 'Latency vs. Lock time';
-            legends = {'avg latency A','avg latency B'};
+            legends = {};
+            for i=1:mv.numOfTransType
+                legends{end+1} = horzcat('Avg Latency of Type ', num2str(i));
+            end
         end
+
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerLocktime99(this)
+            mv = this.mv;
+            CurrentRowLockTime=mv.dbmsCurrentLockWaits;
+    
+			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],7);
+			latencies(isnan(latencies)) = 0;
+            temp = [CurrentRowLockTime latencies this.Xdata];
+            temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
+            Xdata = {temp(:,1)};
+            Xlabel = 'Row lock time';
+            Ydata = {temp(:,2:end)};
+            Ylabel = '';
+            title = 'Latency vs. Lock time (99% Quantile)';
+            legends = {};
+            for i=1:mv.numOfTransType
+                legends{end+1} = horzcat('Avg Latency of Type ', num2str(i));
+            end
+        end
+
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerLocktimeMedian(this)
+            mv = this.mv;
+            CurrentRowLockTime=mv.dbmsCurrentLockWaits;
+    
+			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],3);
+			latencies(isnan(latencies)) = 0;
+            temp = [CurrentRowLockTime latencies this.Xdata];
+            temp = sortrows(temp,1);
+			timestamp = temp(:, end);
+			temp = temp(:,1:end-1);
+            Xdata = {temp(:,1)};
+            Xlabel = 'Row lock time';
+            Ydata = {temp(:,2:end)};
+            Ylabel = '';
+            title = 'Latency vs. Lock time (Median)';
+            legends = {};
+            for i=1:mv.numOfTransType
+                legends{end+1} = horzcat('Avg Latency of Type ', num2str(i));
+            end
+        end
+
+		function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotTransactionMix(this)
+			mv = this.mv;
+			
+			title = 'Transaction Mix';
+			Xdata = {[1:size(mv.clientIndividualSubmittedTrans, 2)]};
+			Ydata = {sum(mv.clientIndividualSubmittedTrans, 1)};
+			Xlabel = '';
+			Ylabel = '';
+			legends = {};
+			timestamp = this.Xdata;
+			for i=1:size(mv.clientIndividualSubmittedTrans, 2)
+				legends{end+1} = ['Transaction Type ' num2str(i)];
+			end
+		end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotStrangeFeatures1(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotStrangeFeatures1(this)
             % TODO: do we need this?
         end
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotStrangeFeatures2(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotStrangeFeatures2(this)
             % TODO: do we need this?
         end
 
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotAllStrangeFeatures(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotAllStrangeFeatures(this)
             % TODO: do we need this?
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotInterrupts(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotInterrupts(this)
             % TODO: handle monitor variable
         end
         
-        function [title legends Xdata Ydata Xlabel Ylabel] = plotFlushRatePrediction(this)
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotFlushRatePrediction(this)
             % TODO: has hard-coded numbers...
         end
         

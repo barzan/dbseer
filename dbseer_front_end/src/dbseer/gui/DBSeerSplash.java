@@ -15,7 +15,7 @@ public class DBSeerSplash extends JWindow
 		Dimension screenSize =
 				Toolkit.getDefaultToolkit().getScreenSize();
 
-		status = new JLabel("initializing MATLAB...");
+		status = new JLabel("initializing the statistical libraries...");
 		status.setHorizontalAlignment(JLabel.CENTER);
 		status.setPreferredSize(new Dimension(500, 24));
 

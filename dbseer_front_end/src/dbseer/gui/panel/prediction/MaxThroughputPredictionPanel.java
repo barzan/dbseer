@@ -1,5 +1,6 @@
 package dbseer.gui.panel.prediction;
 
+import dbseer.gui.actions.ManuallyChangeFieldAction;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -14,6 +15,9 @@ public class MaxThroughputPredictionPanel extends JPanel
 	private JLabel lockConfLabel;
 	private JTextField lockConfTextField;
 
+	private JButton changeIOConfButton;
+	private JButton changeLockConfButton;
+
 	public MaxThroughputPredictionPanel()
 	{
 		initializeGUI();
@@ -21,16 +25,20 @@ public class MaxThroughputPredictionPanel extends JPanel
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: MaxThroughputPrediction"), "wrap");
+		this.setLayout(new MigLayout("fill", "[70%][30%]"));
+//		this.add(new JLabel("Prediction: MaxThroughputPrediction"), "wrap");
 		ioConfLabel = new JLabel("IO Configuration: ");
 		ioConfTextField = new JTextField();
+		changeIOConfButton = new JButton(new ManuallyChangeFieldAction(ioConfTextField));
 		lockConfLabel = new JLabel("Lock Configuration");
 		lockConfTextField = new JTextField();
+		changeLockConfButton = new JButton(new ManuallyChangeFieldAction(lockConfTextField));
 		this.add(ioConfLabel, "wrap");
-		this.add(ioConfTextField, "growx, wrap");
+		this.add(ioConfTextField, "growx");
+		this.add(changeIOConfButton, "wrap");
 		this.add(lockConfLabel, "wrap");
 		this.add(lockConfTextField, "growx");
+		this.add(changeLockConfButton);
 	}
 
 	public String getIOConf()
@@ -41,6 +49,10 @@ public class MaxThroughputPredictionPanel extends JPanel
 	public void setIOConf(String conf)
 	{
 		ioConfTextField.setText(conf);
+		if (!conf.isEmpty())
+		{
+			ioConfTextField.setEnabled(false);
+		}
 	}
 
 	public String getLockConf() { return lockConfTextField.getText(); }
@@ -48,5 +60,9 @@ public class MaxThroughputPredictionPanel extends JPanel
 	public void setLockConf(String conf)
 	{
 		lockConfTextField.setText(conf);
+		if (!conf.isEmpty())
+		{
+			lockConfTextField.setEnabled(false);
+		}
 	}
 }

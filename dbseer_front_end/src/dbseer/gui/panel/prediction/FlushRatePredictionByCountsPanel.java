@@ -1,5 +1,6 @@
 package dbseer.gui.panel.prediction;
 
+import dbseer.gui.actions.ManuallyChangeFieldAction;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -14,6 +15,8 @@ public class FlushRatePredictionByCountsPanel extends JPanel
 	private JLabel whichTransactionToPlotLabel;
 	private JTextField whichTransactionToPlotTextField;
 
+	private JButton changeIOConfButton;
+
 	public FlushRatePredictionByCountsPanel()
 	{
 		initializeGUI();
@@ -21,12 +24,14 @@ public class FlushRatePredictionByCountsPanel extends JPanel
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("fill"));
-		this.add(new JLabel("Prediction: FlushRatePredictionByCounts"), "wrap");
+		this.setLayout(new MigLayout("fill", "[70%][30%]"));
+//		this.add(new JLabel("Prediction: FlushRatePredictionByCounts"), "wrap");
 		ioConfLabel = new JLabel("IO Configuration: ");
 		ioConfTextField = new JTextField();
+		changeIOConfButton = new JButton(new ManuallyChangeFieldAction(ioConfTextField));
 		this.add(ioConfLabel, "wrap");
-		this.add(ioConfTextField, "growx, wrap");
+		this.add(ioConfTextField, "growx");
+		this.add(changeIOConfButton, "wrap");
 
 		whichTransactionToPlotLabel = new JLabel("Which transaction type to plot:");
 		whichTransactionToPlotTextField = new JTextField();
@@ -42,6 +47,10 @@ public class FlushRatePredictionByCountsPanel extends JPanel
 	public void setIOConf(String conf)
 	{
 		ioConfTextField.setText(conf);
+		if (!conf.isEmpty())
+		{
+			ioConfTextField.setEnabled(false);
+		}
 	}
 
 	public String getWhichTransactiontoPlot()

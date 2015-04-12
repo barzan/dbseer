@@ -58,6 +58,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 
 		portField = new JFormattedTextField(portFormatter);
 		portField.setColumns(6);
+		portField.setText("3334"); // default port.
 		idField = new JTextField(20);
 		passwordField = new JPasswordField(20);
 
@@ -67,6 +68,9 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 		startMonitoringButton.addActionListener(this);
 		stopMonitoringButton = new JButton("Stop Monitoring");
 		stopMonitoringButton.addActionListener(this);
+
+		startMonitoringButton.setEnabled(false);
+		stopMonitoringButton.setEnabled(false);
 
 		ipField.setText(DBSeerGUI.userSettings.getLastMiddlewareIP());
 		portField.setText(String.valueOf(DBSeerGUI.userSettings.getLastMiddlewarePort()));
@@ -120,15 +124,17 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 
 					XStreamHelper xmlHelper = new XStreamHelper();
 					xmlHelper.toXML(DBSeerGUI.userSettings, DBSeerGUI.settingsPath);
+
+					startMonitoringButton.setEnabled(true);
 				}
 				else
 				{
 					JOptionPane.showMessageDialog(null, socket.getErrorMessage(), "Middleware Login Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
-			catch (IOException e)
+			catch (Exception e)
 			{
-				JOptionPane.showMessageDialog(null, e.toString(), "Middleware Login Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, e.getMessage(), "Middleware Login Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		else if (actionEvent.getSource() == startMonitoringButton)
@@ -139,6 +145,8 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 				{
 					DBSeerGUI.middlewareStatus.setText("Middleware Connected: " + socket.getIp() + ":" + socket.getPort() + " as " +
 							socket.getId() + " (Monitoring)");
+					startMonitoringButton.setEnabled(false);
+					stopMonitoringButton.setEnabled(true);
 				}
 				else
 				{
@@ -147,13 +155,16 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 			}
 			catch (IOException e)
 			{
-				JOptionPane.showMessageDialog(null, e.toString(), "Middleware Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, e.getMessage(), "Middleware Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		else if (actionEvent.getSource() == stopMonitoringButton)
 		{
 			try
 			{
+				startMonitoringButton.setEnabled(true);
+				stopMonitoringButton.setEnabled(false);
+
 				if (!socket.isMonitoring())
 				{
 					return;
@@ -171,7 +182,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 				File newRawDatasetDir = new File (DBSeerConstants.RAW_DATASET_PATH + File.separator + datasetName);
 				while (newRawDatasetDir.exists())
 				{
-					datasetName = (String)JOptionPane.showInputDialog(this, datasetName + "already exists.\n" +
+					datasetName = (String)JOptionPane.showInputDialog(this, datasetName + " already exists.\n" +
 									"Enter the name of new dataset", "New Dataset",
 							JOptionPane.PLAIN_MESSAGE, null, null, "NewDataset");
 					newRawDatasetDir = new File (DBSeerConstants.RAW_DATASET_PATH + File.separator + datasetName);
@@ -227,7 +238,9 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 					if (!dc.processDataset())
 					{
 						JOptionPane.showMessageDialog(null, "Failed to process received dataset", "Error", JOptionPane.ERROR_MESSAGE);
+						DBSeerGUI.status.setText("");
 					}
+					DBSeerGUI.status.setText("");
 				}
 				else
 				{
@@ -236,7 +249,8 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 			}
 			catch (IOException e)
 			{
-				JOptionPane.showMessageDialog(null, e.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				DBSeerGUI.status.setText("");
 			}
 		}
 	}
