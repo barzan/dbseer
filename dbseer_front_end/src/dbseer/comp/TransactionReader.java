@@ -11,23 +11,38 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by dyoon on 15. 1. 3..
  */
 public class TransactionReader
 {
+	public static final int NOT_STARTED = 0;
+	public static final int FETCHING = 1;
+	public static final int FETCHED = 2;
+	public static final int DONE = 3;
+
+	private int fetchStatus = 0;
+
 	private String transactionFilePath;
 	private String queryFilePath;
 	private String statementFilePath;
 	private String statementOffsetPath;
 	private String lastUser;
+	private String transaction;
+	private String currentUser;
 
 	private int time;
 	private int txIndex;
 
 	private long lastLatency;
 	private long lastId;
+
+	private long currentLatency;
+	private long currentId;
 
 	private RandomAccessFile transactionFile = null;
 	private RandomAccessFile queryFile = null;
@@ -40,8 +55,9 @@ public class TransactionReader
 	private ArrayList<Long> minQueryOffsets;
 	private ArrayList<Long> maxQueryOffsets;
 
-	private HashMap<String, PriorityQueue<QueryOffset>> queryOffsetMap = new HashMap<String, PriorityQueue<QueryOffset>>();
-//	private LimitedLinkedHashMap<Long, String> queryMap = new LimitedLinkedHashMap<Long, String>(10000);
+	private TransactionFetchThread fetchThread;
+	private final Lock lock = new ReentrantLock();
+	private final Condition isFetched = lock.newCondition();
 
 	public TransactionReader()
 	{
@@ -55,10 +71,7 @@ public class TransactionReader
 		this.statementOffsetPath = statementOffsetPath;
 		this.time = time;
 
-		if (!queryOffsetMap.containsKey(queryFilePath))
-		{
-			queryOffsetMap.put(queryFilePath, new PriorityQueue<QueryOffset>(100, new QueryOffsetComparator()));
-		}
+//		this.fetchThread = new TransactionFetchThread(this);
 	}
 
 	public boolean initialize()
@@ -129,6 +142,9 @@ public class TransactionReader
 //			e.printStackTrace();
 			return false;
 		}
+		fetchStatus = FETCHING;
+		fetchThread = new TransactionFetchThread(this);
+		fetchThread.start();
 		return true;
 	}
 
@@ -149,9 +165,51 @@ public class TransactionReader
 
 	public String getNextTransaction()
 	{
+		String currentTransaction = "";
+		lock.lock();
+		if (fetchStatus == DONE)
+		{
+			lock.unlock();
+			return "";
+		}
+		try
+		{
+			while (fetchStatus == NOT_STARTED || fetchStatus == FETCHING)
+			{
+				isFetched.await();
+			}
+			currentTransaction = transaction;
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			lock.unlock();
+		}
+
+		currentId = lastId;
+		currentLatency = lastLatency;
+		currentUser = lastUser;
+
+		fetchThread = new TransactionFetchThread(this);
+		fetchThread.start();
+
+		return currentTransaction;
+	}
+
+	public void fetchTransaction()
+	{
+		lock.lock();
+		fetchStatus = FETCHING;
 		if (txIndex == txIds.size())
 		{
-			return "";
+			transaction = "";
+			fetchStatus = DONE;
+			isFetched.signal();
+			lock.unlock();
+			return;
 		}
 
 		long txId = txIds.get(txIndex);
@@ -166,10 +224,9 @@ public class TransactionReader
 		lastLatency = 0;
 		lastId = txId;
 		lastUser = "";
-		lastLatency = 0;
 
 		ArrayList<Long> statementIds = new ArrayList<Long>();
-		PriorityQueue<QueryOffset> queryOffsetIndex = queryOffsetMap.get(queryFilePath);
+//		PriorityQueue<QueryOffset> queryOffsetIndex = queryOffsetMap.get(queryFilePath);
 
 		try
 		{
@@ -208,15 +265,20 @@ public class TransactionReader
 
 			if (statementIds.isEmpty())
 			{
-				return "";
+				transaction = "";
+				fetchStatus = DONE;
+				isFetched.signal();
+				lock.unlock();
+				return;
+//				return "";
 			}
 
 			Collections.sort(statementIds);
 
 			long nextId;
 
-			QueryOffset[] queryOffsetIndexArray = queryOffsetIndex.toArray(new QueryOffset[0]);
-			Arrays.sort(queryOffsetIndexArray, new QueryOffsetComparator());
+//			QueryOffset[] queryOffsetIndexArray = queryOffsetIndex.toArray(new QueryOffset[0]);
+//			Arrays.sort(queryOffsetIndexArray, new QueryOffsetComparator());
 
 			queryFile.seek(minQueryOffset);
 
@@ -255,7 +317,33 @@ public class TransactionReader
 		{
 			e.printStackTrace();
 		}
-		++txIndex;
-		return content;
+		finally
+		{
+			++txIndex;
+			transaction = content;
+			fetchStatus = FETCHED;
+			isFetched.signal();
+			lock.unlock();
+		}
+	}
+
+	public synchronized int getFetchStatus()
+	{
+		return fetchStatus;
+	}
+
+	public String getCurrentUser()
+	{
+		return currentUser;
+	}
+
+	public long getCurrentLatency()
+	{
+		return currentLatency;
+	}
+
+	public long getCurrentId()
+	{
+		return currentId;
 	}
 }

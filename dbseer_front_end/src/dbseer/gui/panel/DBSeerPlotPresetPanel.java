@@ -32,7 +32,7 @@ public class DBSeerPlotPresetPanel extends JPanel implements ActionListener
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("fill"));
+		this.setLayout(new MigLayout("fill, ins 0"));
 
 		selectAllButton = new JButton();
 		selectAllButton.setText("Select All");
@@ -42,11 +42,11 @@ public class DBSeerPlotPresetPanel extends JPanel implements ActionListener
 		deselectAllButton.setText("Deselect All");
 		deselectAllButton.addActionListener(this);
 
-		transactionChartsPanel = new JPanel(new MigLayout("wrap 3"));
+		transactionChartsPanel = new JPanel(new MigLayout("ins 0, wrap 3"));
 		transactionChartsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Transaction"));
-		systemChartsPanel = new JPanel(new MigLayout("wrap 3"));
+		systemChartsPanel = new JPanel(new MigLayout("ins 0, wrap 4"));
 		systemChartsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "System"));
-		dbmsChartsPanel = new JPanel(new MigLayout("wrap 3"));
+		dbmsChartsPanel = new JPanel(new MigLayout("ins 0, wrap 4"));
 		dbmsChartsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "DBMS"));
 
 		for (String name : DBSeerGUI.transactionChartNames)

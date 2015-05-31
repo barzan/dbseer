@@ -568,8 +568,17 @@ public class ExplainChartAction extends AbstractAction
 			String cause = (String) JOptionPane.showInputDialog(null, "Enter the cause for predicates ", "New Causal Model",
 					JOptionPane.PLAIN_MESSAGE, null, null, "New Causal Model");
 
-			if (cause == null)
+			if (cause == null || cause.isEmpty())
 			{
+				JOptionPane.showMessageDialog(null, "Please enter the cause correctly to save the causal model", "Warning", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
+			cause = cause.trim();
+
+			if (cause == "" || cause.isEmpty())
+			{
+				JOptionPane.showMessageDialog(null, "Please enter the cause correctly to save the causal model", "Warning", JOptionPane.WARNING_MESSAGE);
 				return;
 			}
 

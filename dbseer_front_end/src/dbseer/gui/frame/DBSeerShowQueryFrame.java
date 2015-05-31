@@ -212,8 +212,8 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 
 	private String getTransactionInformation()
 	{
-		return String.format("- Tx ID: %d, Username: %s, Latency: %d ms\n", reader.getLastTransactionId(),
-				reader.getLastTransactionUser(), reader.getLastTransactionLatency());
+		return String.format("- Tx ID: %d, Username: %s, Latency: %d ms\n", reader.getCurrentId(),
+				reader.getCurrentUser(), reader.getCurrentLatency());
 	}
 
 	public boolean isQueryAvailable()
@@ -243,7 +243,7 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 				if (reader != null)
 				{
 					String output = reader.getNextTransaction();
-					while (output == "" && currentCategory < timestamp.length)
+					while (output == "" && currentCategory < timestamp.length - 1)
 					{
 						++currentCategory;
 						int time = (int)timestamp[currentCategory];

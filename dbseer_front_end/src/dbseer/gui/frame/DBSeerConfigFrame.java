@@ -105,17 +105,27 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 
 //		availableProfileList = new JList(DBSeerGUI.datasets);
 		availableProfileList = new JList(availableProfiles);
+		availableProfileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		selectedProfileList = new JList(config.getDatasetList());
+
 		availableProfileListPane = new JScrollPane(availableProfileList);
 		availableProfileListPane.setPreferredSize(new Dimension(200, 300));
 		availableProfileListPane.setBorder(BorderFactory.createTitledBorder("Available datasets"));
 
 		selectedProfileListPane = new JScrollPane(selectedProfileList);
 		selectedProfileListPane.setPreferredSize(new Dimension(200, 300));
-		selectedProfileListPane.setBorder(BorderFactory.createTitledBorder("Datasets for this train config"));
+		selectedProfileListPane.setBorder(BorderFactory.createTitledBorder("Dataset for this train config"));
 
 		addProfileToConfigButton = new JButton(">>");
 		removeProfileFromConfigButton = new JButton("<<");
+		if (config.getDatasetCount() > 0)
+		{
+			addProfileToConfigButton.setEnabled(false);
+		}
+		else
+		{
+			removeProfileFromConfigButton.setEnabled(false);
+		}
 
 		this.add(tableScrollPane, "cell 0 0 2 2, grow");
 
@@ -243,6 +253,10 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 				config.addDataset(profile);
 				availableProfiles.removeElement(profile);
 			}
+			if (config.getDatasetCount() > 0)
+			{
+				addProfileToConfigButton.setEnabled(false);
+			}
 		}
 		else if (actionEvent.getSource() == removeProfileFromConfigButton)
 		{
@@ -252,6 +266,10 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 				DBSeerDataSet profile = (DBSeerDataSet)profileObj;
 				config.removeDataset(profile);
 				availableProfiles.addElement(profile);
+			}
+			if (config.getDatasetCount() == 0)
+			{
+				addProfileToConfigButton.setEnabled(true);
 			}
 		}
 	}

@@ -6,8 +6,8 @@ package dbseer.gui;
 public class DBSeerConstants
 {
 	// prediction test modes
-	public static final int TEST_MODE_DATASET = 0;
-	public static final int TEST_MODE_MIXTURE_TPS = 1;
+	public static final int TEST_MODE_MIXTURE_TPS = 0;
+	public static final int TEST_MODE_DATASET = 1;
 
 	// Grouping Type Constants
 	public static final int GROUP_NONE = 0;
@@ -52,4 +52,19 @@ public class DBSeerConstants
 	// Constants
 	public static final double EXPLAIN_DEFAULT_CONFIDENCE_THRESHOLD = 20.0;
 	public static final int DBSCAN_MAX_CLUSTERS = 5;
+
+	public static final int MAX_PREDICTION_TPS = 10000;
+	public static final int MIN_PREDICTION_TPS = 0;
+
+	// chart types
+	public static final int CHART_XYLINE = 0;
+	public static final int CHART_BAR = 1;
+
+	// performance analysis types
+	public static final int ANALYSIS_WHATIF = 0;
+	public static final int ANALYSIS_BOTTLENECK = 1;
+	public static final int ANALYSIS_BLAME = 2;
+	public static final int ANALYSIS_THROTTLING = 3;
+
 }
+

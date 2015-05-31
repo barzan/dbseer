@@ -30,6 +30,13 @@ public class DBSeerCausalModelFrame extends JFrame
 		initializeGUI();
 	}
 
+	public DBSeerCausalModelFrame(DBSeerCausalModel model, String title)
+	{
+		this.model = model;
+		initializeGUI();
+		this.setTitle(title);
+	}
+
 	private void initializeGUI()
 	{
 		this.setTitle("DBSherlock: Causal Model");
@@ -72,7 +79,7 @@ public class DBSeerCausalModelFrame extends JFrame
 		graph.getModel().beginUpdate();
 		try
 		{
-			Object cause = graph.insertVertex(parent, null, model.getCause(), 500, 10, 160, 40, "CauseStyle");
+			Object cause = graph.insertVertex(parent, null, model.getCause(), 500, 10, 200, 80, "CauseStyle");
 //			mxCell cell = (mxCell)cause;
 //			mxGeometry geom = (mxGeometry) cell.getGeometry().clone();
 //			mxRectangle bounds = graph.getView().getState(cell).getLabelBounds();
@@ -83,7 +90,7 @@ public class DBSeerCausalModelFrame extends JFrame
 			for (DBSeerPredicate predicate : model.getPredicates())
 			{
 				Object pred = graph.insertVertex(parent, null, predicate.toString(),
-						10 + 500 * col, 60 + 50 * row, 420, 40, "PredicateStyle");
+						10 + 500 * col, 100 + 50 * row, 420, 40, "PredicateStyle");
 				vertices.add(pred);
 //				graph.insertEdge(parent, null, "", cause, pred);
 				++row;
@@ -104,6 +111,7 @@ public class DBSeerCausalModelFrame extends JFrame
 		}
 
 		graph.setAutoSizeCells(true);
+		graph.setCellsEditable(false);
 		graph.setCellsDisconnectable(false);
 		mxGraphComponent component = new mxGraphComponent(graph);
 		component.setConnectable(false);

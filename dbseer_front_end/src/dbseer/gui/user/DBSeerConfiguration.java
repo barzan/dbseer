@@ -3,7 +3,9 @@ package dbseer.gui.user;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import com.thoughtworks.xstream.annotations.XStreamOmitField;
+import dbseer.comp.MatlabFunctions;
 import dbseer.comp.UserInputValidator;
+import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
@@ -35,43 +37,26 @@ public class DBSeerConfiguration
 
 	// Table Header Constants
 	private static final int TYPE_NAME = 0;
-	private static final int TYPE_TRANSACTION_TYPE = 1;
-	private static final int TYPE_IO_CONFIGURATION = 2;
-	private static final int TYPE_LOCK_CONFIGURATION = 3;
-//	private static final int TYPE_NUM_CLUSTERS = 4;
-//	private static final int TYPE_WHICH_TRANSACTION = 5;
-//	private static final int TYPE_MIN_FREQUENECY = 6;
-//	private static final int TYPE_MIN_TPS = 7;
-//	private static final int TYPE_MAX_TPS = 8;
-//	private static final int TYPE_ALLOWED_RELATIVE_DIFF = 9;
+//	private static final int TYPE_TRANSACTION_TYPE = 1;
+	private static final int TYPE_IO_MAX_LOG_CAPACITY = 1;
+	private static final int TYPE_IO_MAX_FLUSH_RATE = 2;
+	private static final int TYPE_IO_SCALE_FACTOR = 3;
 
-	private static final String[] tableHeaders = {"Name of configuration", "Transaction types", "IO Configuration",
-			"Lock Configuration"
+	private static final int TYPE_LOCK_BEGIN_COST = 4;
+	private static final int TYPE_LOCK_INTERLOCK_INTERVAL = 5;
+	private static final int TYPE_LOCK_DOMAIN_MULTIPLIER = 6;
+	private static final int TYPE_LOCK_COST_MULTIPLIER = 7;
+
+	private static final String[] tableHeaders = {"Name of configuration", "IO: Max Log Capacity",
+			"IO: Max Flush Rate (pages/sec)", "IO: Scale Factor", "Lock: Begin Cost", "Lock: Inter-lock Interval",
+			"Lock: Domain Multiplier", "Lock: Cost Multiplier"
 	};
-	//, "IO configuration",
-//			"Lock configuration", "# clusters for a group", "Which transaction type to group",
-//			"Minimum frequency for a group", "Minimum TPS for a group", "Maximum TPS for a group",
-//			"Allowed relative diff"};
-
-//	private static final String[] groupingTypes = {"None", "Group by range", "Group by relative diff",
-//			"Group by clustering"};
-//
-//	private static final String[] groupingTargets = {"Individual transactions", "TPS"};
 
 	@XStreamOmitField
 	private JTable table;
 
 	@XStreamOmitField
 	private DefaultTableModel tableModel;
-
-//	@XStreamOmitField
-//	private JComboBox groupTypeComboBox;
-//
-//	@XStreamOmitField
-//	private JComboBox groupTargetComboBox;
-//
-//	@XStreamOmitField
-//	private JTextArea groupsTextArea;
 
 	@XStreamOmitField
 	private String uniqueVariableName = "";
@@ -85,6 +70,17 @@ public class DBSeerConfiguration
 
 	@XStreamOmitField
 	private boolean isInitialized = false;
+
+	private int numTransactionType = 0;
+
+	private double ioMaxLogCapacity = 0;
+	private double ioMaxFlushRate = 0;
+	private double ioScaleFactor = 0;
+
+	private double lockBeginCost = 0;
+	private double lockInterLockInterval = 0;
+	private double lockDomainMultiplier = 0;
+	private double lockCostMultiplier = 0;
 
 //	private int groupingType = GROUP_NONE; // combo box
 //	private int groupingTarget = GROUP_TARGET_INDIVIDUAL_TRANS_COUNT; // combo box
@@ -177,6 +173,20 @@ public class DBSeerConfiguration
 
 			try
 			{
+				String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
+
+				proxy.eval("rmpath " + dbseerPath + ";");
+				proxy.eval("rmpath " + dbseerPath + "/common_mat;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_data;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+
+				proxy.eval("addpath " + dbseerPath + ";");
+				proxy.eval("addpath " + dbseerPath + "/common_mat;");
+				proxy.eval("addpath " + dbseerPath + "/predict_mat;");
+				proxy.eval("addpath " + dbseerPath + "/predict_data;");
+				proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+
 				proxy.eval(this.uniqueVariableName + " = PredictionConfig;");
 				proxy.eval(this.uniqueVariableName + ".cleanDataset;");
 				if (datasetList.getSize() == 0)
@@ -185,23 +195,31 @@ public class DBSeerConfiguration
 							JOptionPane.WARNING_MESSAGE);
 					return false;
 				}
+				DBSeerDataSet firstProfile = (DBSeerDataSet) datasetList.getElementAt(0);
+				numTransactionType = firstProfile.getNumTransactionTypes();
 				for (int i = 0; i < datasetList.getSize(); ++i)
 				{
 					DBSeerDataSet profile = (DBSeerDataSet) datasetList.getElementAt(i);
-					profile.loadDataset();
+					profile.loadModelVariable();
 					proxy.eval(this.uniqueVariableName + ".addDataset(" + profile.getUniqueVariableName() + ");");
 				}
 
 //				setGroupingStrategy();
+				String transactionType = "[";
+				for (int i = 1; i <= numTransactionType; ++i)
+				{
+					transactionType += i + " ";
+				}
+				transactionType += "]";
 
-				proxy.eval(this.uniqueVariableName + ".setTransactionType(" + this.transactionTypes + ");");
+				proxy.eval(this.uniqueVariableName + ".setTransactionType(" + transactionType + ");");
 //				proxy.eval(this.uniqueVariableName + ".setIOConfiguration(" + this.ioConfiguration + ");");
 //				proxy.eval(this.uniqueVariableName + ".setLockConfiguration(" + this.lockConfiguration + ");");
 				proxy.eval(this.uniqueVariableName + ".initialize;");
 			}
 			catch (MatlabInvocationException e)
 			{
-				e.printStackTrace();
+				DBSeerExceptionHandler.handleException(e);
 			}
 
 //			isInitialized = true;
@@ -217,24 +235,23 @@ public class DBSeerConfiguration
 		ArrayList<Integer> currentTransactionTypes = new ArrayList<Integer>();
 		ArrayList<Integer> newTransactionTypes = new ArrayList<Integer>();
 
-		String transactionTypeString = this.transactionTypes.trim();
+//		String transactionTypeString = this.transactionTypes.trim();
 		String newTransactionType = "[";
-		String[] tokens = transactionTypeString.trim().split("[\\[\\]\\s]+");
+//		String[] tokens = transactionTypeString.trim().split("[\\[\\]\\s]+");
 
-		for (String token : tokens)
-		{
-			if (!token.isEmpty())
-			{
-				currentTransactionTypes.add(Integer.parseInt(token));
-			}
-		}
+//		for (String token : tokens)
+//		{
+//			if (!token.isEmpty())
+//			{
+//				currentTransactionTypes.add(Integer.parseInt(token));
+//			}
+//		}
 
 		List<String> testTransactionTypeNames = testDataset.getTransactionTypeNames();
 
-		for (Integer i : currentTransactionTypes)
+		for (int i = 0; i < numTransactionType; ++i)
 		{
-			int idx = i.intValue();
-			String transactionName = trainDataset.getTransactionTypeNames().get(idx-1);
+			String transactionName = trainDataset.getTransactionTypeNames().get(i);
 
 			int matchIndex = testTransactionTypeNames.indexOf(transactionName);
 
@@ -261,60 +278,6 @@ public class DBSeerConfiguration
 		return newTransactionType;
 	}
 
-//	private void setGroupingStrategy()
-//	{
-//		// no grouping.
-//		if (this.groupingType == GROUP_NONE)
-//		{
-//			return;
-//		}
-//
-//		MatlabProxy proxy = DBSeerGUI.proxy;
-//
-//		try
-//		{
-//		 	if (this.groupingType == GROUP_RANGE)
-//		    {
-//			    proxy.eval(this.uniqueVariableName + "_groups = " + this.groupingRange + ";");
-//			    proxy.eval(this.uniqueVariableName + "_groupingStrategy = " +
-//					    "struct('groups', " + this.uniqueVariableName + "_groups);");
-//			    proxy.eval(this.uniqueVariableName + ".setGroupingStrategy(" +
-//					    this.uniqueVariableName + "_groupingStrategy);");
-//		    }
-//			else
-//		    {
-//			    String groupStructString = "struct('minFreq', " + this.minFrequency + ", " +
-//					    "'minTPS', " + this.minTPS + ", " +
-//					    "'maxTPS', " + this.maxTPS + ", " +
-//					    "'groupByTPSinsteadOfIndivCounts', " + (this.groupingTarget == GROUP_TARGET_TPS ? "true" : "false") + ", ";
-//
-//
-//			    if (this.groupingType == GROUP_REL_DIFF)
-//			    {
-//				    groupStructString += "'allowedRelativeDiff', " + this.allowedRelDiff + ", ";
-//			    }
-//			    else if (this.groupingType == GROUP_NUM_CLUSTER)
-//			    {
-//				    groupStructString += "'nClusters', " + this.numClusters + ", ";
-//			    }
-//
-//			    if (this.groupingTarget == GROUP_TARGET_INDIVIDUAL_TRANS_COUNT)
-//			    {
-//				    groupStructString += "'byWhichTranTypes', " + this.whichTransTypeToGroup + ")";
-//			    }
-//
-//			    proxy.eval(this.uniqueVariableName + "_groupParams = " + groupStructString + ";");
-//			    proxy.eval(this.uniqueVariableName + "_groupingStrategy = " +
-//					    "struct('groupParams', " + this.uniqueVariableName + "_groupParams);");
-//			    proxy.eval(this.uniqueVariableName + ".setGroupingStrategy(" +
-//					    this.uniqueVariableName + "_groupingStrategy);");
-//		    }
-//		}
-//		catch (MatlabInvocationException e)
-//		{
-//			e.printStackTrace();
-//		}
-//	}
 
 	public String toString()
 	{
@@ -352,31 +315,71 @@ public class DBSeerConfiguration
 				{
 					switch (j)
 					{
-						case TYPE_TRANSACTION_TYPE:
+						case TYPE_IO_MAX_LOG_CAPACITY:
 						{
-							if (!UserInputValidator.validateSingleRowMatrix((String)tableModel.getValueAt(i, 1)))
+							if (!UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
 							{
-								JOptionPane.showMessageDialog(null, "Please enter transaction types correctly.\nIt has to be in the form of a MATLAB single row matrix. e.g. [1 2 3 4 5]",
+								JOptionPane.showMessageDialog(null, "Please enter 'IO: Max Log Capacity' correctly.\nIt has to be a positive number.",
 										"Warning", JOptionPane.WARNING_MESSAGE);
 								return false;
 							}
 							break;
 						}
-						case TYPE_IO_CONFIGURATION:
+						case TYPE_IO_MAX_FLUSH_RATE:
 						{
-							if (!UserInputValidator.validateSingleRowMatrix((String)tableModel.getValueAt(i, 1)))
+							if (!UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
 							{
-								JOptionPane.showMessageDialog(null, "Please enter IO configuration correctly.\nIt has to be in the form of a MATLAB single row matrix. e.g. [1000000 1500 10]",
+								JOptionPane.showMessageDialog(null, "Please enter 'IO: Max Flush Rate' correctly.\nIt has to be a positive number.",
 										"Warning", JOptionPane.WARNING_MESSAGE);
 								return false;
 							}
 							break;
 						}
-						case TYPE_LOCK_CONFIGURATION:
+						case TYPE_IO_SCALE_FACTOR:
 						{
-							if (!UserInputValidator.validateSingleRowMatrix((String)tableModel.getValueAt(i, 1)))
+							if (!UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
 							{
-								JOptionPane.showMessageDialog(null, "Please enter Lock configuration correctly.\nIt has to be in the form of a MATLAB single row matrix. e.g. [0.08 0.0001 2 0.8]",
+								JOptionPane.showMessageDialog(null, "Please enter 'IO: Scale Factor' correctly.\nIt has to be a positive number.",
+										"Warning", JOptionPane.WARNING_MESSAGE);
+								return false;
+							}
+							break;
+						}
+						case TYPE_LOCK_BEGIN_COST:
+						{
+							if (!UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
+							{
+								JOptionPane.showMessageDialog(null, "Please enter 'Lock: Begin Cost' correctly.\nIt has to be a positive number.",
+										"Warning", JOptionPane.WARNING_MESSAGE);
+								return false;
+							}
+							break;
+						}
+						case TYPE_LOCK_INTERLOCK_INTERVAL:
+						{
+							if (!UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
+							{
+								JOptionPane.showMessageDialog(null, "Please enter 'Lock: Inter-lock Interval' correctly.\nIt has to be a positive number.",
+										"Warning", JOptionPane.WARNING_MESSAGE);
+								return false;
+							}
+							break;
+						}
+						case TYPE_LOCK_DOMAIN_MULTIPLIER:
+						{
+							if (!UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
+							{
+								JOptionPane.showMessageDialog(null, "Please enter 'Lock: Domain Multiplier' correctly.\nIt has to be a positive number.",
+										"Warning", JOptionPane.WARNING_MESSAGE);
+								return false;
+							}
+							break;
+						}
+						case TYPE_LOCK_COST_MULTIPLIER:
+						{
+							if (!UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
+							{
+								JOptionPane.showMessageDialog(null, "Please enter 'Lock: Cost Multiplier' correctly.\nIt has to be a positive number.",
 										"Warning", JOptionPane.WARNING_MESSAGE);
 								return false;
 							}
@@ -408,33 +411,30 @@ public class DBSeerConfiguration
 						case TYPE_NAME:
 							this.name = (String)tableModel.getValueAt(i, 1);
 							break;
-						case TYPE_TRANSACTION_TYPE:
-							this.transactionTypes = (String)tableModel.getValueAt(i, 1);
+//						case TYPE_TRANSACTION_TYPE:
+//							this.transactionTypes = (String)tableModel.getValueAt(i, 1);
+//							break;
+						case TYPE_IO_MAX_LOG_CAPACITY:
+							this.ioMaxLogCapacity = Double.parseDouble((String)tableModel.getValueAt(i, 1));
 							break;
-						case TYPE_IO_CONFIGURATION:
-							this.ioConfiguration = (String)tableModel.getValueAt(i, 1);
+						case TYPE_IO_MAX_FLUSH_RATE:
+							this.ioMaxFlushRate = Double.parseDouble((String)tableModel.getValueAt(i, 1));
 							break;
-						case TYPE_LOCK_CONFIGURATION:
-							this.lockConfiguration = (String)tableModel.getValueAt(i, 1);
+						case TYPE_IO_SCALE_FACTOR:
+							this.ioScaleFactor = Double.parseDouble((String)tableModel.getValueAt(i, 1));
 							break;
-//						case TYPE_NUM_CLUSTERS:
-//							this.numClusters = Integer.parseInt((String) tableModel.getValueAt(i, 1));
-//							break;
-//						case TYPE_WHICH_TRANSACTION:
-//							this.whichTransTypeToGroup = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_MIN_FREQUENECY:
-//							this.minFrequency = Double.parseDouble((String) tableModel.getValueAt(i, 1));
-//							break;
-//						case TYPE_MIN_TPS:
-//							this.minTPS = Double.parseDouble((String) tableModel.getValueAt(i, 1));
-//							break;
-//						case TYPE_MAX_TPS:
-//							this.maxTPS = Double.parseDouble((String) tableModel.getValueAt(i, 1));
-//							break;
-//						case TYPE_ALLOWED_RELATIVE_DIFF:
-//							this.allowedRelDiff = Double.parseDouble((String) tableModel.getValueAt(i, 1));
-//							break;
+						case TYPE_LOCK_BEGIN_COST:
+							this.lockBeginCost = Double.parseDouble((String)tableModel.getValueAt(i, 1));
+							break;
+						case TYPE_LOCK_INTERLOCK_INTERVAL:
+							this.lockInterLockInterval = Double.parseDouble((String)tableModel.getValueAt(i, 1));
+							break;
+						case TYPE_LOCK_DOMAIN_MULTIPLIER:
+							this.lockDomainMultiplier = Double.parseDouble((String)tableModel.getValueAt(i, 1));
+							break;
+						case TYPE_LOCK_COST_MULTIPLIER:
+							this.lockCostMultiplier = Double.parseDouble((String)tableModel.getValueAt(i, 1));
+							break;
 						default:
 							break;
 					}
@@ -457,33 +457,27 @@ public class DBSeerConfiguration
 						case TYPE_NAME:
 							tableModel.setValueAt(this.name, i, 1);
 							break;
-						case TYPE_TRANSACTION_TYPE:
-							tableModel.setValueAt(this.transactionTypes, i, 1);
+						case TYPE_IO_MAX_LOG_CAPACITY:
+							tableModel.setValueAt(String.valueOf(this.ioMaxLogCapacity), i, 1);
 							break;
-						case TYPE_IO_CONFIGURATION:
-							tableModel.setValueAt(this.ioConfiguration, i, 1);
+						case TYPE_IO_MAX_FLUSH_RATE:
+							tableModel.setValueAt(String.valueOf(this.ioMaxFlushRate), i, 1);
 							break;
-						case TYPE_LOCK_CONFIGURATION:
-							tableModel.setValueAt(this.lockConfiguration, i, 1);
+						case TYPE_IO_SCALE_FACTOR:
+							tableModel.setValueAt(String.valueOf(this.ioScaleFactor), i, 1);
 							break;
-//						case TYPE_NUM_CLUSTERS:
-//							tableModel.setValueAt(String.valueOf(this.numClusters), i, 1);
-//							break;
-//						case TYPE_WHICH_TRANSACTION:
-//							tableModel.setValueAt(this.whichTransTypeToGroup, i, 1);
-//							break;
-//						case TYPE_MIN_FREQUENECY:
-//							tableModel.setValueAt(String.valueOf(this.minFrequency), i, 1);
-//							break;
-//						case TYPE_MIN_TPS:
-//							tableModel.setValueAt(String.valueOf(this.minTPS), i, 1);
-//							break;
-//						case TYPE_MAX_TPS:
-//							tableModel.setValueAt(String.valueOf(this.maxTPS), i, 1);
-//							break;
-//						case TYPE_ALLOWED_RELATIVE_DIFF:
-//							tableModel.setValueAt(String.valueOf(this.allowedRelDiff), i, 1);
-//							break;
+						case TYPE_LOCK_BEGIN_COST:
+							tableModel.setValueAt(String.valueOf(this.lockBeginCost), i, 1);
+							break;
+						case TYPE_LOCK_INTERLOCK_INTERVAL:
+							tableModel.setValueAt(String.valueOf(this.lockInterLockInterval), i, 1);
+							break;
+						case TYPE_LOCK_DOMAIN_MULTIPLIER:
+							tableModel.setValueAt(String.valueOf(this.lockDomainMultiplier), i, 1);
+							break;
+						case TYPE_LOCK_COST_MULTIPLIER:
+							tableModel.setValueAt(String.valueOf(this.lockCostMultiplier), i, 1);
+							break;
 						default:
 							break;
 					}
@@ -517,6 +511,10 @@ public class DBSeerConfiguration
 		return (DBSeerDataSet) datasetList.getElementAt(i);
 	}
 
+	public DBSeerDataSet getDataset()
+	{
+		return (DBSeerDataSet) datasetList.getElementAt(0);
+	}
 	public String getName()
 	{
 		return name;
@@ -529,153 +527,78 @@ public class DBSeerConfiguration
 
 	public String getIoConfiguration()
 	{
-		return ioConfiguration;
+		String ioConfString = "[" + this.ioMaxLogCapacity + " " + this.ioMaxFlushRate + " " + this.ioScaleFactor + "]";
+		return ioConfString;
 	}
-
-	public void setIoConfiguration(String ioConfiguration)
-	{
-		this.ioConfiguration = ioConfiguration;
-		isInitialized = false;
-	}
-
+//
+//	public void setIoConfiguration(String ioConfiguration)
+//	{
+//		this.ioConfiguration = ioConfiguration;
+//		isInitialized = false;
+//	}
+//
 	public String getLockConfiguration()
 	{
-		return lockConfiguration;
-	}
-
-	public void setLockConfiguration(String lockConfiguration)
-	{
-		this.lockConfiguration = lockConfiguration;
-		isInitialized = false;
+		String lockConfString = "[" + this.lockBeginCost + " " + this.lockInterLockInterval + " " + this.lockDomainMultiplier + " " + this.lockCostMultiplier + "]";
+		return lockConfString;
 	}
 //
-//	public String getGroupingRange()
+//	public void setLockConfiguration(String lockConfiguration)
 //	{
-//		return groupingRange;
-//	}
-//
-//	public void setGroupingRange(String groupingRange)
-//	{
-//		this.groupingRange = groupingRange;
+//		this.lockConfiguration = lockConfiguration;
 //		isInitialized = false;
 //	}
 //
-//	public int getGroupingType()
+//	public String getTransactionTypes()
 //	{
-//		return groupingType;
+//		return transactionTypes;
 //	}
 //
-//	public void setGroupingType(int groupingType)
+//	public void setTransactionTypes(String transactionTypes)
 //	{
-//		this.groupingType = groupingType;
+//		this.transactionTypes = transactionTypes;
 //		isInitialized = false;
-//	}
-//
-//	public int getGroupingTarget()
-//	{
-//		return groupingTarget;
-//	}
-//
-//	public void setGroupingTarget(int groupingTarget)
-//	{
-//		this.groupingTarget = groupingTarget;
-//		isInitialized = false;
-//	}
-//
-//	public double getMinFrequency()
-//	{
-//		return minFrequency;
-//	}
-//
-//	public void setMinFrequency(double minFrequency)
-//	{
-//		this.minFrequency = minFrequency;
-//		isInitialized = false;
-//	}
-//
-//	public double getMinTPS()
-//	{
-//		return minTPS;
-//	}
-//
-//	public void setMinTPS(double minTPS)
-//	{
-//		this.minTPS = minTPS;
-//		isInitialized = false;
-//	}
-//
-//	public double getMaxTPS()
-//	{
-//		return maxTPS;
-//	}
-//
-//	public void setMaxTPS(double maxTPS)
-//	{
-//		this.maxTPS = maxTPS;
-//		isInitialized = false;
-//	}
-//
-//	public int getNumClusters()
-//	{
-//		return numClusters;
-//	}
-//
-//	public void setNumClusters(int numClusters)
-//	{
-//		this.numClusters = numClusters;
-//		isInitialized = false;
-//	}
-//
-//	public double getAllowedRelDiff()
-//	{
-//		return allowedRelDiff;
-//	}
-//
-//	public void setAllowedRelDiff(double allowedRelDiff)
-//	{
-//		this.allowedRelDiff = allowedRelDiff;
-//		isInitialized = false;
-//	}
-//
-//	public String getWhichTransTypeToGroup()
-//	{
-//		return whichTransTypeToGroup;
-//	}
-//
-//	public void setWhichTransTypeToGroup(String whichTransTypeToGroup)
-//	{
-//		this.whichTransTypeToGroup = whichTransTypeToGroup;
-//		isInitialized = false;
-//	}
-
-	public String getTransactionTypes()
-	{
-		return transactionTypes;
-	}
-
-	public void setTransactionTypes(String transactionTypes)
-	{
-		this.transactionTypes = transactionTypes;
-		isInitialized = false;
-	}
-
-//	public JComboBox getGroupTypeComboBox()
-//	{
-//		return groupTypeComboBox;
-//	}
-//
-//	public JComboBox getGroupTargetComboBox()
-//	{
-//		return groupTargetComboBox;
-//	}
-//
-//	public JTextArea getGroupsTextArea()
-//	{
-//		return groupsTextArea;
 //	}
 
 	public String getUniqueVariableName()
 	{
 		return uniqueVariableName;
+	}
+
+	public double getMinTPS()
+	{
+		return MatlabFunctions.getMinTPS((DBSeerDataSet)datasetList.getElementAt(0));
+	}
+
+	public double getMaxTPS()
+	{
+		return MatlabFunctions.getMaxTPS((DBSeerDataSet) datasetList.getElementAt(0));
+	}
+
+	public double[] getTransactionMix()
+	{
+		return MatlabFunctions.getTotalTransactionMix((DBSeerDataSet) datasetList.getElementAt(0));
+	}
+
+	public String getTransactionMixString()
+	{
+		double[] mix = MatlabFunctions.getTotalTransactionMix((DBSeerDataSet) datasetList.getElementAt(0));
+		String str = "[";
+		for (double m : mix)
+		{
+			str += m;
+			str += " ";
+		}
+		str += "]";
+		return str;
+	}
+
+	public void setReinitialize()
+	{
+		this.isInitialized = false;
+		for (DBSeerDataSet dataset : datasets)
+		{
+			dataset.setReinitialize();
+		}
 	}
 }

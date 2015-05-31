@@ -121,7 +121,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("fill"));
+		this.setLayout(new MigLayout("fill, ins 0"));
 
 		plotTabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		plotPresetPanel = new DBSeerPlotPresetPanel();
@@ -131,8 +131,8 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 		plotTabbedPane.addTab("Custom", null, plotCustomPanel, "Custom Presets");
 
 		buttonPanel = new JPanel();
-		buttonPanel.setLayout(new MigLayout());
-		buttonPanel.setPreferredSize(new Dimension(300, 200));
+		buttonPanel.setLayout(new MigLayout("ins 0"));
+//		buttonPanel.setPreferredSize(new Dimension(300, 200));
 
 		plotButton = new JButton();
 		plotButton.setText("Load & Plot");

@@ -3,6 +3,8 @@ package dbseer.gui.panel;
 import dbseer.gui.DBSeerConstants;
 import dbseer.comp.PredictionCenter;
 import dbseer.comp.UserInputValidator;
+import dbseer.gui.DBSeerExceptionHandler;
+import dbseer.gui.events.InformationChartMouseListener;
 import dbseer.gui.panel.prediction.*;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.DBSeerGUI;
@@ -15,19 +17,19 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Created by dyoon on 2014. 6. 3..
  */
-public class DBSeerPredictionControlPanel extends JPanel implements ActionListener
+public class DBSeerPredictionConsolePanel extends JPanel implements ActionListener
 {
 	public static Set<String> predictionSet = new HashSet<String>();
 
 	private JComboBox predictionComboBox;
 	private JComboBox trainConfigComboBox;
-	private JComboBox predictionTestModeComboBox;
 	private JComboBox testDatasetComboBox;
 	private JComboBox groupingTypeBox;
 	private JComboBox groupingTargetBox;
@@ -35,37 +37,27 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 	private JTextField testMixtureTextField;
 	private JTextField testMinTPSTextField;
 	private JTextField testMaxTPSTextField;
-	private JTextField minFrequencyTextField;
-	private JTextField minTPSTextField;
-	private JTextField maxTPSTextField;
-	private JTextField allowedRelativeDiffTextField;
-	private JTextField numClusterTextField;
-	private JTextField transactionTypeToGroupTextField;
-	private JTextArea groupingRangeTextArea;
 
 	private JLabel testMixtureLabel;
 	private JLabel testMinTPSLabel;
 	private JLabel testMaxTPSLabel;
-	private JLabel minFrequencyLabel;
-	private JLabel minTPSLabel;
-	private JLabel maxTPSLabel;
-	private JLabel allowedRelativeDiffLabel;
-	private JLabel numClusterLabel;
-	private JLabel transactionTypesToGroupLabel;
-	private JLabel groupingRangeLabel;
 	private JLabel elapsedTimeLabel;
 
 	private JButton predictionButton;
 	private JButton showButton;
 
 	private JPanel controlPanel;
-	private JPanel testPanel;
 	private JPanel predictionSetupPanel;
 	private JPanel datasetSetupPanel;
 	private JPanel mixtureTPSSetupPanel;
 	private JPanel groupingSetupPanel;
 
-	private JScrollPane groupingRangeScrollPane;
+	private InformationChartMouseListener informationChartMouseListener;
+	private DBSeerPredictionInformationPanel infoPanel;
+	private DBSeerPredictionWithTPSMixturePanel tpsMixturePanel;
+	private DBSeerPredictionWithTestDatasetPanel testDatasetPanel;
+
+	private JTabbedPane setupPane;
 
 	// Individual prediction panels
 	private FlushRatePredictionByTPSPanel flushRatePredictionByTPSPanel;
@@ -86,14 +78,14 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 	private LinearPredictionPanel linearPredictionPanel;
 	private PhysicalReadPredictionPanel physicalReadPredictionPanel;
 
-	public DBSeerPredictionControlPanel()
+	public DBSeerPredictionConsolePanel()
 	{
 		initializeGUI();
 	}
 
 	private void initializeGUI()
 	{
-	 	this.setLayout(new MigLayout("fill", "[][]"));
+	 	this.setLayout(new MigLayout("fill, ins 0", "[][fill]", "[fill][fill]"));
 
 		predictionComboBox = new JComboBox(new DefaultComboBoxModel(DBSeerGUI.availablePredictions));
 		trainConfigComboBox = new JComboBox(new SharedComboBoxModel(DBSeerGUI.configs));
@@ -110,15 +102,16 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 
 		predictionButton = new JButton("Predict");
 		predictionButton.addActionListener(this);
+		predictionButton.setEnabled(false);
 		showButton = new JButton("Show Result");
 		showButton.setEnabled(false);
 		showButton.addActionListener(this);
 		elapsedTimeLabel = new JLabel("");
 
 		controlPanel = new JPanel();
-		controlPanel.setLayout(new MigLayout("fill, ins 5 5 5 5"));
-		controlPanel.add(predictionComboBox, "cell 0 0, growx");
-		controlPanel.add(trainConfigComboBox, "cell 0 1, growx");
+		controlPanel.setLayout(new MigLayout("fill, ins 0"));
+		controlPanel.add(predictionComboBox, "growx, wrap");
+		controlPanel.add(trainConfigComboBox, "growx, wrap");
 		controlPanel.setBorder(BorderFactory.createTitledBorder("Choose a prediction"));
 
 		groupingSetupPanel = new JPanel();
@@ -128,16 +121,16 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		datasetSetupPanel = new JPanel();
 		datasetSetupPanel.setLayout(new MigLayout("fill, ins 5 5 5 5"));
 		datasetSetupPanel.setBorder(BorderFactory.createTitledBorder("Choose a test dataset"));
-		datasetSetupPanel.setPreferredSize(new Dimension(600,300));
+//		datasetSetupPanel.setPreferredSize(new Dimension(600, 300));
 
 		mixtureTPSSetupPanel = new JPanel();
 		mixtureTPSSetupPanel.setLayout(new MigLayout("fill, ins 5 5 5 5"));
 		mixtureTPSSetupPanel.setBorder(BorderFactory.createTitledBorder("Specify test TPS + mixture"));
-		mixtureTPSSetupPanel.setPreferredSize(new Dimension(300,150));
+		mixtureTPSSetupPanel.setPreferredSize(new Dimension(300, 150));
 
-		predictionTestModeComboBox = new JComboBox(DBSeerGUI.availablePredictionTestModes);
-		predictionTestModeComboBox.setBorder(BorderFactory.createTitledBorder("Prediction Test Target"));
-		predictionTestModeComboBox.addActionListener(this);
+//		predictionTestModeComboBox = new JComboBox(DBSeerGUI.availablePredictionTestModes);
+//		predictionTestModeComboBox.setBorder(BorderFactory.createTitledBorder("Prediction Test Target"));
+//		predictionTestModeComboBox.addActionListener(this);
 
 		testDatasetComboBox = new JComboBox(new SharedComboBoxModel(DBSeerGUI.datasets));
 		testDatasetComboBox.setBorder(BorderFactory.createTitledBorder("Test Dataset"));
@@ -149,46 +142,7 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		testMaxTPSTextField = new JTextField();
 		testMaxTPSLabel = new JLabel("Test Maximum TPS:");
 
-		controlPanel.add(predictionTestModeComboBox, "growx, wrap");
-
-		minFrequencyLabel = new JLabel("Min Freq:");
-		minTPSLabel = new JLabel("Min TPS:");
-		maxTPSLabel = new JLabel("Max TPS:");
-		allowedRelativeDiffLabel = new JLabel("Allowed relative diff:");
-		numClusterLabel = new JLabel("Number of clusters:");
-		transactionTypesToGroupLabel = new JLabel("Transactions to group:");
-		groupingRangeLabel = new JLabel("Group ranges (e.g. [100 200; 300 400; 500 600 ... ]):");
-
-		minFrequencyTextField = new JTextField();
-		minTPSTextField = new JTextField();
-		maxTPSTextField = new JTextField();
-		allowedRelativeDiffTextField = new JTextField();
-		numClusterTextField = new JTextField();
-		transactionTypeToGroupTextField = new JTextField();
-		groupingRangeTextArea = new JTextArea();
-		groupingRangeScrollPane = new JScrollPane(groupingRangeTextArea);
-		groupingRangeScrollPane.setPreferredSize(new Dimension(60,60));
-
-		groupingSetupPanel.add(groupingTypeBox, "cell 0 0, growx");
-		groupingSetupPanel.add(groupingTargetBox, "cell 1 0, growx, wrap");
-		groupingSetupPanel.add(minFrequencyLabel, "split 2");
-		groupingSetupPanel.add(minFrequencyTextField, "grow");
-		groupingSetupPanel.add(allowedRelativeDiffLabel, "split 2");
-		groupingSetupPanel.add(allowedRelativeDiffTextField, "grow, wrap");
-		groupingSetupPanel.add(minTPSLabel, "split 2");
-		groupingSetupPanel.add(minTPSTextField, "grow");
-		groupingSetupPanel.add(numClusterLabel, "split 2");
-		groupingSetupPanel.add(numClusterTextField, "grow, wrap");
-		groupingSetupPanel.add(maxTPSLabel, "split 2");
-		groupingSetupPanel.add(maxTPSTextField, "grow");
-		groupingSetupPanel.add(transactionTypesToGroupLabel, "split 2");
-		groupingSetupPanel.add(transactionTypeToGroupTextField, "grow, wrap");
-		groupingSetupPanel.add(groupingRangeLabel, "wrap");
-		groupingSetupPanel.add(groupingRangeScrollPane, "spanx 2, grow");
-
-		datasetSetupPanel.add(testDatasetComboBox, "cell 0 0, growx");
-		datasetSetupPanel.add(groupingSetupPanel, "cell 0 1, growx");
-
+//		controlPanel.add(predictionTestModeComboBox, "growx, wrap");
 		mixtureTPSSetupPanel.add(testMixtureLabel, "split 2");
 		mixtureTPSSetupPanel.add(testMixtureTextField, "growx, wrap");
 		mixtureTPSSetupPanel.add(testMinTPSLabel, "split 2");
@@ -211,12 +165,30 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		controlPanel.add(showButton, "growx");
 		controlPanel.add(elapsedTimeLabel);
 
-//		this.add(testPanel, "cell 0 1, aligny top, grow");
-		this.add(controlPanel, "cell 0 0 1 2, grow, aligny top");
-		this.add(datasetSetupPanel, "cell 1 0, grow");
-		this.add(mixtureTPSSetupPanel, "cell 1 1, grow");
+		setupPane = new JTabbedPane(JTabbedPane.BOTTOM);
 
-		setFormAvailability();
+		tpsMixturePanel = new DBSeerPredictionWithTPSMixturePanel();
+		testDatasetPanel = new DBSeerPredictionWithTestDatasetPanel();
+		informationChartMouseListener = new InformationChartMouseListener(tpsMixturePanel);
+		infoPanel = new DBSeerPredictionInformationPanel(informationChartMouseListener);
+
+		JScrollPane tpsMixtureScrollPane = new JScrollPane();
+		tpsMixtureScrollPane.setViewportView(tpsMixturePanel);
+		JScrollPane testDatasetScrollPane = new JScrollPane();
+		testDatasetScrollPane.setViewportView(testDatasetPanel);
+
+		setupPane.addTab("Predict with Hypothetical TPS/Mixture", tpsMixtureScrollPane);
+		setupPane.addTab("Predict and Compare with Test Dataset", testDatasetScrollPane);
+		setupPane.setPreferredSize(new Dimension(600, 240));
+//		setupPane.setMinimumSize(new Dimension(1280, 280));
+
+		infoPanel.setPreferredSize(new Dimension(640, 200));
+//		infoPanel.setMinimumSize(new Dimension(640, 300));
+		infoPanel.initialize();
+
+		this.add(controlPanel, "cell 0 0, aligny top");
+		this.add(infoPanel, "cell 1 0, grow, wrap");
+		this.add(setupPane, "cell 0 1, grow, span");
 	}
 
 	private void addPredictionPanels()
@@ -256,20 +228,6 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 		predictionSetupPanel.add(blownTransactionCountsToIOPanel, "IO by Blown Transaction Counts");
 		predictionSetupPanel.add(linearPredictionPanel, "Log Writes");
 		predictionSetupPanel.add(physicalReadPredictionPanel, "Physical Disk Read");
-
-//		predictionSetupPanel.add(flushRatePredictionByTPSPanel, "FlushRatePredictionByTPS");
-//		predictionSetupPanel.add(flushRatePredictionByCountsPanel, "FlushRatePredictionByCounts");
-//		predictionSetupPanel.add(maxThroughputPredictionPanel, "MaxThroughputPrediction");
-//		predictionSetupPanel.add(lockPredictionPanel, "LockPrediction");
-//		predictionSetupPanel.add(transactionCountsToCpuByTPSPanel, "TransactionCountsToCpuByTPS");
-//		predictionSetupPanel.add(transactionCountsToCpuByCountsPanel, "TransactionCountsToCpuByCounts");
-//		predictionSetupPanel.add(transactionCountsToIOPanel, "TransactionCountsToIO");
-//		predictionSetupPanel.add(transactionCountsToLatencyPanel, "TransactionCountsToLatency");
-//		predictionSetupPanel.add(transactionCountsWaitTimeToLatencyPanel, "TransactionCountsWaitTimeToLatency");
-//		predictionSetupPanel.add(blownTransactionCountsToCpuPanel, "BlownTransactionCountsToCpu");
-//		predictionSetupPanel.add(blownTransactionCountsToIOPanel, "BlownTransactionCountsToIO");
-//		predictionSetupPanel.add(linearPredictionPanel, "LinearPrediction");
-//		predictionSetupPanel.add(physicalReadPredictionPanel, "PhysicalReadPrediction");
 	}
 
 	private boolean setPredictionSpecificValues(PredictionCenter center)
@@ -391,62 +349,30 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 
 	private boolean validateUserInput()
 	{
-		if (!UserInputValidator.validateSingleRowMatrix(testMixtureTextField.getText().trim(), "Test Mixture", testMixtureTextField.isEnabled()) ||
-				!UserInputValidator.validateSingleRowMatrix(transactionTypeToGroupTextField.getText().trim(), "Transactions to group", transactionTypeToGroupTextField.isEnabled()) ||
-				!UserInputValidator.validateNumber(minFrequencyTextField.getText().trim(), "Min Freq", minFrequencyTextField.isEnabled()) ||
-				!UserInputValidator.validateNumber(minTPSTextField.getText().trim(), "Min TPS", minTPSTextField.isEnabled()) ||
-				!UserInputValidator.validateNumber(maxTPSTextField.getText().trim(), "Max TPS", maxTPSTextField.isEnabled()) ||
-				!UserInputValidator.validateNumber(testMinTPSTextField.getText().trim(), "Test Minimum TPS", testMinTPSTextField.isEnabled()) ||
-				!UserInputValidator.validateNumber(testMaxTPSTextField.getText().trim(), "Test Maximum TPS", testMaxTPSTextField.isEnabled()) ||
-				!UserInputValidator.validateNumber(allowedRelativeDiffTextField.getText().trim(), "Allowed Relative diff", allowedRelativeDiffTextField.isEnabled()) ||
-				!UserInputValidator.validateNumber(numClusterTextField.getText().trim(), "Number of clusters", numClusterTextField.isEnabled()) ||
-				!UserInputValidator.validateMatlabMatrix(groupingRangeTextArea.getText().trim(), "Grouping Range", groupingRangeTextArea.isEnabled())
-				)
+		if (setupPane.getSelectedIndex() == DBSeerConstants.TEST_MODE_DATASET)
 		{
-			return false;
-		}
-		if (testMixtureTextField.isEnabled())
-		{
-			if (!UserInputValidator.matchMatrixDimension(((DBSeerConfiguration) trainConfigComboBox.getSelectedItem()).getTransactionTypes(),
-					testMixtureTextField.getText().trim()))
+			if (!testDatasetPanel.checkValidMinMaxTPS())
 			{
-				JOptionPane.showMessageDialog(null, "Test Mixture must have same dimension as the transaction type of the train config.", "Warning",
-						JOptionPane.WARNING_MESSAGE);
-				return false;
+					JOptionPane.showMessageDialog(null, "Maximum TPS must be greater than minimum TPS.", "Warning",
+							JOptionPane.WARNING_MESSAGE);
+					return false;
 			}
 		}
-		if (minTPSTextField.isEnabled() || maxTPSTextField.isEnabled())
+		else if (setupPane.getSelectedIndex() == DBSeerConstants.TEST_MODE_MIXTURE_TPS)
 		{
-			int minTPS = Integer.parseInt(minTPSTextField.getText().trim());
-			int maxTPS = Integer.parseInt(maxTPSTextField.getText().trim());
+			int minTPS = tpsMixturePanel.getMinTPS();
+			int maxTPS = tpsMixturePanel.getMaxTPS();
 
-			if (minTPS < 0 || maxTPS < 0)
+			if (minTPS > maxTPS)
 			{
-				JOptionPane.showMessageDialog(null, "Min/Max TPS must be greater than zero.", "Warning",
+				JOptionPane.showMessageDialog(null, "Hypothetical maximum TPS must be greater than minimum TPS.", "Warning",
 						JOptionPane.WARNING_MESSAGE);
 				return false;
 			}
-			if (minTPS >= maxTPS)
+			if (!tpsMixturePanel.checkTransactionMix())
 			{
-				JOptionPane.showMessageDialog(null, "Max TPS must be greater than Min TPS.", "Warning",
-						JOptionPane.WARNING_MESSAGE);
-				return false;
-			}
-		}
-		if (testMinTPSTextField.isEnabled() || testMaxTPSTextField.isEnabled())
-		{
-			int minTPS = Integer.parseInt(testMinTPSTextField.getText().trim());
-			int maxTPS = Integer.parseInt(testMaxTPSTextField.getText().trim());
-
-			if (minTPS < 0 || maxTPS < 0)
-			{
-				JOptionPane.showMessageDialog(null, "Test Minimum/Maximum TPS must be greater than zero.", "Warning",
-						JOptionPane.WARNING_MESSAGE);
-				return false;
-			}
-			if (minTPS >= maxTPS)
-			{
-				JOptionPane.showMessageDialog(null, "Test Maximum TPS must be greater than Test Minimum TPS.", "Warning",
+				JOptionPane.showMessageDialog(null, "Transaction mix should have at least one transaction type " +
+								"with its weight greater than zero.", "Warning",
 						JOptionPane.WARNING_MESSAGE);
 				return false;
 			}
@@ -473,33 +399,28 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 				}
 			}
 
-			center.setTestMode(predictionTestModeComboBox.getSelectedIndex());
-			if (testDatasetComboBox.getSelectedItem() != null)
-			{
-				center.setTestDataset((DBSeerDataSet) testDatasetComboBox.getSelectedItem());
-			}
+			center.setTestMode(setupPane.getSelectedIndex());
 			center.setTrainConfig((DBSeerConfiguration) trainConfigComboBox.getSelectedItem());
-			center.setGroupingTarget(groupingTargetBox.getSelectedIndex());
-			center.setGroupingType(groupingTypeBox.getSelectedIndex());
-			center.setGroupRange(groupingRangeTextArea.getText());
-			String minFreqString = minFrequencyTextField.getText().trim();
-			center.setTestMinFrequency(!minFreqString.isEmpty() ? Double.parseDouble(minFreqString) : 0.0);
-			String minTPS = minTPSTextField.getText().trim();
-			center.setTestMinTPS(!minTPS.isEmpty() ? Double.parseDouble(minTPS) : 0.0);
-			String maxTPS = maxTPSTextField.getText().trim();
-			center.setTestMaxTPS(!maxTPS.isEmpty() ? Double.parseDouble(maxTPS) : 0.0);
-			String allowedRelDiff = allowedRelativeDiffTextField.getText().trim();
-			center.setAllowedRelativeDiff(!allowedRelDiff.isEmpty() ? Double.parseDouble(allowedRelDiff) : 0.0);
-			String numCluster = numClusterTextField.getText().trim();
-			center.setNumClusters(!numCluster.isEmpty() ? Integer.parseInt(numCluster) : 0);
-			center.setTransactionTypesToGroup(transactionTypeToGroupTextField.getText());
 
-			String testManualMinTPS = testMinTPSTextField.getText().trim();
-			center.setTestManualMinTPS(!testManualMinTPS.isEmpty() ? Double.parseDouble(testManualMinTPS) : 0.0);
-			String testManualMaxTPS = testMaxTPSTextField.getText().trim();
-			center.setTestManualMaxTPS(!testManualMaxTPS.isEmpty() ? Double.parseDouble(testManualMaxTPS) : 0.0);
-			String testMixture = testMixtureTextField.getText().trim();
-			center.setTestMixture(testMixture);
+			if (setupPane.getSelectedIndex() == DBSeerConstants.TEST_MODE_MIXTURE_TPS)
+			{
+				center.setTestManualMaxTPS(tpsMixturePanel.getMaxTPS());
+				center.setTestManualMinTPS(tpsMixturePanel.getMinTPS());
+				center.setTestMixture(tpsMixturePanel.getTransactionMix());
+			}
+			else
+			{
+				center.setTestDataset(testDatasetPanel.getTestDataset());
+				center.setGroupingTarget(testDatasetPanel.getGroupingTarget());
+				center.setGroupingType(testDatasetPanel.getGroupingType());
+				center.setTestMinFrequency(testDatasetPanel.getMinSizeForGroup());
+				center.setTestMinTPS(testDatasetPanel.getMinTPS());
+				center.setTestMaxTPS(testDatasetPanel.getMaxTPS());
+				center.setAllowedRelativeDiff(testDatasetPanel.getAllowedRelativeDifference());
+				center.setNumClusters(testDatasetPanel.getNumGroups());
+				center.setGroupRange(testDatasetPanel.getGroupRanges());
+				center.setTransactionTypesToGroup(testDatasetPanel.getTransactionTypesToGroup());
+			}
 
 			// Prediction-specific options
 			if (!setPredictionSpecificValues(center))
@@ -520,8 +441,8 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 				return;
 			}
 
-			if (((String)predictionTestModeComboBox.getSelectedItem()).equalsIgnoreCase("Dataset") &&
-					testDatasetComboBox.getSelectedItem() == null)
+			if (setupPane.getSelectedIndex() == DBSeerConstants.TEST_MODE_DATASET &&
+					testDatasetPanel.getTestDataset() == null)
 			{
 				JOptionPane.showMessageDialog(null, "Please select a test dataset.", "Warning",
 						JOptionPane.WARNING_MESSAGE);
@@ -563,19 +484,6 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 						elapsedTimeLabel.setText(String.format("Elapsed Time: %.2fs", timeElapsed));
 						predictionButton.setEnabled(true);
 						showButton.setEnabled(true);
-//						SwingUtilities.invokeLater(new Runnable()
-//						{
-//							@Override
-//							public void run()
-//							{
-//								DBSeerPredictionFrame predictionFrame = new DBSeerPredictionFrame(center);
-//								predictionFrame.pack();
-//								predictionFrame.setVisible(true);
-//								predictionButton.setEnabled(true);
-//								predictionButton.requestFocus();
-//								DBSeerGUI.status.setText("");
-//							}
-//						});
 					}
 					else
 					{
@@ -606,12 +514,6 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 				}
 			});
 		}
-		else if (actionEvent.getSource() == predictionTestModeComboBox ||
-				actionEvent.getSource() == groupingTargetBox ||
-				actionEvent.getSource() == groupingTypeBox)
-		{
-			setFormAvailability();
-		}
 		else if (actionEvent.getSource() == predictionComboBox)
 		{
 			CardLayout layout = (CardLayout)predictionSetupPanel.getLayout();
@@ -619,12 +521,12 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 
 			if (((String) predictionComboBox.getSelectedItem()).compareTo("Physical Disk Read") == 0)
 			{
-				predictionTestModeComboBox.setSelectedIndex(DBSeerConstants.TEST_MODE_DATASET);
-				predictionTestModeComboBox.setEnabled(false);
+				setupPane.setEnabledAt(DBSeerConstants.TEST_MODE_MIXTURE_TPS, false);
+				setupPane.setSelectedIndex(DBSeerConstants.TEST_MODE_DATASET);
 			}
 			else
 			{
-				predictionTestModeComboBox.setEnabled(true);
+				setupPane.setEnabledAt(DBSeerConstants.TEST_MODE_MIXTURE_TPS, true);
 			}
 
 			if (((String) predictionComboBox.getSelectedItem()).compareTo("Latency (99% Quantile)") == 0 ||
@@ -632,16 +534,26 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 					((String) predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, 99% Quantile)") == 0 ||
 					((String) predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, Median)") == 0)
 			{
-				groupingTypeBox.setSelectedIndex(DBSeerConstants.GROUP_NONE);
-				groupingTypeBox.setEnabled(false);
+				if (testDatasetPanel.getGroupingTypeBox() != null)
+				{
+					testDatasetPanel.getGroupingTypeBox().setSelectedIndex(DBSeerConstants.GROUP_NONE);
+					testDatasetPanel.getGroupingTypeBox().setEnabled(false);
+				}
+//				groupingTypeBox.setEnabled(false);
 			}
 			else
 			{
-				groupingTypeBox.setEnabled(true);
+				if (testDatasetPanel.getGroupingTypeBox() != null)
+				{
+					testDatasetPanel.getGroupingTypeBox().setEnabled(true);
+				}
+//				groupingTypeBox.setEnabled(true);
 			}
 		}
 		else if (actionEvent.getSource() == trainConfigComboBox)
 		{
+			DBSeerGUI.status.setText("Loading dataset from the train config...");
+			predictionButton.setEnabled(false);
 			DBSeerConfiguration config = (DBSeerConfiguration)trainConfigComboBox.getSelectedItem();
 			if (config != null)
 			{
@@ -654,113 +566,20 @@ public class DBSeerPredictionControlPanel extends JPanel implements ActionListen
 				maxThroughputPredictionPanel.setLockConf(lockConf);
 				lockPredictionPanel.setLockConf(lockConf);
 			}
-		}
-	}
-
-	// change setEnabled for components depending on user selected combobox values.
-	private void setFormAvailability()
-	{
-		SwingUtilities.invokeLater(new Runnable()
-		{
-			@Override
-			public void run()
+			final DBSeerDataSet dataset = config.getDataset(0);
+			SwingUtilities.invokeLater(new Runnable()
 			{
-				if (predictionTestModeComboBox.getSelectedIndex() == DBSeerConstants.TEST_MODE_DATASET)
+				@Override
+				public void run()
 				{
-					for (Component comp : datasetSetupPanel.getComponents())
-					{
-						comp.setEnabled(true);
-					}
-					for (Component comp : mixtureTPSSetupPanel.getComponents())
-					{
-						comp.setEnabled(false);
-					}
-
-					// Disable all grouping first.
-					for (Component comp : groupingSetupPanel.getComponents())
-					{
-						comp.setEnabled(false);
-					}
-					groupingRangeTextArea.setEditable(false);
-					groupingRangeTextArea.setEnabled(false);
-//					groupingTypeBox.setEnabled(true);
-					if (((String) predictionComboBox.getSelectedItem()).compareTo("Latency (99% Quantile)") == 0 ||
-							((String) predictionComboBox.getSelectedItem()).compareTo("Latency (Median)") == 0 ||
-							((String) predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, 99% Quantile)") == 0 ||
-							((String) predictionComboBox.getSelectedItem()).compareTo("Latency (With Lock Waits, Median)") == 0)
-					{
-						groupingTypeBox.setEnabled(false);
-					}
-					else
-					{
-						groupingTypeBox.setEnabled(true);
-					}
-
-					if (groupingTypeBox.getSelectedIndex() == DBSeerConstants.GROUP_NONE)
-					{
-						// nothing is enabled.
-						return;
-					}
-
-					minTPSTextField.setEnabled(true);
-					minTPSLabel.setEnabled(true);
-					minFrequencyLabel.setEnabled(true);
-					minFrequencyTextField.setEnabled(true);
-					maxTPSLabel.setEnabled(true);
-					maxTPSTextField.setEnabled(true);
-
-					if (groupingTypeBox.getSelectedIndex() == DBSeerConstants.GROUP_RANGE)
-					{
-						groupingTargetBox.setEnabled(true);
-						groupingRangeLabel.setEnabled(true);
-						groupingRangeTextArea.setEnabled(true);
-						groupingRangeTextArea.setEditable(true);
-						groupingRangeScrollPane.setEnabled(true);
-						return;
-					}
-					else if (groupingTypeBox.getSelectedIndex() == DBSeerConstants.GROUP_REL_DIFF)
-					{
-						groupingTargetBox.setEnabled(true);
-						allowedRelativeDiffTextField.setEnabled(true);
-						allowedRelativeDiffLabel.setEnabled(true);
-					}
-					else if (groupingTypeBox.getSelectedIndex() == DBSeerConstants.GROUP_NUM_CLUSTER)
-					{
-						groupingTargetBox.setEnabled(true);
-						numClusterTextField.setEnabled(true);
-						numClusterLabel.setEnabled(true);
-					}
-
-					if (groupingTargetBox.getSelectedIndex() == DBSeerConstants.GROUP_TARGET_INDIVIDUAL_TRANS_COUNT)
-					{
-						transactionTypesToGroupLabel.setEnabled(true);
-						transactionTypeToGroupTextField.setEnabled(true);
-					}
-					else if (groupingTargetBox.getSelectedIndex() == DBSeerConstants.GROUP_TARGET_TPS)
-					{
-						transactionTypesToGroupLabel.setEnabled(false);
-						transactionTypeToGroupTextField.setEnabled(false);
-					}
+					infoPanel.setDataset(dataset);
+					tpsMixturePanel.setDataset(dataset);
+					testDatasetPanel.setDataset(dataset);
+					DBSeerGUI.repaintMainFrame();
+					DBSeerGUI.status.setText("");
+					predictionButton.setEnabled(true);
 				}
-				else if (predictionTestModeComboBox.getSelectedIndex() == DBSeerConstants.TEST_MODE_MIXTURE_TPS)
-				{
-					datasetSetupPanel.setEnabled(false);
-					for (Component comp : datasetSetupPanel.getComponents())
-					{
-						comp.setEnabled(false);
-					}
-					for (Component comp : groupingSetupPanel.getComponents())
-					{
-						comp.setEnabled(false);
-					}
-					mixtureTPSSetupPanel.setEnabled(true);
-					for (Component comp : mixtureTPSSetupPanel.getComponents())
-					{
-						comp.setEnabled(true);
-					}
-				}
-			}
-		});
-
+			});
+		}
 	}
 }

@@ -1,1 +1,8 @@
-Compared to previous version, we have added limited support for Postgres. We have also restructured the predictionConsole and load_and_plot
+2015-05-31
+- Fixed the bug where 'Show Queries' menu hangs in transaction mix graph.
+- Added a more user-intuitive prediction console.
+- Improved the connection handling with the middleware.
+- Fixed many other trivial bugs.
+
+Previous Changes
+- Compared to previous version, we have added limited support for Postgres. We have also restructured the predictionConsole and load_and_plot

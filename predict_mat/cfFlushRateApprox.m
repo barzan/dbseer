@@ -25,7 +25,7 @@ elseif strcmp(conf.workloadName, 'pgtpcc')
 else
     error(['Unknown workloadName in cfFlushRateApprox: ' conf.workloadName]);
 end
-    
+
 D = size(PPwrite,2);
 
 PPwrite = PPwrite * scaling;
@@ -102,18 +102,18 @@ for i=1:size(uniqueTransCounts,1)
     tps = sum(curTransCounts);
     T = probOfBeingChosenAtLeastOnce(PP, freq, curTransCounts);
     mysum = zeros(size(T));
-    
+
     p1 = zeros(size(T));
     p2 = zeros(size(T));
     p3 = ones(size(T));
-    
+
     nRounds = 0;
     avgf = 0;
     oldAvgf = 1e10;
     seenFullLog = 0;
-    
+
     howManySecondsToRotate = round(L / tps)-1;
-    
+
     if 1==0
         Tpowers = (1-T).^howManySecondsToRotate;
         cachedCoef = (1-tps/L)^howManySecondsToRotate;
@@ -122,28 +122,28 @@ for i=1:size(uniqueTransCounts,1)
         Tpowers = recpow((1-T), howManySecondsToRotate);
         cachedCoef = recpow((1-tps/L), howManySecondsToRotate);
         mysum = recpow(1-T, howManySecondsToRotate) - recpow(1-tps/L, howManySecondsToRotate);
-    end    
-    
+    end
+
     onesIdx = find(T==tps/L);
     nononesIdx = find(T~=tps/L);
-    
+
     mysum(onesIdx) = howManySecondsToRotate * Tpowers(onesIdx) ./ (1-T(onesIdx));
     mysum(nononesIdx) = mysum(nononesIdx) ./ (1-T(nononesIdx)-1+tps/L);
-    
+
     epsilon = 0.000001;
 
     initTime = toc(overallTime);
     fprintf(1,'initialization time=%f\n', initTime);
 
-    while abs(avgf-oldAvgf)>0.0001 || seenFullLog<100 
+    while abs(avgf-oldAvgf)>0.0001 || seenFullLog<100
         oldAvgf = avgf;
-        
+
         d1 = sum(p1 .* counts);
         d2 = sum(p2 .* counts);
         d3 = sum(p3 .* counts);
-        
+
         f = min(d1/round(L/tps), maxPagesPerSecs);
-        
+
         d1 = d1 - f*howManySecondsToRotate;
         if d1>f+epsilon
             couldNotKeepUp = true;
@@ -151,25 +151,25 @@ for i=1:size(uniqueTransCounts,1)
         %%%%%%%%%%%%%% THIS IS THE LINE TO CHANGE!!
         %p2 = p2 + (1-p1-p2).* T;
         %we know that when the log neds to be rotated, we have the following:
-        
+
         %right when the log becomes full but before the rotation we have:
-        
-        p3 = p3 .* Tpowers + (tps/L) * p1 .* mysum; 
+
+        p3 = p3 .* Tpowers + (tps/L) * p1 .* mysum;
         p1 = p1 * cachedCoef;
         p2 = 1 - p1 - p3;
-        
+
         %now we need to rotate the log and flush the last bit of remaining
         %logs
         p3 = p3 + p1;
         p1 = p2;
         p2(:,:) = 0;
-        
+
         seenFullLog = seenFullLog + 1;
-        
+
         if f<minIO
-           f = f + IOcorrection; 
+           f = f + IOcorrection;
         end
-        
+
         avgf = (f + nRounds*avgf) / (1+nRounds);
         nRounds = nRounds+1;
         %allf(n) = f;
@@ -177,10 +177,10 @@ for i=1:size(uniqueTransCounts,1)
             nRounds
         end
     end
-    
+
     %plot(allf(1:n),'-');
     uniqueFlush(i) = avgf;
-    
+
 end % for the for over different TPSs
 
 for i=1:size(transCounts,1)

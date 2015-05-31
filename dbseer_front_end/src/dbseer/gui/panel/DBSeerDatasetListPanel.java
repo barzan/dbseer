@@ -32,7 +32,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener, Mo
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("ins 5 5 5 5", "[align center, grow]", "[fill, grow] [align center]"));
+		this.setLayout(new MigLayout("ins 0", "[align center, grow]", "[fill, grow] [align center]"));
 
 		JScrollPane scrollPane = new JScrollPane();
 		list = new JList(DBSeerGUI.datasets);

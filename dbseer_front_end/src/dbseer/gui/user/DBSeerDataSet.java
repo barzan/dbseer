@@ -3,7 +3,9 @@ package dbseer.gui.user;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import com.thoughtworks.xstream.annotations.XStreamOmitField;
+import dbseer.comp.MatlabFunctions;
 import dbseer.comp.UserInputValidator;
+import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.xml.XStreamHelper;
 import matlabcontrol.MatlabInvocationException;
@@ -57,7 +59,12 @@ public class DBSeerDataSet implements TableModelListener
 	private boolean dataSetLoaded = false;
 
 	@XStreamOmitField
+	private boolean modelVariableLoaded = false;
+
+	@XStreamOmitField
 	private String uniqueVariableName = "";
+	@XStreamOmitField
+	private String uniqueModelVariableName = "";
 
 	private String name = "";
 
@@ -139,6 +146,7 @@ public class DBSeerDataSet implements TableModelListener
 		final DefaultCellEditor dce = new DefaultCellEditor(trueFalseBox);
 
 		uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
+		uniqueModelVariableName = "mv_" + UUID.randomUUID().toString().replace('-', '_');
 		name = "Unnamed dataset";
 		tableModel = new DBSeerDataSetTableModel(null, new String[]{"Name", "Value"});
 		tableModel.addTableModelListener(this);
@@ -419,9 +427,22 @@ public class DBSeerDataSet implements TableModelListener
 		if (dataSetLoaded == false)
 		{
 			MatlabProxy proxy = DBSeerGUI.proxy;
+			String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
 
 			try
 			{
+				proxy.eval("rmpath " + dbseerPath + ";");
+				proxy.eval("rmpath " + dbseerPath + "/common_mat;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_data;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+
+				proxy.eval("addpath " + dbseerPath + ";");
+				proxy.eval("addpath " + dbseerPath + "/common_mat;");
+				proxy.eval("addpath " + dbseerPath + "/predict_mat;");
+				proxy.eval("addpath " + dbseerPath + "/predict_data;");
+				proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+
 				proxy.eval(this.uniqueVariableName + " = DataSet;");
 				proxy.eval(this.uniqueVariableName + ".header_path = '" + this.headerPath + "';");
 				proxy.eval(this.uniqueVariableName + ".monitor_path = '" + this.monitoringDataPath + "';");
@@ -452,6 +473,60 @@ public class DBSeerDataSet implements TableModelListener
 
 			dataSetLoaded = true;
 		}
+	}
+
+	public void loadModelVariable()
+	{
+		// set the unique name for mv first.
+		if (uniqueModelVariableName == "")
+		{
+			uniqueModelVariableName = "mv_" + UUID.randomUUID().toString().replace('-', '_');
+		}
+
+		// load dataset if it already has not been done.
+		if (!dataSetLoaded)
+		{
+			loadDataset();
+		}
+
+		if (!modelVariableLoaded)
+		{
+			MatlabProxy proxy = DBSeerGUI.proxy;
+			String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
+
+			try
+			{
+				proxy.eval("rmpath " + dbseerPath + ";");
+				proxy.eval("rmpath " + dbseerPath + "/common_mat;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_data;");
+				proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+
+				proxy.eval("addpath " + dbseerPath + ";");
+				proxy.eval("addpath " + dbseerPath + "/common_mat;");
+				proxy.eval("addpath " + dbseerPath + "/predict_mat;");
+				proxy.eval("addpath " + dbseerPath + "/predict_data;");
+				proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+
+				proxy.eval("[mvGrouped " + uniqueModelVariableName + "] = load_mv(" +
+						uniqueVariableName + ".header," +
+						uniqueVariableName + ".monitor," +
+						uniqueVariableName + ".averageLatency," +
+						uniqueVariableName + ".percentileLatency," +
+						uniqueVariableName + ".transactionCount," +
+						uniqueVariableName + ".diffedMonitor," +
+						uniqueVariableName + ".statementStat);");
+			}
+			catch (Exception e)
+			{
+				DBSeerExceptionHandler.handleException(e);
+			}
+		}
+	}
+
+	public String getUniqueModelVariableName()
+	{
+		return uniqueModelVariableName;
 	}
 
 	public List<String> getStatementOffsetFileList()
@@ -1021,5 +1096,11 @@ public class DBSeerDataSet implements TableModelListener
 				tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), name});
 			}
 		}
+	}
+
+	public void setReinitialize()
+	{
+		this.dataSetLoaded = false;
+		this.modelVariableLoaded = false;
 	}
 }

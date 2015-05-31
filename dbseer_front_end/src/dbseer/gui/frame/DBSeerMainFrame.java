@@ -1,5 +1,6 @@
 package dbseer.gui.frame;
 
+import dbseer.comp.data.LiveMonitor;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.panel.*;
 import dbseer.gui.actions.*;
@@ -7,7 +8,6 @@ import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 /**
@@ -26,7 +26,8 @@ public class DBSeerMainFrame extends JFrame
 	private DBSeerTaskDescriptionPanel taskDescPanel;
 	private DBSeerPlotControlPanel plotControlPanel;
 	private DBSeerConfigurationPanel configPanel;
-	private DBSeerPredictionControlPanel predictionPanel;
+	private DBSeerPredictionConsolePanel predictionConsolePanel;
+	private DBSeerPerformancePredictionPanel performancePredictionPanel;
 	private JPanel statusPanel;
 
 	public DBSeerMainFrame()
@@ -39,7 +40,8 @@ public class DBSeerMainFrame extends JFrame
 		this.setTitle("DBSeer Console");
 		System.setProperty("apple.laf.useScreenMenuBar", "true"); // for mac os
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "DBSeer"); // for mac os
-		layout = new MigLayout("ins 5 5 5 5", "[grow,fill]", "[][grow,fill]push[fill]");
+//		layout = new MigLayout("fill, ins 5 5 5 5", "[grow]", "[grow][grow,shrink 100]push[shrink 0]");
+		layout = new MigLayout("fill, ins 0", "[grow]", "[grow,shrink 100]push[grow,shrink 0]");
 
 		// create Menubar.
 		menuBar = new JMenuBar();
@@ -68,6 +70,12 @@ public class DBSeerMainFrame extends JFrame
 		// Process dataset without DBSCAN.
 		menuItem = new JMenuItem(new ProcessDatasetDirectoryWithoutDBSCANAction());
 		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		menu.add(menuItem);
+
+		menu.addSeparator();
+
+		menuItem = new JMenuItem(new EditCausalModelAction());
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		menu.add(menuItem);
 
 //
@@ -107,7 +115,8 @@ public class DBSeerMainFrame extends JFrame
 		taskDescPanel = new DBSeerTaskDescriptionPanel();
 		plotControlPanel = new DBSeerPlotControlPanel();
 		configPanel = new DBSeerConfigurationPanel();
-		predictionPanel = new DBSeerPredictionControlPanel();
+		predictionConsolePanel = new DBSeerPredictionConsolePanel();
+		performancePredictionPanel = new DBSeerPerformancePredictionPanel();
 
 		statusPanel = new JPanel();
 		statusPanel.setLayout(new MigLayout("fill, insets 0 0 0 0", "[grow 25][grow 75]"));
@@ -132,23 +141,57 @@ public class DBSeerMainFrame extends JFrame
 		statusPanel.add(DBSeerGUI.status, "growx");
 
 		mainTabbedPane.addTab("Settings", null, configPanel, "Set-up configurations for DBSeer");
-		mainTabbedPane.addTab("Plot/Graph", null, plotControlPanel, "Displays plot/graphs from DB statistics");
-		mainTabbedPane.addTab("Prediction", null, predictionPanel, "Predicts various metrics");
+		mainTabbedPane.addTab("Live Monitoring", null, DBSeerGUI.liveMonitorPanel, "Live monitoring from the middleware.");
+		mainTabbedPane.addTab("DBSherlock (Performance Analysis)", null, plotControlPanel, "Displays plot/graphs from DB statistics");
+		mainTabbedPane.addTab("Performance Prediction", null, performancePredictionPanel, "Perform performance/resource predictions");
+		mainTabbedPane.addTab("Performance Prediction (For Advanced Users)", null, predictionConsolePanel, "Predicts various metrics");
 
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		this.setLayout(layout);
-		this.add(pathChoosePanel, "cell 0 0");
+//		this.add(pathChoosePanel, "grow, wrap");
 		//this.add(taskDescPanel, "cell 0 1");
-		this.add(mainTabbedPane, "cell 0 1, grow");
+//		this.add(mainTabbedPane, "grow, wrap");
 		//this.add(configPane, "cell 0 2, grow");
 		//this.add(plotControlPanel, "cell 1 0");
 
-		this.add(statusPanel, "dock south, grow");
+		JPanel mainPanel = new JPanel();
+		mainPanel.setLayout(new MigLayout("fill"));
+		mainPanel.add(pathChoosePanel, "grow, wrap");
+		mainPanel.add(mainTabbedPane, "grow");
+//		JScrollPane mainScrollPane = new JScrollPane();
+//		mainScrollPane.setViewportView(mainPanel);
+//		mainScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+//		mainScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-		// disable frame resizing
-		this.setResizable(false);
+		this.add(mainPanel, "grow, wrap");
+		this.add(statusPanel, "dock south, grow, push");
+		this.setResizable(true);
 
+	}
+
+	public JTabbedPane getMainTabbedPane()
+	{
+		return mainTabbedPane;
+	}
+
+	public void resetLiveMonitoring()
+	{
+		final DBSeerMainFrame frame = this;
+		DBSeerGUI.liveMonitor = new LiveMonitor();
+		DBSeerGUI.liveMonitorPanel = new DBSeerLiveMonitorPanel();
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				mainTabbedPane.removeTabAt(1);
+				mainTabbedPane.insertTab("Live Monitoring", null, DBSeerGUI.liveMonitorPanel, "Live monitoring from the middleware.", 1);
+				DBSeerGUI.liveMonitorPanel.revalidate();
+				DBSeerGUI.liveMonitorPanel.repaint();
+				frame.repaint();
+			}
+		});
 	}
 
 }

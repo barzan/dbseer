@@ -4,7 +4,7 @@ classdef Plotter < handle
         Xdata
         Xlabel
     end
-    
+
     methods
         function obj = set.mv(self, value)
             self.mv = value;
@@ -34,7 +34,7 @@ classdef Plotter < handle
 				data = sum(data,2);
 			end
 		end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotIndividualCoreUsageUser(this)
             Xdata = {this.Xdata};
             Ydata = {this.mv.cpu_usr};
@@ -44,7 +44,7 @@ classdef Plotter < handle
             legends = {'Core with MySQL'};
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotIndividualCoreUsageSys(this)
             Xdata = {this.Xdata};
             Ydata = {this.mv.cpu_sys};
@@ -54,7 +54,7 @@ classdef Plotter < handle
             legends = {'Core with MySQL'};
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotInterCoreStandardDeviation(this)
             Xdata = {this.Xdata};
             Ydata = {sqrt(this.mv.CoreVariance)};
@@ -64,7 +64,7 @@ classdef Plotter < handle
             legends = {'Inter-core std. dev.'};
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotAvgCpuUsage(this)
             mv = this.mv;
             Xdata = {this.Xdata}
@@ -77,7 +77,7 @@ classdef Plotter < handle
             legends = {'Usr', 'Sys', 'AvgCpuWai', 'AvgCpuHiq', 'AvgCpuSiq', 'Idle'};
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotTPSCommitRollback(this)
             mv = this.mv;
 			Xdata = {};
@@ -102,14 +102,14 @@ classdef Plotter < handle
             Ydata{end+1} = mv.dbmsRolledbackCommands;
             legends{end+1} = 'DBMS Committed Commands';
             legends{end+1} = 'DBMS Rolledback Commands';
-            
+
             % TODO: max throughput part is omitted
             Xlabel = this.Xlabel;
             Ylabel = 'Transactions (tps)';
             title = 'DBMS Transactions';
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotContextSwitches(this)
             mv = this.mv;
             Xdata = {this.Xdata};
@@ -126,7 +126,7 @@ classdef Plotter < handle
             title = 'Threads';
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskWriteMB(this)
             mv = this.mv;
             Xdata = {};
@@ -159,7 +159,7 @@ classdef Plotter < handle
             title = 'Write Volume (MB)';
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskWriteMB_friendly(this)
             mv = this.mv;
             Xdata = {this.Xdata};
@@ -174,13 +174,13 @@ classdef Plotter < handle
                 legends = {'DB Log Writes','DB Page Writes', 'OS No. Sector Writes'};
                 % legends = {'DB Log Writes','DB Page Writes', 'OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
             end
-            
+
             Xlabel = this.Xlabel;
             Ylabel = 'Write Volume (MB/sec)';
             title = 'Write Volume (MB)';
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskWriteNum(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
@@ -193,12 +193,12 @@ classdef Plotter < handle
 				timestamp = this.Xdata;
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskWriteNum_friendly(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites') && isfield(mv, 'dbmsNumberOfDataWrites') && isfield(mv, 'dbmsDoubleWritesOperations') && isfield(mv, 'dbmsNumberOfLogWriteRequests')...
                 && isfield(mv, 'dbmsBufferPoolWrites') && isfield(mv, 'dbmsNumberOfFysncLogWrites')
-                
+
                 Xdata = {this.Xdata};
                 Ydata = {[mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites]};
                 title = 'Write Requests (#)';
@@ -208,7 +208,7 @@ classdef Plotter < handle
 				timestamp = this.Xdata;
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskReadMB(this)
             mv = this.mv;
             Xdata = {};
@@ -230,7 +230,7 @@ classdef Plotter < handle
             title = 'Read Volume (MB)';
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDiskReadNum(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfDataReads')
@@ -243,37 +243,37 @@ classdef Plotter < handle
 				timestamp = this.Xdata;
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotCacheHit(this)
             mv = this.mv;
             allowedRelativeDiff = 0.1;
             minFreq=100;
-            
+
             %grouping by total TPS
             if isfield(mv, 'dbmsPhysicalReadsMB')
                 [grouped freq] = GroupByAvg([mv.clientTotalSubmittedTrans mv.clientIndividualSubmittedTrans mv.dbmsReads mv.dbmsReadRequests mv.dbmsPhysicalReadsMB], 1, allowedRelativeDiff, minFreq, 10, 1000);
             else
                 [grouped freq] = GroupByAvg([mv.clientTotalSubmittedTrans mv.clientIndividualSubmittedTrans mv.dbmsReads mv.dbmsReadRequests], 1, allowedRelativeDiff, minFreq, 10, 1000);
             end
-            grouped = grouped(:,2:end);        
+            grouped = grouped(:,2:end);
             actualCacheMiss = grouped(:,end-2) ./ grouped(:,end-1);
             x = sum(grouped(:,1:end-3),2);
             ratio = mean(mv.dbmsReads(mv.dbmsReadRequests>0) ./mv.dbmsReadRequests(mv.dbmsReadRequests>0));
-            
+
             Xdata = {x};
             Ydata = {actualCacheMiss};
             Xlabel = 'TPS';
             Ylabel = 'Actual miss ratio';
             legends = {};
 			timestamp = this.Xdata;
-            
+
             if isfield(mv, 'dbmsPhysicalReadsMB')
                 title = ['Avg Read(MB)=' num2str(mean(mv.dbmsPhysicalReadsMB),1) ' Actual Cache Miss Ratio=', num2str(mean(actualCacheMiss),3) '=' num2str(mean(mv.dbmsReads),3) '/' num2str(mean(mv.dbmsReadRequests),1) '=' num2str(ratio,3)];
             else
                 title = ['Actual Cache Miss Ratio=', num2str(mean(actualCacheMiss),3) '=' num2str(mean(mv.dbmsReads),3) '/' num2str(mean(mv.dbmsReadRequests),1) '=' num2str(ratio,3)];
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotRowsChangedOverTime(this)
             mv = this.mv;
             if isfield(mv, 'dbmsChangedRows')
@@ -286,7 +286,7 @@ classdef Plotter < handle
 				timestamp = this.Xdata;
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotRowsChangedPerWriteMB(this)
             mv = this.mv;
             if isfield(mv, 'dbmsChangedRows')
@@ -305,7 +305,7 @@ classdef Plotter < handle
             legends = {'MySQL total IO', 'MySQL log IO', 'MySQL data IO', 'System physical IO'};
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotRowsChangedPerWriteNo(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
@@ -318,11 +318,11 @@ classdef Plotter < handle
 				timestamp = this.Xdata;
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDirtyPagesPrediction(this)
-            % TODO: not done because of hard-coded numbers 
+            % TODO: not done because of hard-coded numbers
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotFlushRate(this)
             mv = this.mv
             Xdata = {this.Xdata};
@@ -338,7 +338,7 @@ classdef Plotter < handle
             legends = {'Actual # of pages flushed'};
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotNetwork(this)
             mv = this.mv;
             Xdata = {this.Xdata};
@@ -349,11 +349,11 @@ classdef Plotter < handle
             title = 'Network';
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPrediction(this)
             % TODO: not implemented due to hard-coded number in original implementation.
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLockConcurrencyPrediction(this)
             % TODO: not implemented due to hard-coded number in original implementation.
         end
@@ -361,7 +361,7 @@ classdef Plotter < handle
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotBarzanPrediction(this)
             % TODO: not implemented due to hard-coded number in original implementation.
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotDirtyPagesOverTime(this)
             % TODO: handle monitor variable.
             mv = this.mv;
@@ -386,7 +386,7 @@ classdef Plotter < handle
 				timestamp = this.Xdata;
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotPagingInOut(this)
             % TODO: handle monitor variable.
             mv = this.mv;
@@ -398,7 +398,7 @@ classdef Plotter < handle
             legends = {'paging_in','paging_out','virtual_majpf'};
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotCombinedAvgLatency(this)
             mv = this.mv;
             Xdata = {this.Xdata};
@@ -414,14 +414,15 @@ classdef Plotter < handle
             title = 'Average Latency';
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatency(this)
             % TODO: where does 'clientAvgLatencyA' come from?
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyOverall(this)
             mv = this.mv;
-            AvgLatencyAllLittle = 160 ./ mv.clientTotalSubmittedTrans;
+            %AvgLatencyAllLittle = 160 ./ mv.clientTotalSubmittedTrans;
+            AvgLatencyAllLittle = mean(sum(mv.clientIndividualSubmittedTrans .* mv.clientTransLatency, 2)) ./ mv.clientTotalSubmittedTrans;
             AcgLatencyAll = sum(mv.clientIndividualSubmittedTrans .* mv.clientTransLatency, 2) ./ mv.clientTotalSubmittedTrans;
 			AvgLatencyAllLittle(~isfinite(AvgLatencyAllLittle)) = 0;
 			AcgLatencyAll(~isfinite(AcgLatencyAll)) = 0;
@@ -435,7 +436,7 @@ classdef Plotter < handle
             title = 'Overall Latency';
 			timestamp = this.Xdata;
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyVersusCPU(this)
             mv = this.mv;
             Xdata = {};
@@ -502,17 +503,17 @@ classdef Plotter < handle
             Ylabel = 'latency (sec)';
             title = 'CPU vs Latency (Median)';
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatency3D(this)
             % TODO: 3D support in JFreeChart?
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotWorkingSetSize(this)
             mv = this.mv;
             if isfield(mv, 'dbmsRandomReadAheads')
                 temp=[ ...
                     mv.dbmsRandomReadAheads mv.dbmsSequentialReadAheads mv.dbmsNumberOfLogicalReadRequests ...
-                    mv.dbmsNumberOfLogicalReadsFromDisk mv.dbmsNumberOfWaitsForFlush];    
+                    mv.dbmsNumberOfLogicalReadsFromDisk mv.dbmsNumberOfWaitsForFlush];
                 Xdata = {this.Xdata};
                 Xlabel = this.Xlabel;
                 Ydata = {normMatrix(temp)};
@@ -522,7 +523,7 @@ classdef Plotter < handle
 				timestamp = this.Xdata;
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotWorkingSetSize2(this)
             mv = this.mv;
             if isfield(mv, 'dbmsNumberOfNextRowReadRequests')
@@ -536,7 +537,7 @@ classdef Plotter < handle
 				timestamp = this.Xdata;
             end
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerTPS(this)
             mv = this.mv;
             temp = [mv.clientTotalSubmittedTrans mv.clientTransLatency this.Xdata];
@@ -597,11 +598,11 @@ classdef Plotter < handle
             title = 'Latency vs. TPS (Median)';
             Ylabel = 'Latency (sec)';
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerLocktime(this)
             mv = this.mv;
             CurrentRowLockTime=mv.dbmsCurrentLockWaits;
-    
+
             temp = [CurrentRowLockTime mv.clientTransLatency this.Xdata];
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
@@ -620,7 +621,7 @@ classdef Plotter < handle
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerLocktime99(this)
             mv = this.mv;
             CurrentRowLockTime=mv.dbmsCurrentLockWaits;
-    
+
 			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],7);
 			latencies(isnan(latencies)) = 0;
             temp = [CurrentRowLockTime latencies this.Xdata];
@@ -641,7 +642,7 @@ classdef Plotter < handle
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerLocktimeMedian(this)
             mv = this.mv;
             CurrentRowLockTime=mv.dbmsCurrentLockWaits;
-    
+
 			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],3);
 			latencies(isnan(latencies)) = 0;
             temp = [CurrentRowLockTime latencies this.Xdata];
@@ -661,7 +662,7 @@ classdef Plotter < handle
 
 		function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotTransactionMix(this)
 			mv = this.mv;
-			
+
 			title = 'Transaction Mix';
 			Xdata = {[1:size(mv.clientIndividualSubmittedTrans, 2)]};
 			Ydata = {sum(mv.clientIndividualSubmittedTrans, 1)};
@@ -673,7 +674,7 @@ classdef Plotter < handle
 				legends{end+1} = ['Transaction Type ' num2str(i)];
 			end
 		end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotStrangeFeatures1(this)
             % TODO: do we need this?
         end
@@ -685,14 +686,36 @@ classdef Plotter < handle
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotAllStrangeFeatures(this)
             % TODO: do we need this?
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotInterrupts(this)
             % TODO: handle monitor variable
         end
-        
+
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotFlushRatePrediction(this)
             % TODO: has hard-coded numbers...
         end
-        
+
+        %% Plot functions for prediction console
+        function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotForPrediction(this)
+            mv = this.mv;
+			Xdata = {};
+			Ydata = {};
+            legends = {};
+            for i=1:size(mv.clientIndividualSubmittedTrans, 2)
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = mv.clientIndividualSubmittedTrans(:,i);
+                legends{end+1} = horzcat('# of Type ', num2str(i), ' Transactions');
+            end
+			Xdata{end+1} = this.Xdata;
+			Ydata{end+1} = mv.clientTotalSubmittedTrans;
+            legends{end+1} = 'Total client submitted transactions';
+            
+            % TODO: max throughput part is omitted
+            Xlabel = this.Xlabel;
+            Ylabel = 'Transactions (tps)';
+            title = 'DBMS Transactions';
+			timestamp = this.Xdata;
+        end
+
     end % end methods
 end

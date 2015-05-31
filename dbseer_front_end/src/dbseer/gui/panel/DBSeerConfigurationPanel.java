@@ -1,5 +1,6 @@
 package dbseer.gui.panel;
 
+import dbseer.gui.DBSeerGUI;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -24,6 +25,7 @@ public class DBSeerConfigurationPanel extends JPanel
 
 		loginPanel = new DBSeerMiddlewarePanel();
 		loginPanel.setBorder(BorderFactory.createTitledBorder("Middleware"));
+		DBSeerGUI.middlewarePanel = loginPanel;
 		configListPanel = new DBSeerConfigListPanel();
 		configListPanel.setBorder(BorderFactory.createTitledBorder("Available Train Configs"));
 		profileListPanel = new DBSeerDatasetListPanel();

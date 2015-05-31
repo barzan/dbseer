@@ -2,7 +2,11 @@ package dbseer.gui;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.io.StreamException;
+import dbseer.comp.LiveMonitoringThread;
+import dbseer.comp.data.LiveMonitor;
 import dbseer.gui.frame.DBSeerMainFrame;
+import dbseer.gui.panel.DBSeerLiveMonitorPanel;
+import dbseer.gui.panel.DBSeerMiddlewarePanel;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.user.DBSeerUserSettings;
@@ -21,6 +25,8 @@ import java.net.Socket;
 public class DBSeerGUI
 {
 	private static final String DEFAULT_SETTING_FILE_PATH = "./settings.xml";
+
+	public static DBSeerMainFrame mainFrame;
 
 	public static String settingsPath = DEFAULT_SETTING_FILE_PATH;
 
@@ -48,6 +54,18 @@ public class DBSeerGUI
 	public static MiddlewareSocket middlewareSocket = new MiddlewareSocket();
 
 	public static DBSeerDataSet currentDataset = null;
+
+	public static DBSeerMiddlewarePanel middlewarePanel = null;
+
+	public static LiveMonitor liveMonitor = new LiveMonitor();
+
+	public static DBSeerLiveMonitorPanel liveMonitorPanel = new DBSeerLiveMonitorPanel();
+
+	public static LiveMonitoringThread liveMonitoringThread = new LiveMonitoringThread();
+
+	public static boolean isProxyRenewing = false;
+
+	public static int liveMonitorRefreshRate = 1;
 
 	public static String[] getProfileNames()
 	{
@@ -239,6 +257,8 @@ public class DBSeerGUI
 
 	private static DBSeerSplash splash;
 
+	private static MatlabProxyFactoryOptions options;
+
 	public static void main(String[] args)
 	{
 //		Temp: testing data center;
@@ -263,6 +283,10 @@ public class DBSeerGUI
 		{
 
 		}
+
+		options = new MatlabProxyFactoryOptions.Builder()
+				.setUsePreviouslyControlledSession(true)
+				.setHidden(true).build();
 
 		SwingUtilities.invokeLater(new Runnable()
 		{
@@ -291,9 +315,6 @@ public class DBSeerGUI
 					e.printStackTrace();
 				}
 
-				MatlabProxyFactoryOptions options = new MatlabProxyFactoryOptions.Builder()
-						.setUsePreviouslyControlledSession(true)
-						.setHidden(true).build();
 				MatlabProxyFactory factory = new MatlabProxyFactory(options);
 
 				try
@@ -330,12 +351,40 @@ public class DBSeerGUI
 				}
 
 				splash.dispose();
-				DBSeerMainFrame mainFrame = new DBSeerMainFrame();
+				mainFrame = new DBSeerMainFrame();
 				SwingUtilities.updateComponentTreeUI(mainFrame);
 				mainFrame.pack();
 				mainFrame.setVisible(true);
+//				mainFrame.setPreferredSize(mainFrame.getSize());
+
 			}
 		});
+	}
+
+	public static void repaintMainFrame()
+	{
+		mainFrame.repaint(50L);
+		mainFrame.pack();
+		mainFrame.setPreferredSize(mainFrame.getSize());
+	}
+
+	public static void renewProxy()
+	{
+		MatlabProxyFactory factory = new MatlabProxyFactory(options);
+
+		try
+		{
+			if (proxy.isConnected())
+			{
+				proxy.exit();
+			}
+			proxy = factory.getProxy();
+			proxy.eval("clear all");
+		}
+		catch (Exception e)
+		{
+			DBSeerExceptionHandler.handleException(e);
+		}
 	}
 
 }

@@ -28,7 +28,7 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener, Mou
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("ins 5 5 5 5", "[align center, grow]", "[fill,grow] [align center]"));
+		this.setLayout(new MigLayout("ins 0", "[align center, grow]", "[fill,grow] [align center]"));
 
 		list = new JList(DBSeerGUI.configs);
 		list.setVisibleRowCount(8);

@@ -1,5 +1,6 @@
 package dbseer.gui.chart;
 
+import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.comp.PredictionCenter;
 import dbseer.gui.panel.DBSeerPlotControlPanel;
@@ -16,6 +17,8 @@ import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.data.general.PieDataset;
 import org.jfree.data.xy.XYSeries;
@@ -125,7 +128,13 @@ public class DBSeerChartFactory
 					for (int r = 0; r < row; ++r)
 					{
 						int xRow = (r >= xLength) ? xLength - 1 : r;
-						series.add(xArray[xRow], yArray.getRealValue(r, c));
+						double yValue = yArray.getRealValue(r, c);
+						// remove negatives
+						if (yValue < 0)
+						{
+							yValue = 0;
+						}
+						series.add(xArray[xRow], yValue);
 					}
 					XYdataSet.addSeries(series);
 					++dataCount;
@@ -365,7 +374,14 @@ public class DBSeerChartFactory
 					for (int r = 0; r < row; ++r)
 					{
 						int xRow = (r >= xLength) ? xLength - 1 : r;
-						series.add(xArray[xRow], yArray.getRealValue(r, c));
+						double yValue = yArray.getRealValue(r, c);
+						// remove negatives & NaN & infs.
+						if (yValue < 0 || yValue == Double.NaN ||
+								yValue == Double.POSITIVE_INFINITY || yValue == Double.NEGATIVE_INFINITY)
+						{
+							yValue = 0.0;
+						}
+						series.add(xArray[xRow], yValue);
 					}
 					dataSet.addSeries(series);
 					++dataCount;
@@ -398,6 +414,114 @@ public class DBSeerChartFactory
 		catch (MatlabInvocationException e)
 		{
 			JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab Proxy Error", JOptionPane.ERROR_MESSAGE);
+		}
+
+		return null;
+	}
+
+	public static JFreeChart createPredictionBarChart(PredictionCenter center)
+	{
+		MatlabProxy proxy = DBSeerGUI.proxy;
+		try
+		{
+//			center.run(); // now done in the DBSeerPredictionControlPanel.
+
+			String title = (String) proxy.getVariable("title");
+			String[] legends = (String[]) proxy.getVariable("legends");
+			MatlabTypeConverter converter = new MatlabTypeConverter(proxy);
+
+			Object[] xCellArray = (Object[]) proxy.getVariable("Xdata");
+			Object[] yCellArray = (Object[]) proxy.getVariable("Ydata");
+			String xLabel = (String) proxy.getVariable("Xlabel");
+			String yLabel = (String) proxy.getVariable("Ylabel");
+
+			DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+			int numLegends = legends.length;
+			int numXCellArray = xCellArray.length;
+			int numYCellArray = yCellArray.length;
+			int dataCount = 0;
+
+			final java.util.List<String> transactionNames = center.getTrainConfig().getDataset(0).getTransactionTypeNames();
+			for (int i = 0; i < numLegends; ++i)
+			{
+				String legend = legends[i];
+				for (int j = 0; j < transactionNames.size(); ++j)
+				{
+					if (legend.contains("Type " + (j + 1)))
+					{
+						legends[i] = legend.replace("Type " + (j + 1), transactionNames.get(j));
+						break;
+					}
+				}
+			}
+			for (int j = 0; j < transactionNames.size(); ++j)
+			{
+				if (xLabel.contains("Type " + (j + 1)))
+				{
+					xLabel = xLabel.replace("Type " + (j + 1), transactionNames.get(j));
+					break;
+				}
+			}
+			for (int j = 0; j < transactionNames.size(); ++j)
+			{
+				if (yLabel.contains("Type " + (j + 1)))
+				{
+					yLabel = yLabel.replace("Type " + (j + 1), transactionNames.get(j));
+					break;
+				}
+			}
+
+			for (int i = 0; i < numYCellArray; ++i)
+			{
+//				double[] xArray = (double[]) xCellArray[i];
+				MatlabNumericArray yArray = converter.getNumericArray("Ydata{" + (i + 1) + "}");
+//				int xLength = xArray.length;
+				int[] yArrayLengths = yArray.getLengths();
+				int row = yArrayLengths[0];
+				int col = yArrayLengths[1];
+
+				for (int c = 0; c < col; ++c)
+				{
+					String category = "";
+					int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
+					if (numLegends == 0)
+					{
+						category = "Data " + dataCount + 1;
+					}
+					else if (dataCount >= numLegends)
+					{
+						category = legends[legendIdx] + (dataCount + 1);
+					}
+					else
+					{
+						category = legends[legendIdx];
+					}
+
+					for (int r = 0; r < row; ++r)
+					{
+//						int xRow = (r >= xLength) ? xLength - 1 : r;
+						double yValue = yArray.getRealValue(r, c);
+						// remove negatives.
+						if (yValue < 0 || yValue == Double.NaN ||
+								yValue == Double.POSITIVE_INFINITY || yValue == Double.NEGATIVE_INFINITY)
+						{
+							yValue = 0.0;
+						}
+
+						dataset.addValue(yValue, category, "");
+					}
+					++dataCount;
+				}
+			}
+
+			JFreeChart chart = ChartFactory.createBarChart(title, xLabel, yLabel, dataset);
+
+			return chart;
+		}
+		catch (Exception e)
+		{
+			DBSeerExceptionHandler.handleException(e);
 		}
 
 		return null;

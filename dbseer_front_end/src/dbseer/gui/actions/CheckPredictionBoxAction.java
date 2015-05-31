@@ -1,6 +1,6 @@
 package dbseer.gui.actions;
 
-import dbseer.gui.panel.DBSeerPredictionControlPanel;
+import dbseer.gui.panel.DBSeerPredictionConsolePanel;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -27,11 +27,11 @@ public class CheckPredictionBoxAction extends AbstractAction
 			JCheckBox box = (JCheckBox)source;
 			if (box.isSelected())
 			{
-				DBSeerPredictionControlPanel.predictionSet.add(box.getText());
+				DBSeerPredictionConsolePanel.predictionSet.add(box.getText());
 			}
 			else
 			{
-				DBSeerPredictionControlPanel.predictionSet.remove(box.getText());
+				DBSeerPredictionConsolePanel.predictionSet.remove(box.getText());
 			}
 		}
 	}
