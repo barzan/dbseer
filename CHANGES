@@ -2,6 +2,7 @@
 - Fixed the bug where 'Show Queries' menu hangs in transaction mix graph.
 - Added a more user-intuitive prediction console.
 - Improved the connection handling with the middleware.
+- Added live monitoring.
 - Fixed many other trivial bugs.
 
 Previous Changes
