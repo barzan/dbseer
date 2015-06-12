@@ -6,7 +6,7 @@ import dbseer.gui.model.SharedComboBoxModel;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.DBSeerGUI;
 
-import matlabcontrol.MatlabInvocationException;
+import dbseer.stat.StatisticalPackageRunner;
 import matlabcontrol.MatlabProxy;
 import net.miginfocom.swing.MigLayout;
 
@@ -179,35 +179,27 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 				@Override
 				protected Void doInBackground() throws Exception
 				{
-					MatlabProxy proxy = DBSeerGUI.proxy;
+					StatisticalPackageRunner runner = DBSeerGUI.runner;
 
 					String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
 
 					try
 					{
-						proxy.eval("rmpath " + dbseerPath + ";");
-						proxy.eval("rmpath " + dbseerPath + "/common_mat;");
-						proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
-						proxy.eval("rmpath " + dbseerPath + "/predict_data;");
-						proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+						runner.eval("rmpath " + dbseerPath + ";");
+						runner.eval("rmpath " + dbseerPath + "/common_mat;");
+						runner.eval("rmpath " + dbseerPath + "/predict_mat;");
+						runner.eval("rmpath " + dbseerPath + "/predict_data;");
+						runner.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-						proxy.eval("addpath " + dbseerPath + ";");
-						proxy.eval("addpath " + dbseerPath + "/common_mat;");
-						proxy.eval("addpath " + dbseerPath + "/predict_mat;");
-						proxy.eval("addpath " + dbseerPath + "/predict_data;");
-						proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+						runner.eval("addpath " + dbseerPath + ";");
+						runner.eval("addpath " + dbseerPath + "/common_mat;");
+						runner.eval("addpath " + dbseerPath + "/predict_mat;");
+						runner.eval("addpath " + dbseerPath + "/predict_data;");
+						runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-						proxy.eval("plotter = Plotter;");
+						runner.eval("plotter = Plotter;");
 						profile.loadDataset();
-//							proxy.eval("header_path = '" + profile.getHeaderPath() + "';");
-//							proxy.eval("monitor_path = '" + profile.getMonitoringDataPath() + "';");
-//							proxy.eval("trans_count_path = '" + profile.getTransCountPath() + "';");
-//							proxy.eval("avg_latency_path = '" + profile.getAverageLatencyPath() + "';");
-//							proxy.eval("percentile_latency_path = '" + profile.getPercentileLatencyPath() + "';");
-//							proxy.eval("[header monitor avglat prclat trcount diffMonitor] = load_stats(header_path, " +
-//									"monitor_path, trans_count_path, avg_latency_path, percentile_latency_path, " +
-//									"0, 0, true);");
-						proxy.eval("[mvGrouped mvUngrouped] = load_mv(" +
+						runner.eval("[mvGrouped mvUngrouped] = load_mv(" +
 								profile.getUniqueVariableName() + ".header," +
 								profile.getUniqueVariableName() + ".monitor," +
 								profile.getUniqueVariableName() + ".averageLatency," +
@@ -215,7 +207,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 								profile.getUniqueVariableName() + ".transactionCount," +
 								profile.getUniqueVariableName() + ".diffedMonitor," +
 								profile.getUniqueVariableName() + ".statementStat);");
-						proxy.eval("plotter.mv = mvUngrouped;");
+						runner.eval("plotter.mv = mvUngrouped;");
 
 					}
 					catch (Exception e)

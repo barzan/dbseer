@@ -1,10 +1,10 @@
 classdef DataSet < handle
 
     properties
-        header_path 
+        header_path
         monitor_path
-        trans_count_path 
-        avg_latency_path 
+        trans_count_path
+        avg_latency_path
         percentile_latency_path
         statement_stat_path
         %tranTypes
@@ -24,10 +24,10 @@ classdef DataSet < handle
         diffedMonitor
     end
 
-    properties (SetAccess='private', GetAccess='private')
+    properties (SetAccess='private', GetAccess='public')
         statReady = false;
     end
-    
+
     methods
 
         % property accessors set statReady to false
@@ -153,7 +153,8 @@ classdef DataSet < handle
         end
 
         function this = setStruct(this, paramStruct)
-            propertyList = properties(this);
+            % propertyList = properties(this);
+            propertyList = fieldnames(this);
             for i = 1:length(propertyList)
                 prop = propertyList(i);
                 prop = prop{1};
@@ -163,10 +164,11 @@ classdef DataSet < handle
                 end
             end
         end
-    
+
         function groupStruct = getStruct(this)
             groupStruct = struct();
-            propertyList = properties(this);
+            % propertyList = properties(this);
+            propertyList = fieldnames(this);
             for i = 1:length(propertyList)
                 prop = propertyList(i);
                 prop = prop{1};
@@ -180,15 +182,15 @@ classdef DataSet < handle
         function loadStatistics(this)
 			if this.use_entire
 				[this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
-					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ... 
+					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ...
 					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, 0, 0, true);
 			else
 				[this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
-					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ... 
+					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ...
 					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, this.startIdx, this.endIdx, false);
 			end
             this.statReady = true;
         end
     end % end methods
-    
+
 end % end classdef

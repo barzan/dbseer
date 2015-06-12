@@ -146,7 +146,7 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 				}
 
 
-				final PredictionCenter center = new PredictionCenter(DBSeerGUI.proxy,
+				final PredictionCenter center = new PredictionCenter(DBSeerGUI.runner,
 						predictionString, DBSeerGUI.userSettings.getDBSeerRootPath(), true);
 
 				center.setPredictionDescription("What-if Analysis");
@@ -183,7 +183,7 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 			{
 				int chartType = DBSeerConstants.CHART_XYLINE;
 				final int selectedIndex = bottleneckAnalysisPanel.getSelectedQuestion();
-				final PredictionCenter center = new PredictionCenter(DBSeerGUI.proxy,
+				final PredictionCenter center = new PredictionCenter(DBSeerGUI.runner,
 						DBSeerBottleneckAnalysisPanel.actualFunctions[selectedIndex],
 						DBSeerGUI.userSettings.getDBSeerRootPath(), true);
 
@@ -222,7 +222,7 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 			else if (tabbedPane.getSelectedIndex() == DBSeerConstants.ANALYSIS_BLAME)
 			{
 				final int selectedIndex = blameAnalysisPanel.getSelectedIndex();
-				final PredictionCenter center = new PredictionCenter(DBSeerGUI.proxy,
+				final PredictionCenter center = new PredictionCenter(DBSeerGUI.runner,
 						blameAnalysisPanel.getAnalysisFunction(), DBSeerGUI.userSettings.getDBSeerRootPath(), true);
 
 				center.setPredictionDescription("Blame Analysis");
@@ -255,7 +255,7 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 			}
 			else if (tabbedPane.getSelectedIndex() == DBSeerConstants.ANALYSIS_THROTTLING)
 			{
-				final PredictionCenter center = new PredictionCenter(DBSeerGUI.proxy,
+				final PredictionCenter center = new PredictionCenter(DBSeerGUI.runner,
 						"ThrottlingAnalysis", DBSeerGUI.userSettings.getDBSeerRootPath(), true);
 				final int throttleType = throttlingAnalysisPanel.getThrottleType();
 
@@ -355,7 +355,7 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 					protected Void doInBackground() throws Exception
 					{
 						DBSeerGUI.isProxyRenewing = true;
-						DBSeerGUI.renewProxy();
+						DBSeerGUI.resetStatRunner();
 						DBSeerGUI.isProxyRenewing = false;
 						return null;
 					}

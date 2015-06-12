@@ -4,8 +4,14 @@ import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.user.DBSeerCausalModel;
 import dbseer.gui.user.DBSeerPredicate;
-import dbseer.gui.user.DBSeerUserSettings;
-import matlabcontrol.MatlabInvocationException;
+import dbseer.stat.MatlabRunner;
+import dbseer.stat.OctaveRunner;
+import dbseer.stat.StatisticalPackageRunner;
+import dk.ange.octave.OctaveEngine;
+import dk.ange.octave.type.OctaveCell;
+import dk.ange.octave.type.OctaveDouble;
+import dk.ange.octave.type.OctaveString;
+import dk.ange.octave.type.OctaveStruct;
 import matlabcontrol.MatlabProxy;
 import net.miginfocom.swing.MigLayout;
 
@@ -128,14 +134,27 @@ public class DBSeerEditCausalModelFrame extends JFrame implements ActionListener
 					causalModelFilenames.add(filename);
 
 					// get 'cause'
-					MatlabProxy proxy = DBSeerGUI.proxy;
+					StatisticalPackageRunner runner = DBSeerGUI.runner;
 
 					try
 					{
-						proxy.eval("addpath " + causalModelDirPath + ";");
-						proxy.eval(String.format("dbseer_causal_model = load('%s');", filename));
-						String cause = (String) proxy.getVariable("dbseer_causal_model.model.cause");
-						causes.add(cause);
+						runner.eval("addpath " + causalModelDirPath + ";");
+						runner.eval(String.format("dbseer_causal_model = load('%s');", filename));
+						String cause = "";
+						if (runner instanceof MatlabRunner)
+						{
+							cause = runner.getVariableString("dbseer_causal_model.model.cause");
+							causes.add(cause);
+						}
+						else if (runner instanceof OctaveRunner)
+						{
+							OctaveEngine engine = OctaveRunner.getInstance().getEngine();
+							OctaveStruct struct1 = (OctaveStruct) engine.get("dbseer_causal_model");
+							OctaveStruct struct2 = (OctaveStruct) struct1.get("model");
+							OctaveString str = (OctaveString) struct2.get("cause");
+							cause = str.getString();
+							causes.add(cause);
+						}
 
 						tableModel.addRow(new String[]{filename, cause});
 						tableModel.fireTableDataChanged();
@@ -223,18 +242,25 @@ public class DBSeerEditCausalModelFrame extends JFrame implements ActionListener
 				newCause = newCause.trim();
 
 				// get 'cause'
-				MatlabProxy proxy = DBSeerGUI.proxy;
+				StatisticalPackageRunner runner = DBSeerGUI.runner;
 				String causalModelDirPath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator + "causal_models";
 				String filename = causalModelFilenames.get(selectedRow);
 
 				try
 				{
-					proxy.eval("addpath " + causalModelDirPath + ";");
-					proxy.eval("cd " + causalModelDirPath + ";");
-					proxy.eval(String.format("dbseer_loaded_model = load('%s');", filename));
-					proxy.eval("model = dbseer_loaded_model.model;");
-					proxy.eval(String.format("model.cause = '%s';", newCause));
-					proxy.eval(String.format("save('%s', 'model');", filename));
+					runner.eval("addpath " + causalModelDirPath + ";");
+					runner.eval("cd " + causalModelDirPath + ";");
+					runner.eval(String.format("dbseer_loaded_model = load('%s');", filename));
+					runner.eval("model = dbseer_loaded_model.model;");
+					runner.eval(String.format("model.cause = '%s';", newCause));
+					if (runner instanceof MatlabRunner)
+					{
+						runner.eval(String.format("save('%s', 'model');", filename));
+					}
+					else if (runner instanceof  OctaveRunner)
+					{
+						runner.eval(String.format("save('-mat', '%s', 'model');", filename));
+					}
 				}
 				catch (Exception e)
 				{
@@ -258,16 +284,44 @@ public class DBSeerEditCausalModelFrame extends JFrame implements ActionListener
 
 			// get 'cause'
 			String causalModelDirPath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator + "causal_models";
-			MatlabProxy proxy = DBSeerGUI.proxy;
+			StatisticalPackageRunner runner = DBSeerGUI.runner;
 			final String cause = (String)tableModel.getValueAt(selectedRow, 1);
 			final String filename = (String)tableModel.getValueAt(selectedRow, 0);
 			DBSeerCausalModel causalModel = null;
 
 			try
 			{
-				proxy.eval("addpath " + causalModelDirPath + ";");
-				proxy.eval(String.format("dbseer_causal_model = load('%s');", filename));
-				Object[] predicates = (Object[]) proxy.getVariable("dbseer_causal_model.model.predicates");
+				runner.eval("addpath " + causalModelDirPath + ";");
+				runner.eval(String.format("dbseer_causal_model = load('%s');", filename));
+				Object[] predicates = null;
+				if (runner instanceof MatlabRunner)
+				{
+					predicates = (Object[]) runner.getVariableCell("dbseer_causal_model.model.predicates");
+				}
+				else if (runner instanceof OctaveRunner)
+				{
+					OctaveEngine engine = OctaveRunner.getInstance().getEngine();
+					OctaveStruct struct1 = (OctaveStruct) engine.get("dbseer_causal_model");
+					OctaveStruct struct2 = (OctaveStruct) struct1.get("model");
+					OctaveCell cell = (OctaveCell)struct2.get("predicates");
+					Object[] objs = cell.getData();
+					predicates = new Object[objs.length];
+
+					int idx = 0;
+					for (Object o : objs)
+					{
+						if (o instanceof OctaveDouble)
+						{
+							OctaveDouble d = (OctaveDouble)o;
+							predicates[idx++] = d.getData();
+						}
+						else if (o instanceof OctaveString)
+						{
+							OctaveString s = (OctaveString)o;
+							predicates[idx++] = s.getString();
+						}
+					}
+				}
 
 				causalModel = new DBSeerCausalModel(cause, 0.0);
 

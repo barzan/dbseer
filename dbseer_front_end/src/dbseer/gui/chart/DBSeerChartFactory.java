@@ -5,19 +5,24 @@ import dbseer.gui.DBSeerGUI;
 import dbseer.comp.PredictionCenter;
 import dbseer.gui.panel.DBSeerPlotControlPanel;
 import dbseer.gui.user.DBSeerDataSet;
+import dbseer.stat.MatlabRunner;
+import dbseer.stat.OctaveRunner;
+import dbseer.stat.StatisticalPackageRunner;
+import dk.ange.octave.type.OctaveCell;
+import dk.ange.octave.type.OctaveDouble;
+import dk.ange.octave.type.OctaveObject;
+import dk.ange.octave.type.OctaveString;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 import matlabcontrol.extensions.MatlabNumericArray;
 import matlabcontrol.extensions.MatlabTypeConverter;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.annotations.XYDataImageAnnotation;
 import org.jfree.chart.labels.PieSectionLabelGenerator;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.data.general.PieDataset;
@@ -29,7 +34,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.AttributedString;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 
 /**
  * Created by dyoon on 2014. 5. 25..
@@ -44,541 +48,474 @@ public class DBSeerChartFactory
 
 	public static JFreeChart createXYLineChart(String chartName, DBSeerDataSet dataset)
 	{
-		MatlabProxy proxy = DBSeerGUI.proxy;
-		try
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		runner.eval("[title legends Xdata Ydata Xlabel Ylabel timestamp] = plotter.plot" + chartName + ";");
+
+		String title = runner.getVariableString("title");
+		Object[] legends = (Object[])runner.getVariableCell("legends");
+		Object[] xCellArray = (Object[])runner.getVariableCell("Xdata");
+		Object[] yCellArray = (Object[])runner.getVariableCell("Ydata");
+		String xLabel = runner.getVariableString("Xlabel");
+		String yLabel = runner.getVariableString("Ylabel");
+
+		timestamp = runner.getVariableDouble("timestamp");
+
+		XYSeriesCollection XYdataSet = new XYSeriesCollection();
+
+		int numLegends = legends.length;
+		int numXCellArray = xCellArray.length;
+		int numYCellArray = yCellArray.length;
+		int dataCount = 0;
+
+		if (numXCellArray != numYCellArray)
 		{
-			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel timestamp] = plotter.plot" + chartName + ";");
+			JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
+					"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
+			System.out.println(numXCellArray + " : " + numYCellArray);
+			return null;
+		}
 
-			String title = (String)proxy.getVariable("title");
-			String[] legends = (String[])proxy.getVariable("legends");
-			MatlabTypeConverter converter = new MatlabTypeConverter(proxy);
-//			MatlabNumericArray xArray = converter.getNumericArray("Xdata");
-//			MatlabNumericArray yArray = converter.getNumericArray("Ydata");
+		java.util.List<String> transactionNames = dataset.getTransactionTypeNames();
 
-			Object[] xCellArray = (Object[])proxy.getVariable("Xdata");
-			Object[] yCellArray = (Object[])proxy.getVariable("Ydata");
-			String xLabel = (String)proxy.getVariable("Xlabel");
-			String yLabel = (String)proxy.getVariable("Ylabel");
-
-			timestamp = (double[])proxy.getVariable("timestamp");
-
-			//double[] xArray = (double[])xCellArray[0]; // assuming only 1 array for X.
-
-			XYSeriesCollection XYdataSet = new XYSeriesCollection();
-
-			//int[] xArrayLengths = xArray.getLengths();
-			//int[] yArrayLengths = yArray.getLengths();
-			//int numRows = (xArrayLengths[0] < yArrayLengths[0]) ? xArrayLengths[0] : yArrayLengths[0];
-			//int numData = yArrayLengths[1];
-			//int xLength = xArray.length;
-			int numLegends = legends.length;
-			int numXCellArray = xCellArray.length;
-			int numYCellArray = yCellArray.length;
-			int dataCount = 0;
-
-			if (numXCellArray != numYCellArray)
+		for (int i = 0; i < numLegends; ++i)
+		{
+			String legend = (String)legends[i];
+			for (int j = 0; j < transactionNames.size(); ++j)
 			{
-				JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
-						"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
-				System.out.println(numXCellArray + " : " + numYCellArray);
-				return null;
-			}
-
-			java.util.List<String> transactionNames = dataset.getTransactionTypeNames();
-
-			for (int i = 0; i < numLegends; ++i)
-			{
-				String legend = legends[i];
-				for (int j = 0; j < transactionNames.size(); ++j)
+				if (legend.contains("Type " + (j+1)))
 				{
-					if (legend.contains("Type " + (j+1)))
-					{
-						legends[i] = legend.replace("Type " + (j+1), transactionNames.get(j));
-						break;
-					}
-				}
-			}
-
-			for (int i = 0; i < numYCellArray; ++i)
-			{
-				double[] xArray = (double[])xCellArray[i];
-				MatlabNumericArray yArray = converter.getNumericArray("Ydata{" + (i+1) + "}" );
-				int xLength = xArray.length;
-				int[] yArrayLengths = yArray.getLengths();
-				int row = yArrayLengths[0];
-				int col = yArrayLengths[1];
-
-				for (int c = 0; c < col; ++c)
-				{
-					XYSeries series;
-					int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
-					if (numLegends == 0)
-					{
-						series = new XYSeries("Data " + dataCount+1);
-					}
-					else if (dataCount >= numLegends)
-					{
-						series = new XYSeries(legends[legendIdx] + (dataCount+1));
-					}
-					else
-					{
-						series = new XYSeries(legends[legendIdx]);
-					}
-
-					for (int r = 0; r < row; ++r)
-					{
-						int xRow = (r >= xLength) ? xLength - 1 : r;
-						double yValue = yArray.getRealValue(r, c);
-						// remove negatives
-						if (yValue < 0)
-						{
-							yValue = 0;
-						}
-						series.add(xArray[xRow], yValue);
-					}
-					XYdataSet.addSeries(series);
-					++dataCount;
-				}
-//
-//				for (int j = 0; j < numRows; ++j)
-//				{
-//					series.add(xArray.getRealValue(j, 0), yArray.getRealValue(j, i));
-//				}
-//				dataSet.addSeries(series);
-			}
-
-			// Temp
-//			XYSeries abnormalSeries = new XYSeries("Abnormal");
-//			XYSeries normalSeries = new XYSeries("Normal");
-//			XYdataSet.addSeries(abnormalSeries);
-//			XYdataSet.addSeries(normalSeries);
-
-			JFreeChart chart = ChartFactory.createXYLineChart(title, xLabel, yLabel, XYdataSet);
-			boolean isTransactionSampleChart = false;
-			for (String name : DBSeerGUI.transactionSampleCharts)
-			{
-				if (name.equals(chartName))
-				{
-					isTransactionSampleChart = true;
+					legends[i] = legend.replace("Type " + (j+1), transactionNames.get(j));
 					break;
 				}
 			}
+		}
 
-//			for (int i=0; i<dataCount; ++i)
-//			{
-				// Renderer to highlight selected normal or outlier points.
-				if (isTransactionSampleChart)
+		for (int i = 0; i < numYCellArray; ++i)
+		{
+			double[] xArray = (double[])xCellArray[i];
+			int row = 0, col = 0;
+			int xLength = 0;
+
+			runner.eval("yArraySize = size(Ydata{" + (i+1) + "});");
+			runner.eval("yArray = Ydata{" + (i+1) + "};");
+			double[] yArraySize = runner.getVariableDouble("yArraySize");
+			double[] yArray = runner.getVariableDouble("yArray");
+
+			xLength = xArray.length;
+			row = (int)yArraySize[0];
+			col = (int)yArraySize[1];
+
+			for (int c = 0; c < col; ++c)
+			{
+				XYSeries series;
+				int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
+				String legend = (String)legends[legendIdx];
+				if (numLegends == 0)
 				{
-//					chart.getXYPlot().setRenderer(new DBSeerXYLineAndShapeRenderer(timestamp, dataset.getTransactionSampleLists()));
-					chart.getXYPlot().setRenderer(new DBSeerXYLineAndShapeRenderer(timestamp, dataset));
+					series = new XYSeries("Data " + dataCount+1);
+				}
+				else if (dataCount >= numLegends)
+				{
+					series = new XYSeries(legend + (dataCount+1));
 				}
 				else
 				{
-					chart.getXYPlot().setRenderer(new DBSeerXYLineAndShapeRenderer());
-
-					// TEMP
-//					chart.getXYPlot().getRenderer(0).setSeriesPaint(0, Color.BLACK);
-//					chart.getXYPlot().getRenderer(0).setSeriesPaint(1, Color.RED);
-//					chart.getXYPlot().getRenderer(0).setSeriesPaint(2, Color.BLUE);
-//
-//					chart.getXYPlot().getRenderer(0).setSeriesShape(0, new Rectangle(-2, -2, 5, 5));
-//					chart.getXYPlot().getRenderer(0).setSeriesShape(1, new Rectangle(-2, -2, 5, 5));
-//					chart.getXYPlot().getRenderer(0).setSeriesShape(2, new Rectangle(-2, -2, 5, 5));
+					series = new XYSeries(legend);
 				}
-//			}
 
-			return chart;
+				for (int r = 0; r < row; ++r)
+				{
+					int xRow = (r >= xLength) ? xLength - 1 : r;
+					double yValue = yArray[r+c*row];
+					// remove negatives
+					if (yValue < 0)
+					{
+						yValue = 0;
+					}
+					series.add(xArray[xRow], yValue);
+				}
+				XYdataSet.addSeries(series);
+				++dataCount;
+			}
 		}
-		catch (MatlabInvocationException e)
+
+		JFreeChart chart = ChartFactory.createXYLineChart(title, xLabel, yLabel, XYdataSet);
+		boolean isTransactionSampleChart = false;
+		for (String name : DBSeerGUI.transactionSampleCharts)
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab Proxy Error", JOptionPane.ERROR_MESSAGE);
+			if (name.equals(chartName))
+			{
+				isTransactionSampleChart = true;
+				break;
+			}
 		}
 
-		return null;
+		// Renderer to highlight selected normal or outlier points.
+		if (isTransactionSampleChart)
+		{
+			chart.getXYPlot().setRenderer(new DBSeerXYLineAndShapeRenderer(timestamp, dataset));
+		}
+		else
+		{
+			chart.getXYPlot().setRenderer(new DBSeerXYLineAndShapeRenderer());
+
+		}
+
+		return chart;
 	}
 
 	public static JFreeChart createPieChart(String chartName, DBSeerDataSet dataset)
 	{
-		MatlabProxy proxy = DBSeerGUI.proxy;
-		try
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		runner.eval("[title legends Xdata Ydata Xlabel Ylabel timestamp] = plotter.plot" + chartName + ";");
+
+		String title = runner.getVariableString("title");
+		Object[] legends = (Object[])runner.getVariableCell("legends");
+		Object[] xCellArray = (Object[])runner.getVariableCell("Xdata");
+		Object[] yCellArray = (Object[])runner.getVariableCell("Ydata");
+		String xLabel = runner.getVariableString("Xlabel");
+		String yLabel = runner.getVariableString("Ylabel");
+		timestamp = runner.getVariableDouble("timestamp");
+
+		DefaultPieDataset pieDataSet = new DefaultPieDataset();
+
+		int numLegends = legends.length;
+		int numXCellArray = xCellArray.length;
+		int numYCellArray = yCellArray.length;
+		int dataCount = 0;
+
+		if (numXCellArray != numYCellArray)
 		{
-			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel timestamp] = plotter.plot" + chartName + ";");
+			JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
+					"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
 
-			String title = (String)proxy.getVariable("title");
-			String[] legends = (String[])proxy.getVariable("legends");
-			MatlabTypeConverter converter = new MatlabTypeConverter(proxy);
+		final java.util.List<String> transactionTypeNames = dataset.getTransactionTypeNames();
 
-			Object[] xCellArray = (Object[])proxy.getVariable("Xdata");
-			Object[] yCellArray = (Object[])proxy.getVariable("Ydata");
-			String xLabel = (String)proxy.getVariable("Xlabel");
-			String yLabel = (String)proxy.getVariable("Ylabel");
-			timestamp = (double[])proxy.getVariable("timestamp");
+		for (int i = 0; i < numYCellArray; ++i)
+		{
+			double[] xArray = (double[])xCellArray[i];
+			runner.eval("yArraySize = size(Ydata{" + (i+1) + "});");
+			runner.eval("yArray = Ydata{" + (i+1) + "};");
+			double[] yArraySize = runner.getVariableDouble("yArraySize");
+			double[] yArray = runner.getVariableDouble("yArray");
 
-			DefaultPieDataset pieDataSet = new DefaultPieDataset();
+			int xLength = xArray.length;
+			int row = (int)yArraySize[0];
+			int col = (int)yArraySize[1];
 
-			int numLegends = legends.length;
-			int numXCellArray = xCellArray.length;
-			int numYCellArray = yCellArray.length;
-			int dataCount = 0;
-
-			if (numXCellArray != numYCellArray)
+			for (int c = 0; c < col; ++c)
 			{
-				JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
-						"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
-				return null;
-			}
-
-			final java.util.List<String> transactionTypeNames = dataset.getTransactionTypeNames();
-
-			for (int i = 0; i < numYCellArray; ++i)
-			{
-				double[] xArray = (double[])xCellArray[i];
-				MatlabNumericArray yArray = converter.getNumericArray("Ydata{" + (i+1) + "}" );
-				int xLength = xArray.length;
-				int[] yArrayLengths = yArray.getLengths();
-				int row = yArrayLengths[0];
-				int col = yArrayLengths[1];
-
-				for (int c = 0; c < col; ++c)
+				if (c < transactionTypeNames.size())
 				{
-					if (c < transactionTypeNames.size())
+					String name = transactionTypeNames.get(c);
+					if (!name.isEmpty())
 					{
-						String name = transactionTypeNames.get(c);
-						if (!name.isEmpty())
-						{
-							pieDataSet.setValue(name, new Double(yArray.getRealValue(0, c)));
-						}
-						else
-						{
-							pieDataSet.setValue("Transaction Type " + (c+1), yArray.getRealValue(0, c));
-						}
+//							pieDataSet.setValue(name, new Double(yArray.getRealValue(0, c)));
+						pieDataSet.setValue(name, yArray[c]);
+					}
+					else
+					{
+//							pieDataSet.setValue("Transaction Type " + (c+1), yArray.getRealValue(0, c));
+						pieDataSet.setValue("Transaction Type " + (c+1), yArray[c]);
 					}
 				}
 			}
-
-			JFreeChart chart = ChartFactory.createPieChart(title, pieDataSet, true, true, false);
-			PiePlot plot = (PiePlot)chart.getPlot();
-			plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0}: {1} ({2})", new DecimalFormat("0"),
-					new DecimalFormat("0%")));
-			plot.setLegendLabelGenerator(new PieSectionLabelGenerator()
-			{
-				@Override
-				public String generateSectionLabel(PieDataset pieDataset, Comparable comparable)
-				{
-					return (String)comparable;
-				}
-
-				@Override
-				public AttributedString generateAttributedSectionLabel(PieDataset pieDataset, Comparable comparable)
-				{
-					return null;
-				}
-			});
-			return chart;
 		}
-		catch (MatlabInvocationException e)
+
+		JFreeChart chart = ChartFactory.createPieChart(title, pieDataSet, true, true, false);
+		PiePlot plot = (PiePlot)chart.getPlot();
+		plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0}: {1} ({2})", new DecimalFormat("0"),
+				new DecimalFormat("0%")));
+		plot.setLegendLabelGenerator(new PieSectionLabelGenerator()
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab Proxy Error", JOptionPane.ERROR_MESSAGE);
-		}
+			@Override
+			public String generateSectionLabel(PieDataset pieDataset, Comparable comparable)
+			{
+				return (String)comparable;
+			}
 
-		return null;
+			@Override
+			public AttributedString generateAttributedSectionLabel(PieDataset pieDataset, Comparable comparable)
+			{
+				return null;
+			}
+		});
+		return chart;
 	}
 
 	public static JFreeChart createXYLinePredictionChart(PredictionCenter center)
 	{
-		MatlabProxy proxy = DBSeerGUI.proxy;
-		try
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		String title = runner.getVariableString("title");
+		Object[] legends = (Object[])runner.getVariableCell("legends");
+		Object[] xCellArray = (Object[])runner.getVariableCell("Xdata");
+		Object[] yCellArray = (Object[])runner.getVariableCell("Ydata");
+		String xLabel = runner.getVariableString("Xlabel");
+		String yLabel = runner.getVariableString("Ylabel");
+
+		XYSeriesCollection dataSet = new XYSeriesCollection();
+
+		int numLegends = legends.length;
+		int numXCellArray = xCellArray.length;
+		int numYCellArray = yCellArray.length;
+		int dataCount = 0;
+
+		if (numXCellArray != numYCellArray)
 		{
-//			center.run(); // now done in the DBSeerPredictionControlPanel.
+			JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
+					"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
+			System.out.println(numXCellArray + " : " + numYCellArray);
+			return null;
+		}
 
-			String title = (String)proxy.getVariable("title");
-			String[] legends = (String[])proxy.getVariable("legends");
-			MatlabTypeConverter converter = new MatlabTypeConverter(proxy);
-
-			Object[] xCellArray = (Object[])proxy.getVariable("Xdata");
-			Object[] yCellArray = (Object[])proxy.getVariable("Ydata");
-			String xLabel = (String)proxy.getVariable("Xlabel");
-			String yLabel = (String)proxy.getVariable("Ylabel");
-
-			XYSeriesCollection dataSet = new XYSeriesCollection();
-
-			int numLegends = legends.length;
-			int numXCellArray = xCellArray.length;
-			int numYCellArray = yCellArray.length;
-			int dataCount = 0;
-
-			if (numXCellArray != numYCellArray)
-			{
-				JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
-						"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
-				System.out.println(numXCellArray + " : " + numYCellArray);
-				return null;
-			}
-
-			final java.util.List<String> transactionNames = center.getTrainConfig().getDataset(0).getTransactionTypeNames();
-			for (int i = 0; i < numLegends; ++i)
-			{
-				String legend = legends[i];
-				for (int j = 0; j < transactionNames.size(); ++j)
-				{
-					if (legend.contains("Type " + (j+1)))
-					{
-						legends[i] = legend.replace("Type " + (j+1), transactionNames.get(j));
-						break;
-					}
-				}
-			}
+		final java.util.List<String> transactionNames = center.getTrainConfig().getDataset(0).getTransactionTypeNames();
+		for (int i = 0; i < numLegends; ++i)
+		{
+			String legend = (String)legends[i];
 			for (int j = 0; j < transactionNames.size(); ++j)
 			{
-				if (xLabel.contains("Type " + (j+1)))
+				if (legend.contains("Type " + (j+1)))
 				{
-					xLabel = xLabel.replace("Type " + (j+1), transactionNames.get(j));
+					legends[i] = legend.replace("Type " + (j+1), transactionNames.get(j));
 					break;
 				}
 			}
-			for (int j = 0; j < transactionNames.size(); ++j)
+		}
+		for (int j = 0; j < transactionNames.size(); ++j)
+		{
+			if (xLabel.contains("Type " + (j+1)))
 			{
-				if (yLabel.contains("Type " + (j+1)))
-				{
-					yLabel = yLabel.replace("Type " + (j+1), transactionNames.get(j));
-					break;
-				}
+				xLabel = xLabel.replace("Type " + (j+1), transactionNames.get(j));
+				break;
 			}
-
-			for (int i = 0; i < numYCellArray; ++i)
+		}
+		for (int j = 0; j < transactionNames.size(); ++j)
+		{
+			if (yLabel.contains("Type " + (j+1)))
 			{
-				double[] xArray = (double[])xCellArray[i];
-				MatlabNumericArray yArray = converter.getNumericArray("Ydata{" + (i+1) + "}" );
-				int xLength = xArray.length;
-				int[] yArrayLengths = yArray.getLengths();
-				int row = yArrayLengths[0];
-				int col = yArrayLengths[1];
-
-				for (int c = 0; c < col; ++c)
-				{
-					XYSeries series;
-					int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
-					if (numLegends == 0)
-					{
-						series = new XYSeries("Data " + dataCount+1);
-					}
-					else if (dataCount >= numLegends)
-					{
-						series = new XYSeries(legends[legendIdx] + (dataCount+1));
-					}
-					else
-					{
-						series = new XYSeries(legends[legendIdx]);
-					}
-
-					for (int r = 0; r < row; ++r)
-					{
-						int xRow = (r >= xLength) ? xLength - 1 : r;
-						double yValue = yArray.getRealValue(r, c);
-						// remove negatives & NaN & infs.
-						if (yValue < 0 || yValue == Double.NaN ||
-								yValue == Double.POSITIVE_INFINITY || yValue == Double.NEGATIVE_INFINITY)
-						{
-							yValue = 0.0;
-						}
-						series.add(xArray[xRow], yValue);
-					}
-					dataSet.addSeries(series);
-					++dataCount;
-				}
+				yLabel = yLabel.replace("Type " + (j+1), transactionNames.get(j));
+				break;
 			}
+		}
 
-			JFreeChart chart = ChartFactory.createXYLineChart(title, xLabel, yLabel, dataSet);
+		for (int i = 0; i < numYCellArray; ++i)
+		{
+			double[] xArray = (double[])xCellArray[i];
+			runner.eval("yArraySize = size(Ydata{" + (i+1) + "});");
+			runner.eval("yArray = Ydata{" + (i+1) + "};");
+			double[] yArraySize = runner.getVariableDouble("yArraySize");
+			double[] yArray = runner.getVariableDouble("yArray");
 
-			// change 'predicted' data to have dotted lines.
-			BasicStroke dashStroke = toStroke(STYLE_DASH);
-			BasicStroke dotStroke = toStroke(STYLE_DOT);
-			BasicStroke lineStroke = toStroke(STYLE_LINE);
-			for (int i = 0; i < dataSet.getSeriesCount(); ++i)
+			int xLength = xArray.length;
+			int row = (int)yArraySize[0];
+			int col = (int)yArraySize[1];
+
+			for (int c = 0; c < col; ++c)
 			{
-				String legend = (String)dataSet.getSeriesKey(i);
-				XYPlot plot = chart.getXYPlot();
-				XYItemRenderer renderer = plot.getRenderer();
-				if (legend.contains("predicted") || legend.contains("Predicted"))
+				XYSeries series;
+				int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
+				String legend = (String)legends[legendIdx];
+				if (numLegends == 0)
 				{
-					renderer.setSeriesStroke(i, dotStroke);
+					series = new XYSeries("Data " + dataCount+1);
+				}
+				else if (dataCount >= numLegends)
+				{
+					series = new XYSeries(legend + (dataCount+1));
 				}
 				else
 				{
-					renderer.setSeriesStroke(i, lineStroke);
+					series = new XYSeries(legend);
 				}
+
+				for (int r = 0; r < row; ++r)
+				{
+					int xRow = (r >= xLength) ? xLength - 1 : r;
+					double yValue = yArray[r+c*row];
+					// remove negatives & NaN & infs.
+					if (yValue < 0 || yValue == Double.NaN ||
+							yValue == Double.POSITIVE_INFINITY || yValue == Double.NEGATIVE_INFINITY)
+					{
+						yValue = 0.0;
+					}
+					series.add(xArray[xRow], yValue);
+				}
+				dataSet.addSeries(series);
+				++dataCount;
 			}
-
-			return chart;
 		}
-		catch (MatlabInvocationException e)
+
+		JFreeChart chart = ChartFactory.createXYLineChart(title, xLabel, yLabel, dataSet);
+
+		// change 'predicted' data to have dotted lines.
+		BasicStroke dashStroke = toStroke(STYLE_DASH);
+		BasicStroke dotStroke = toStroke(STYLE_DOT);
+		BasicStroke lineStroke = toStroke(STYLE_LINE);
+		for (int i = 0; i < dataSet.getSeriesCount(); ++i)
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab Proxy Error", JOptionPane.ERROR_MESSAGE);
+			String legend = (String)dataSet.getSeriesKey(i);
+			XYPlot plot = chart.getXYPlot();
+			XYItemRenderer renderer = plot.getRenderer();
+			if (legend.contains("predicted") || legend.contains("Predicted"))
+			{
+				renderer.setSeriesStroke(i, dotStroke);
+			}
+			else
+			{
+				renderer.setSeriesStroke(i, lineStroke);
+			}
 		}
 
-		return null;
+		return chart;
 	}
 
 	public static JFreeChart createPredictionBarChart(PredictionCenter center)
 	{
-		MatlabProxy proxy = DBSeerGUI.proxy;
-		try
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		String title = runner.getVariableString("title");
+		Object[] legends = (Object[])runner.getVariableCell("legends");
+		Object[] xCellArray = (Object[])runner.getVariableCell("Xdata");
+		Object[] yCellArray = (Object[])runner.getVariableCell("Ydata");
+		String xLabel = runner.getVariableString("Xlabel");
+		String yLabel = runner.getVariableString("Ylabel");
+
+		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+		int numLegends = legends.length;
+		int numXCellArray = xCellArray.length;
+		int numYCellArray = yCellArray.length;
+		int dataCount = 0;
+
+		final java.util.List<String> transactionNames = center.getTrainConfig().getDataset(0).getTransactionTypeNames();
+		for (int i = 0; i < numLegends; ++i)
 		{
-//			center.run(); // now done in the DBSeerPredictionControlPanel.
-
-			String title = (String) proxy.getVariable("title");
-			String[] legends = (String[]) proxy.getVariable("legends");
-			MatlabTypeConverter converter = new MatlabTypeConverter(proxy);
-
-			Object[] xCellArray = (Object[]) proxy.getVariable("Xdata");
-			Object[] yCellArray = (Object[]) proxy.getVariable("Ydata");
-			String xLabel = (String) proxy.getVariable("Xlabel");
-			String yLabel = (String) proxy.getVariable("Ylabel");
-
-			DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
-			int numLegends = legends.length;
-			int numXCellArray = xCellArray.length;
-			int numYCellArray = yCellArray.length;
-			int dataCount = 0;
-
-			final java.util.List<String> transactionNames = center.getTrainConfig().getDataset(0).getTransactionTypeNames();
-			for (int i = 0; i < numLegends; ++i)
-			{
-				String legend = legends[i];
-				for (int j = 0; j < transactionNames.size(); ++j)
-				{
-					if (legend.contains("Type " + (j + 1)))
-					{
-						legends[i] = legend.replace("Type " + (j + 1), transactionNames.get(j));
-						break;
-					}
-				}
-			}
+			String legend = (String)legends[i];
 			for (int j = 0; j < transactionNames.size(); ++j)
 			{
-				if (xLabel.contains("Type " + (j + 1)))
+				if (legend.contains("Type " + (j + 1)))
 				{
-					xLabel = xLabel.replace("Type " + (j + 1), transactionNames.get(j));
+					legends[i] = legend.replace("Type " + (j + 1), transactionNames.get(j));
 					break;
 				}
 			}
-			for (int j = 0; j < transactionNames.size(); ++j)
-			{
-				if (yLabel.contains("Type " + (j + 1)))
-				{
-					yLabel = yLabel.replace("Type " + (j + 1), transactionNames.get(j));
-					break;
-				}
-			}
-
-			for (int i = 0; i < numYCellArray; ++i)
-			{
-//				double[] xArray = (double[]) xCellArray[i];
-				MatlabNumericArray yArray = converter.getNumericArray("Ydata{" + (i + 1) + "}");
-//				int xLength = xArray.length;
-				int[] yArrayLengths = yArray.getLengths();
-				int row = yArrayLengths[0];
-				int col = yArrayLengths[1];
-
-				for (int c = 0; c < col; ++c)
-				{
-					String category = "";
-					int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
-					if (numLegends == 0)
-					{
-						category = "Data " + dataCount + 1;
-					}
-					else if (dataCount >= numLegends)
-					{
-						category = legends[legendIdx] + (dataCount + 1);
-					}
-					else
-					{
-						category = legends[legendIdx];
-					}
-
-					for (int r = 0; r < row; ++r)
-					{
-//						int xRow = (r >= xLength) ? xLength - 1 : r;
-						double yValue = yArray.getRealValue(r, c);
-						// remove negatives.
-						if (yValue < 0 || yValue == Double.NaN ||
-								yValue == Double.POSITIVE_INFINITY || yValue == Double.NEGATIVE_INFINITY)
-						{
-							yValue = 0.0;
-						}
-
-						dataset.addValue(yValue, category, "");
-					}
-					++dataCount;
-				}
-			}
-
-			JFreeChart chart = ChartFactory.createBarChart(title, xLabel, yLabel, dataset);
-
-			return chart;
 		}
-		catch (Exception e)
+		for (int j = 0; j < transactionNames.size(); ++j)
 		{
-			DBSeerExceptionHandler.handleException(e);
+			if (xLabel.contains("Type " + (j + 1)))
+			{
+				xLabel = xLabel.replace("Type " + (j + 1), transactionNames.get(j));
+				break;
+			}
+		}
+		for (int j = 0; j < transactionNames.size(); ++j)
+		{
+			if (yLabel.contains("Type " + (j + 1)))
+			{
+				yLabel = yLabel.replace("Type " + (j + 1), transactionNames.get(j));
+				break;
+			}
 		}
 
-		return null;
+		for (int i = 0; i < numYCellArray; ++i)
+		{
+			runner.eval("yArraySize = size(Ydata{" + (i+1) + "});");
+			runner.eval("yArray = Ydata{" + (i+1) + "};");
+			double[] yArraySize = runner.getVariableDouble("yArraySize");
+			double[] yArray = runner.getVariableDouble("yArray");
+
+			int row = (int)yArraySize[0];
+			int col = (int)yArraySize[1];
+
+			for (int c = 0; c < col; ++c)
+			{
+				String category = "";
+				int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
+				String legend = (String)legends[legendIdx];
+				if (numLegends == 0)
+				{
+					category = "Data " + dataCount + 1;
+				}
+				else if (dataCount >= numLegends)
+				{
+					category = legend + (dataCount + 1);
+				}
+				else
+				{
+					category = legend;
+				}
+
+				for (int r = 0; r < row; ++r)
+				{
+					double yValue = yArray[r+c*row];
+					// remove negatives.
+					if (yValue < 0 || yValue == Double.NaN ||
+							yValue == Double.POSITIVE_INFINITY || yValue == Double.NEGATIVE_INFINITY)
+					{
+						yValue = 0.0;
+					}
+
+					dataset.addValue(yValue, category, "");
+				}
+				++dataCount;
+			}
+		}
+
+		JFreeChart chart = ChartFactory.createBarChart(title, xLabel, yLabel, dataset);
+
+		return chart;
 	}
 
 	public static JTable createErrorTable(PredictionCenter center)
 	{
 		JTable errorTable = null;
 		DefaultTableModel errorTableModel = null;
-		MatlabProxy proxy = DBSeerGUI.proxy;
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
-		try
+		Object[] maeList = (Object[])runner.getVariableCell("meanAbsError");
+		Object[] mreList = (Object[])runner.getVariableCell("meanRelError");
+		Object[] headers = (Object[])runner.getVariableCell("errorHeader");
+
+		if (maeList.length > 0 || mreList.length > 0)
 		{
-			Object[] maeList = (Object[]) proxy.getVariable("meanAbsError");
-			Object[] mreList = (Object[]) proxy.getVariable("meanRelError");
-			String[] headers = (String[]) proxy.getVariable("errorHeader");
-
-			if (maeList.length > 0 || mreList.length > 0)
+			errorTableModel = new DefaultTableModel()
 			{
-				errorTableModel = new DefaultTableModel()
+				@Override
+				public boolean isCellEditable(int row, int column)
 				{
-					@Override
-					public boolean isCellEditable(int row, int column)
-					{
-						return false;
-					}
-				};
-				//errorTable = new JTable();
-				errorTableModel.addColumn(null, new String[]{"", "MAE", "MRE"}); // first empty column
-
-				final java.util.List<String> transactionNames = center.getTrainConfig().getDataset(0).getTransactionTypeNames();
-				for (int i = 0; i < maeList.length; ++i)
-				{
-					Object maeObj = maeList[i];
-					Object mreObj = mreList[i];
-
-					double[] mae = (double[])maeObj;
-					double[] mre = (double[])mreObj;
-
-					String header = headers[i];
-					for (int j = 0; j < transactionNames.size(); ++j)
-					{
-						if (header.contains("Type " + (j+1)))
-						{
-							headers[i] = header.replace("Type " + (j+1), transactionNames.get(j));
-							break;
-						}
-					}
-
-					errorTableModel.addColumn(null, new Object[]{headers[i], String.format("%.3f", mae[0]), String.format("%.3f", mre[0])});
+					return false;
 				}
-				errorTable = new JTable(errorTableModel);
+			};
+			//errorTable = new JTable();
+			errorTableModel.addColumn(null, new String[]{"", "MAE", "MRE"}); // first empty column
+
+			final java.util.List<String> transactionNames = center.getTrainConfig().getDataset(0).getTransactionTypeNames();
+			for (int i = 0; i < maeList.length; ++i)
+			{
+				Object maeObj = maeList[i];
+				Object mreObj = mreList[i];
+
+				double[] mae = (double[])maeObj;
+				double[] mre = (double[])mreObj;
+
+				String header = (String)headers[i];
+				for (int j = 0; j < transactionNames.size(); ++j)
+				{
+					if (header.contains("Type " + (j+1)))
+					{
+						headers[i] = header.replace("Type " + (j+1), transactionNames.get(j));
+						break;
+					}
+				}
+
+				errorTableModel.addColumn(null, new Object[]{headers[i], String.format("%.3f", mae[0]), String.format("%.3f", mre[0])});
 			}
-		}
-		catch (MatlabInvocationException e)
-		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			errorTable = new JTable(errorTableModel);
 		}
 
 		return errorTable;
@@ -586,74 +523,69 @@ public class DBSeerChartFactory
 
 	public static JFreeChart createCustomXYLineChart(String xAxisName, String yAxisName)
 	{
-		MatlabProxy proxy = DBSeerGUI.proxy;
-		try
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		runner.eval("[Xdata Ydata] = plotter.plotCustom('" +
+				DBSeerPlotControlPanel.axisMap.get(xAxisName) +
+				"', '" +
+				DBSeerPlotControlPanel.axisMap.get(yAxisName) + "');");
+
+		String title = "Custom Plot";
+
+		Object[] xCellArray = (Object[])runner.getVariableCell("Xdata");
+		Object[] yCellArray = (Object[])runner.getVariableCell("Ydata");
+		String xLabel = xAxisName;
+		String yLabel = yAxisName;
+
+		XYSeriesCollection dataSet = new XYSeriesCollection();
+
+		int numXCellArray = xCellArray.length;
+		int numYCellArray = yCellArray.length;
+		int dataCount = 0;
+
+		if (numXCellArray != numYCellArray)
 		{
-			proxy.eval("[Xdata Ydata] = plotter.plotCustom('" +
-					DBSeerPlotControlPanel.axisMap.get(xAxisName) +
-					"', '" +
-					DBSeerPlotControlPanel.axisMap.get(yAxisName) + "');");
+			JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
+					"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
+			System.out.println(numXCellArray + " : " + numYCellArray);
+			return null;
+		}
 
-			String title = "Custom Plot";
-			MatlabTypeConverter converter = new MatlabTypeConverter(proxy);
+		for (int i = 0; i < numYCellArray; ++i)
+		{
+			double[] xArray = (double[])xCellArray[i];
 
-			Object[] xCellArray = (Object[])proxy.getVariable("Xdata");
-			Object[] yCellArray = (Object[])proxy.getVariable("Ydata");
-			String xLabel = xAxisName;
-			String yLabel = yAxisName;
+			runner.eval("yArraySize = size(Ydata{" + (i+1) + "});");
+			runner.eval("yArray = Ydata{" + (i+1) + "};");
+			double[] yArraySize = runner.getVariableDouble("yArraySize");
+			double[] yArray = runner.getVariableDouble("yArray");
 
-			XYSeriesCollection dataSet = new XYSeriesCollection();
+			int xLength = xArray.length;
+			int row = (int)yArraySize[0];
+			int col = (int)yArraySize[1];
 
-			int numXCellArray = xCellArray.length;
-			int numYCellArray = yCellArray.length;
-			int dataCount = 0;
-
-			if (numXCellArray != numYCellArray)
+			for (int c = 0; c < col; ++c)
 			{
-				JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
-						"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
-				System.out.println(numXCellArray + " : " + numYCellArray);
-				return null;
-			}
+				XYSeries series = new XYSeries(yAxisName);
 
-			for (int i = 0; i < numYCellArray; ++i)
-			{
-				double[] xArray = (double[])xCellArray[i];
-				MatlabNumericArray yArray = converter.getNumericArray("Ydata{" + (i+1) + "}" );
-				int xLength = xArray.length;
-				int[] yArrayLengths = yArray.getLengths();
-				int row = yArrayLengths[0];
-				int col = yArrayLengths[1];
-
-				for (int c = 0; c < col; ++c)
+				for (int r = 0; r < row; ++r)
 				{
-					XYSeries series = new XYSeries(yAxisName);
-
-					for (int r = 0; r < row; ++r)
-					{
-						int xRow = (r >= xLength) ? xLength - 1 : r;
-						series.add(xArray[xRow], yArray.getRealValue(r, c));
-					}
-					dataSet.addSeries(series);
-					++dataCount;
+					int xRow = (r >= xLength) ? xLength - 1 : r;
+					series.add(xArray[xRow], yArray[r+c*row]);
 				}
+				dataSet.addSeries(series);
+				++dataCount;
 			}
-
-			JFreeChart chart = ChartFactory.createXYLineChart(title, xLabel, yLabel, dataSet);
-			for (int i=0; i<dataCount; ++i)
-			{
-				// Renderer to highlight selected normal or outlier points.
-				chart.getXYPlot().setRenderer(i, new DBSeerXYLineAndShapeRenderer());
-			}
-
-			return chart;
 		}
-		catch (MatlabInvocationException e)
+
+		JFreeChart chart = ChartFactory.createXYLineChart(title, xLabel, yLabel, dataSet);
+		for (int i=0; i<dataCount; ++i)
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab Proxy Error", JOptionPane.ERROR_MESSAGE);
+			// Renderer to highlight selected normal or outlier points.
+			chart.getXYPlot().setRenderer(i, new DBSeerXYLineAndShapeRenderer());
 		}
 
-		return null;
+		return chart;
 	}
 
 	private static BasicStroke toStroke(int style)

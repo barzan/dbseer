@@ -1,6 +1,5 @@
 package dbseer.gui.panel;
 
-import com.sun.codemodel.internal.JOp;
 import dbseer.comp.DataCenter;
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.DBSeerExceptionHandler;

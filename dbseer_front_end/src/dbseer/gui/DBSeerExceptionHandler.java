@@ -1,5 +1,12 @@
 package dbseer.gui;
 
+import dbseer.stat.OctaveRunner;
+import dbseer.stat.StatisticalPackageRunner;
+import dk.ange.octave.OctaveEngine;
+import dk.ange.octave.exception.OctaveEvalException;
+import dk.ange.octave.type.OctaveDouble;
+import dk.ange.octave.type.OctaveString;
+import dk.ange.octave.type.OctaveStruct;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
@@ -19,11 +26,18 @@ public class DBSeerExceptionHandler
 		{
 			if (!DBSeerGUI.isProxyRenewing)
 			{
-				String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastError(), 120);
+				String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastMatLabError(), 120);
 
 				JOptionPane.showMessageDialog(null, errorMsg, "MATLAB Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
+		}
+		else if (e instanceof OctaveEvalException)
+		{
+			String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastOctaveError(), 120);
+
+			JOptionPane.showMessageDialog(null, errorMsg, "Octave Error",
+					JOptionPane.ERROR_MESSAGE);
 		}
 		else
 		{
@@ -39,11 +53,18 @@ public class DBSeerExceptionHandler
 		{
 			if (!DBSeerGUI.isProxyRenewing)
 			{
-				String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastError(), 120);
+				String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastMatLabError(), 120);
 
 				JOptionPane.showMessageDialog(null, errorMsg, "MATLAB Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
+		}
+		else if (e instanceof OctaveEvalException)
+		{
+			String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastOctaveError(), 120);
+
+			JOptionPane.showMessageDialog(null, errorMsg, "Octave Error",
+					JOptionPane.ERROR_MESSAGE);
 		}
 		else
 		{
@@ -53,21 +74,37 @@ public class DBSeerExceptionHandler
 		}
 	}
 
-	public static String getLastError()
+	public static String getLastMatLabError()
 	{
-		MatlabProxy proxy = DBSeerGUI.proxy;
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
 		String errorMessage = "";
-		try
+		runner.eval("dbseer_lasterror = lasterror;");
+		errorMessage = runner.getVariableString("dbseer_lasterror.message");
+		return errorMessage;
+	}
+
+	public static String getLastOctaveError()
+	{
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+		OctaveEngine engine = OctaveRunner.getInstance().getEngine();
+
+		String errorMessage = "";
+		runner.eval("dbseer_lasterror = lasterror");
+		runner.eval("dbseer_lasterror_message = dbseer_lasterror.message");
+		runner.eval("dbseer_lasterror_file = dbseer_lasterror.stack.file");
+		runner.eval("dbseer_lasterror_line = dbseer_lasterror.stack.line");
+		errorMessage = ((OctaveString)engine.get("dbseer_lasterror_message")).getString();
+
+		OctaveString errorFile = (OctaveString) engine.get("dbseer_lasterror_file");
+		OctaveDouble errorLine = (OctaveDouble) engine.get("dbseer_lasterror_line");
+		if (errorFile != null)
 		{
-			proxy.eval("dbseer_lasterror = lasterror;");
-			Object[] returnObj = proxy.returningEval("dbseer_lasterror.message", 1);
-			errorMessage = (String)returnObj[0];
+			errorMessage += " in " + errorFile.getString();
 		}
-		catch (MatlabInvocationException e)
+		if (errorLine != null)
 		{
-			JOptionPane.showMessageDialog(null, "Failed to retrieve the last error from MATLAB", "Error",
-					JOptionPane.ERROR_MESSAGE);
+			errorMessage += " at " + String.format("%.0f", errorLine.get(1));
 		}
 		return errorMessage;
 	}

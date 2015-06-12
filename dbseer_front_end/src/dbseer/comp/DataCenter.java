@@ -6,14 +6,14 @@ import dbseer.gui.DBSeerGUI;
 import dbseer.gui.user.DBSeerTransactionSample;
 import dbseer.gui.user.DBSeerTransactionSampleList;
 import dbseer.gui.xml.XStreamHelper;
-import matlabcontrol.MatlabInvocationException;
+import dbseer.stat.MatlabRunner;
+import dbseer.stat.OctaveRunner;
+import dbseer.stat.StatisticalPackageRunner;
 import matlabcontrol.MatlabProxy;
 
 import javax.swing.*;
 import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by dyoon on 2014. 7. 4..
@@ -398,11 +398,11 @@ public class DataCenter
 	private boolean writeLatencyPercentile(ArrayList<Double>[][] latencies, int logSize, int varSize)
 	{
 		DBSeerGUI.status.setText("Processing Dataset: Writing percentile latencies.");
-		MatlabProxy      proxy                 = DBSeerGUI.proxy;
+		StatisticalPackageRunner runner        = DBSeerGUI.runner;
 		List<MonitorLog> monitorLogs           = monitor.getLogs();
 		File             percentileLatencyFile = new File(processedPath + File.separator + "prctile_latencies.mat");
 
-		if (proxy == null)
+		if (runner == null)
 		{
 			JOptionPane.showMessageDialog(null, "MatlabProxy uninitialized.", "Error", JOptionPane.ERROR_MESSAGE);
 			return false;
@@ -415,32 +415,45 @@ public class DataCenter
 
 		try
 		{
-			proxy.eval("latenciesPCtile = zeros(" + logSize + "," + (varSize+1) + ",8);");
+			if (!runner.eval("latenciesPCtile = zeros(" + logSize + "," + (varSize + 1) + ",8);")) return false;
 
 			for (int i = 0; i < logSize; ++i)
 			{
-				proxy.eval("latenciesPCtile(" + (i+1) + ",1) = " + monitorLogs.get(i).getTimestamp() + ";");
+				if (!runner.eval("latenciesPCtile(" + (i + 1) + ",1) = " + monitorLogs.get(i).getTimestamp() + ";")) return false;
 				for (int j = 0; j < varSize; ++j)
 				{
 					if (latencies[i][j] == null)
 					{
-						proxy.eval("latenciesPCtile(" + (i+1) + "," + (j+2) + ",:) = prctile([], [10, 25, 50, 75, 90, 95, 99, 99.9]);");
+//						runner.eval("latenciesPCtile(" + (i + 1) + "," + (j + 2) + ",:) = prctile([], [10, 25, 50, 75, 90, 95, 99, 99.9]);");
+						if (!runner.eval("latenciesPCtile(" + (i + 1) + "," + (j + 2) + ",:) = 0;")) return false;
 					}
 					else
 					{
 						int index = 0;
-						double[] latencyValues = new double[latencies[i][j].size()];
+//						double[] latencyValues = new double[latencies[i][j].size()];
+						String latencyStr = "[";
 						for (Double d : latencies[i][j])
 						{
-							latencyValues[index] = d.doubleValue() / 1000.0; // converting to seconds...
-							++index;
+//							latencyValues[index] = d.doubleValue() / 1000.0; // converting to seconds...
+//							++index;
+							latencyStr += (d.doubleValue() / 1000.0);
+							latencyStr += " ";
 						}
-						proxy.setVariable("latencies", latencyValues);
-						proxy.eval("latenciesPCtile(" + (i + 1) + "," + (j + 2) + ",:) = prctile(latencies, [10, 25, 50, 75, 90, 95, 99, 99.9]);");
+						latencyStr += "]";
+//						runner.setVariable("latencies", latencyValues);
+						if (!runner.eval("latencies = " + latencyStr + ";")) return false;
+						if (!runner.eval("latenciesPCtile(" + (i + 1) + "," + (j + 2) + ",:) = prctile(latencies, [10, 25, 50, 75, 90, 95, 99, 99.9]);")) return false;
 					}
 				}
 			}
-			proxy.eval("save('" + percentileLatencyFile.getAbsolutePath() + "', 'latenciesPCtile');");
+			if (runner instanceof MatlabRunner)
+			{
+				runner.eval("save('" + percentileLatencyFile.getAbsolutePath() + "', 'latenciesPCtile');");
+			}
+			else if (runner instanceof OctaveRunner)
+			{
+				runner.eval("save('-mat', '" + percentileLatencyFile.getAbsolutePath() + "', 'latenciesPCtile');");
+			}
 		}
 		catch (Exception e)
 		{

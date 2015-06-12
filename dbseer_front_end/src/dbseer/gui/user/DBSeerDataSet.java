@@ -3,21 +3,18 @@ package dbseer.gui.user;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import com.thoughtworks.xstream.annotations.XStreamOmitField;
-import dbseer.comp.MatlabFunctions;
 import dbseer.comp.UserInputValidator;
 import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.xml.XStreamHelper;
-import matlabcontrol.MatlabInvocationException;
+import dbseer.stat.StatisticalPackageRunner;
 import matlabcontrol.MatlabProxy;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
-import javax.swing.text.TableView;
 import java.awt.*;
 import java.io.File;
 import java.util.*;
@@ -426,43 +423,43 @@ public class DBSeerDataSet implements TableModelListener
 
 		if (dataSetLoaded == false)
 		{
-			MatlabProxy proxy = DBSeerGUI.proxy;
+			StatisticalPackageRunner runner = DBSeerGUI.runner;
 			String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
 
 			try
 			{
-				proxy.eval("rmpath " + dbseerPath + ";");
-				proxy.eval("rmpath " + dbseerPath + "/common_mat;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_data;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+				runner.eval("rmpath " + dbseerPath + ";");
+				runner.eval("rmpath " + dbseerPath + "/common_mat;");
+				runner.eval("rmpath " + dbseerPath + "/predict_mat;");
+				runner.eval("rmpath " + dbseerPath + "/predict_data;");
+				runner.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-				proxy.eval("addpath " + dbseerPath + ";");
-				proxy.eval("addpath " + dbseerPath + "/common_mat;");
-				proxy.eval("addpath " + dbseerPath + "/predict_mat;");
-				proxy.eval("addpath " + dbseerPath + "/predict_data;");
-				proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+				runner.eval("addpath " + dbseerPath + ";");
+				runner.eval("addpath " + dbseerPath + "/common_mat;");
+				runner.eval("addpath " + dbseerPath + "/predict_mat;");
+				runner.eval("addpath " + dbseerPath + "/predict_data;");
+				runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-				proxy.eval(this.uniqueVariableName + " = DataSet;");
-				proxy.eval(this.uniqueVariableName + ".header_path = '" + this.headerPath + "';");
-				proxy.eval(this.uniqueVariableName + ".monitor_path = '" + this.monitoringDataPath + "';");
-				proxy.eval(this.uniqueVariableName + ".avg_latency_path = '" + this.averageLatencyPath + "';");
-				proxy.eval(this.uniqueVariableName + ".percentile_latency_path = '" +
+				runner.eval(this.uniqueVariableName + " = DataSet;");
+				runner.eval(this.uniqueVariableName + ".header_path = '" + this.headerPath + "';");
+				runner.eval(this.uniqueVariableName + ".monitor_path = '" + this.monitoringDataPath + "';");
+				runner.eval(this.uniqueVariableName + ".avg_latency_path = '" + this.averageLatencyPath + "';");
+				runner.eval(this.uniqueVariableName + ".percentile_latency_path = '" +
 						this.percentileLatencyPath + "';");
-				proxy.eval(this.uniqueVariableName + ".trans_count_path = '" + this.transCountPath + "';");
-				proxy.eval(this.uniqueVariableName + ".statement_stat_path = '" + this.statementStatPath + "';");
-				//proxy.eval(this.uniqueVariableName + ".page_info_path = '" + this.pageInfoPath + "';");
-				proxy.eval(this.uniqueVariableName + ".startIdx = " + this.startIndex + ";");
-				proxy.eval(this.uniqueVariableName + ".endIdx = " + this.endIndex + ";");
+				runner.eval(this.uniqueVariableName + ".trans_count_path = '" + this.transCountPath + "';");
+				runner.eval(this.uniqueVariableName + ".statement_stat_path = '" + this.statementStatPath + "';");
+				//runner.eval(this.uniqueVariableName + ".page_info_path = '" + this.pageInfoPath + "';");
+				runner.eval(this.uniqueVariableName + ".startIdx = " + this.startIndex + ";");
+				runner.eval(this.uniqueVariableName + ".endIdx = " + this.endIndex + ";");
 				if (this.useEntireDataSet.booleanValue())
 				{
-					proxy.eval(this.uniqueVariableName + ".use_entire = true;");
+					runner.eval(this.uniqueVariableName + ".use_entire = true;");
 				}
 				else
 				{
-					proxy.eval(this.uniqueVariableName + ".use_entire = false;");
+					runner.eval(this.uniqueVariableName + ".use_entire = false;");
 				}
-				proxy.eval(this.uniqueVariableName + ".loadStatistics;");
+				runner.eval(this.uniqueVariableName + ".loadStatistics;");
 
 
 			}
@@ -491,24 +488,24 @@ public class DBSeerDataSet implements TableModelListener
 
 		if (!modelVariableLoaded)
 		{
-			MatlabProxy proxy = DBSeerGUI.proxy;
+			StatisticalPackageRunner runner = DBSeerGUI.runner;
 			String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
 
 			try
 			{
-				proxy.eval("rmpath " + dbseerPath + ";");
-				proxy.eval("rmpath " + dbseerPath + "/common_mat;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_data;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+				runner.eval("rmpath " + dbseerPath + ";");
+				runner.eval("rmpath " + dbseerPath + "/common_mat;");
+				runner.eval("rmpath " + dbseerPath + "/predict_mat;");
+				runner.eval("rmpath " + dbseerPath + "/predict_data;");
+				runner.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-				proxy.eval("addpath " + dbseerPath + ";");
-				proxy.eval("addpath " + dbseerPath + "/common_mat;");
-				proxy.eval("addpath " + dbseerPath + "/predict_mat;");
-				proxy.eval("addpath " + dbseerPath + "/predict_data;");
-				proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+				runner.eval("addpath " + dbseerPath + ";");
+				runner.eval("addpath " + dbseerPath + "/common_mat;");
+				runner.eval("addpath " + dbseerPath + "/predict_mat;");
+				runner.eval("addpath " + dbseerPath + "/predict_data;");
+				runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-				proxy.eval("[mvGrouped " + uniqueModelVariableName + "] = load_mv(" +
+				runner.eval("[mvGrouped " + uniqueModelVariableName + "] = load_mv(" +
 						uniqueVariableName + ".header," +
 						uniqueVariableName + ".monitor," +
 						uniqueVariableName + ".averageLatency," +

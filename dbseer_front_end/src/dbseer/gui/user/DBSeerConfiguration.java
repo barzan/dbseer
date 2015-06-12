@@ -7,6 +7,7 @@ import dbseer.comp.MatlabFunctions;
 import dbseer.comp.UserInputValidator;
 import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
+import dbseer.stat.StatisticalPackageRunner;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
@@ -14,7 +15,6 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -169,60 +169,48 @@ public class DBSeerConfiguration
 
 //		if (!isInitialized)
 		{
-			MatlabProxy proxy = DBSeerGUI.proxy;
+			StatisticalPackageRunner runner = DBSeerGUI.runner;
 
-			try
+			String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
+
+			runner.eval("rmpath " + dbseerPath + ";");
+			runner.eval("rmpath " + dbseerPath + "/common_mat;");
+			runner.eval("rmpath " + dbseerPath + "/predict_mat;");
+			runner.eval("rmpath " + dbseerPath + "/predict_data;");
+			runner.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+
+			runner.eval("addpath " + dbseerPath + ";");
+			runner.eval("addpath " + dbseerPath + "/common_mat;");
+			runner.eval("addpath " + dbseerPath + "/predict_mat;");
+			runner.eval("addpath " + dbseerPath + "/predict_data;");
+			runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+
+			runner.eval(this.uniqueVariableName + " = PredictionConfig;");
+			runner.eval(this.uniqueVariableName + ".cleanDataset;");
+			if (datasetList.getSize() == 0)
 			{
-				String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
-
-				proxy.eval("rmpath " + dbseerPath + ";");
-				proxy.eval("rmpath " + dbseerPath + "/common_mat;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_data;");
-				proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
-
-				proxy.eval("addpath " + dbseerPath + ";");
-				proxy.eval("addpath " + dbseerPath + "/common_mat;");
-				proxy.eval("addpath " + dbseerPath + "/predict_mat;");
-				proxy.eval("addpath " + dbseerPath + "/predict_data;");
-				proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
-
-				proxy.eval(this.uniqueVariableName + " = PredictionConfig;");
-				proxy.eval(this.uniqueVariableName + ".cleanDataset;");
-				if (datasetList.getSize() == 0)
-				{
-					JOptionPane.showMessageDialog(null, "Please add datasets to the train config.", "Warning",
-							JOptionPane.WARNING_MESSAGE);
-					return false;
-				}
-				DBSeerDataSet firstProfile = (DBSeerDataSet) datasetList.getElementAt(0);
-				numTransactionType = firstProfile.getNumTransactionTypes();
-				for (int i = 0; i < datasetList.getSize(); ++i)
-				{
-					DBSeerDataSet profile = (DBSeerDataSet) datasetList.getElementAt(i);
-					profile.loadModelVariable();
-					proxy.eval(this.uniqueVariableName + ".addDataset(" + profile.getUniqueVariableName() + ");");
-				}
-
-//				setGroupingStrategy();
-				String transactionType = "[";
-				for (int i = 1; i <= numTransactionType; ++i)
-				{
-					transactionType += i + " ";
-				}
-				transactionType += "]";
-
-				proxy.eval(this.uniqueVariableName + ".setTransactionType(" + transactionType + ");");
-//				proxy.eval(this.uniqueVariableName + ".setIOConfiguration(" + this.ioConfiguration + ");");
-//				proxy.eval(this.uniqueVariableName + ".setLockConfiguration(" + this.lockConfiguration + ");");
-				proxy.eval(this.uniqueVariableName + ".initialize;");
+				JOptionPane.showMessageDialog(null, "Please add datasets to the train config.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return false;
 			}
-			catch (MatlabInvocationException e)
+			DBSeerDataSet firstProfile = (DBSeerDataSet) datasetList.getElementAt(0);
+			numTransactionType = firstProfile.getNumTransactionTypes();
+			for (int i = 0; i < datasetList.getSize(); ++i)
 			{
-				DBSeerExceptionHandler.handleException(e);
+				DBSeerDataSet profile = (DBSeerDataSet) datasetList.getElementAt(i);
+				profile.loadModelVariable();
+				runner.eval(this.uniqueVariableName + ".addDataset(" + profile.getUniqueVariableName() + ");");
 			}
 
-//			isInitialized = true;
+			String transactionType = "[";
+			for (int i = 1; i <= numTransactionType; ++i)
+			{
+				transactionType += i + " ";
+			}
+			transactionType += "]";
+
+			runner.eval(this.uniqueVariableName + ".setTransactionType(" + transactionType + ");");
+			runner.eval(this.uniqueVariableName + ".initialize;");
 		}
 		return true;
 	}

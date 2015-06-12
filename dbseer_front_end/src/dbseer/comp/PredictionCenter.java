@@ -5,6 +5,7 @@ import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
+import dbseer.stat.StatisticalPackageRunner;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
@@ -16,7 +17,7 @@ import java.util.List;
  */
 public class PredictionCenter
 {
-	private MatlabProxy proxy;
+	private StatisticalPackageRunner runner;
 
 	private String prediction = "";
 	private String predictionDescription = "";
@@ -56,9 +57,9 @@ public class PredictionCenter
 
 	private static double EPSILON = 0.000001;
 
-	public PredictionCenter(MatlabProxy proxy, String prediction, String dbseerPath)
+	public PredictionCenter(StatisticalPackageRunner runner, String prediction, String dbseerPath)
 	{
-		this.proxy = proxy;
+		this.runner = runner;
 		for (int i = 0; i < DBSeerGUI.availablePredictions.length; ++i)
 		{
 			if (prediction.equalsIgnoreCase(DBSeerGUI.availablePredictions[i]))
@@ -70,9 +71,9 @@ public class PredictionCenter
 		this.dbseerPath = dbseerPath;
 	}
 
-	public PredictionCenter(MatlabProxy proxy, String prediction, String dbseerPath, boolean actualPrediction)
+	public PredictionCenter(StatisticalPackageRunner runner, String prediction, String dbseerPath, boolean actualPrediction)
 	{
-		this.proxy = proxy;
+		this.runner = runner;
 		if (actualPrediction)
 		{
 			this.prediction = prediction;
@@ -102,7 +103,7 @@ public class PredictionCenter
 		}
 		try
 		{
-			proxy.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader extra] = pc.performPrediction;");
+			runner.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader extra] = pc.performPrediction;");
 		}
 		catch (Exception e)
 		{
@@ -116,24 +117,24 @@ public class PredictionCenter
 	{
 		try
 		{
-			proxy.eval("rmpath " + dbseerPath + ";");
-			proxy.eval("rmpath " + dbseerPath + "/common_mat;");
-			proxy.eval("rmpath " + dbseerPath + "/predict_mat;");
-			proxy.eval("rmpath " + dbseerPath + "/predict_data;");
-			proxy.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+			runner.eval("rmpath " + dbseerPath + ";");
+			runner.eval("rmpath " + dbseerPath + "/common_mat;");
+			runner.eval("rmpath " + dbseerPath + "/predict_mat;");
+			runner.eval("rmpath " + dbseerPath + "/predict_data;");
+			runner.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-			proxy.eval("addpath " + dbseerPath + ";");
-			proxy.eval("addpath " + dbseerPath + "/common_mat;");
-			proxy.eval("addpath " + dbseerPath + "/predict_mat;");
-			proxy.eval("addpath " + dbseerPath + "/predict_data;");
-			proxy.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+			runner.eval("addpath " + dbseerPath + ";");
+			runner.eval("addpath " + dbseerPath + "/common_mat;");
+			runner.eval("addpath " + dbseerPath + "/predict_mat;");
+			runner.eval("addpath " + dbseerPath + "/predict_data;");
+			runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-			proxy.eval("pc = PredictionCenter;");
+			runner.eval("pc = PredictionCenter;");
 			if (!trainConfig.initialize())
 			{
 				return false;
 			}
-			proxy.eval("pc.trainConfig = " + trainConfig.getUniqueVariableName() + ";");
+			runner.eval("pc.trainConfig = " + trainConfig.getUniqueVariableName() + ";");
 
 			if (testMode == DBSeerConstants.TEST_MODE_DATASET)
 			{
@@ -142,16 +143,16 @@ public class PredictionCenter
 				{
 					return false;
 				}
-				proxy.eval("pc.testConfig = PredictionConfig;");
-				proxy.eval("pc.testConfig.transactionType = " + mappedTransactionType + ";");
+				runner.eval("pc.testConfig = PredictionConfig;");
+				runner.eval("pc.testConfig.transactionType = " + mappedTransactionType + ";");
 				testDataset.loadDataset();
-				proxy.eval("pc.testConfig.addDataset(" + testDataset.getUniqueVariableName() + ");");
+				runner.eval("pc.testConfig.addDataset(" + testDataset.getUniqueVariableName() + ");");
 
 				if (groupingType == DBSeerConstants.GROUP_RANGE)
 				{
-					proxy.eval("groups = " + groupRange + ";");
-					proxy.eval("groupingStrategy = struct('groups', groups);");
-					proxy.eval("pc.testConfig.groupingStrategy = groupingStrategy;");
+					runner.eval("groups = " + groupRange + ";");
+					runner.eval("groupingStrategy = struct('groups', groups);");
+					runner.eval("pc.testConfig.groupingStrategy = groupingStrategy;");
 				}
 				else if (groupingType == DBSeerConstants.GROUP_REL_DIFF ||
 						groupingType == DBSeerConstants.GROUP_NUM_CLUSTER)
@@ -181,29 +182,29 @@ public class PredictionCenter
 					groupParams += ("'maxTPS', " + String.valueOf(testMaxTPS) + ");");
 
 					//System.out.println(groupParams);
-					proxy.eval(groupParams);
-					proxy.eval("groupingStrategy = struct('groupParams', groupParams);");
-					proxy.eval("pc.testConfig.groupingStrategy = groupingStrategy;");
+					runner.eval(groupParams);
+					runner.eval("groupingStrategy = struct('groupParams', groupParams);");
+					runner.eval("pc.testConfig.groupingStrategy = groupingStrategy;");
 				}
-				proxy.eval("pc.testConfig.initialize;");
+				runner.eval("pc.testConfig.initialize;");
 			}
 			else if (testMode == DBSeerConstants.TEST_MODE_MIXTURE_TPS)
 			{
-				proxy.eval("pc.testMixture = " + testMixture + ";");
-				proxy.eval("pc.testMinTPS = " + testManualMinTPS + ";");
-				proxy.eval("pc.testMaxTPS = " + testManualMaxTPS + ";");
-				proxy.eval("pc.testWorkloadRatio = " + testWorkloadRatio + ";");
+				runner.eval("pc.testMixture = " + testMixture + ";");
+				runner.eval("pc.testMinTPS = " + testManualMinTPS + ";");
+				runner.eval("pc.testMaxTPS = " + testManualMaxTPS + ";");
+				runner.eval("pc.testWorkloadRatio = " + testWorkloadRatio + ";");
 			}
-			proxy.eval("pc.ioConf = " + ioConfiguration + ";");
-			proxy.eval("pc.lockConf = " + lockConfiguration + ";");
-			proxy.eval("pc.whichTransactionToPlot = " + transactionTypeToPlot + ";");
+			runner.eval("pc.ioConf = " + ioConfiguration + ";");
+			runner.eval("pc.lockConf = " + lockConfiguration + ";");
+			runner.eval("pc.whichTransactionToPlot = " + transactionTypeToPlot + ";");
 			if (learnLock)
 			{
-				proxy.eval("pc.learnLock = true;");
+				runner.eval("pc.learnLock = true;");
 			}
 			else
 			{
-				proxy.eval("pc.learnLock = false;");
+				runner.eval("pc.learnLock = false;");
 			}
 			String lockTypeString = "";
 			switch(lockType)
@@ -221,21 +222,21 @@ public class PredictionCenter
 					lockTypeString = "'waitTime'";
 					break;
 			}
-			proxy.eval("pc.throttleTargetTransactionIndex = " + throttleTargetTransactionIndex + ";");
-			proxy.eval("pc.throttleTargetLatency = " + throttleTargetLatency + ";");
-			proxy.eval("pc.throttlePenalty = " + throttlePenalty + ";");
-			proxy.eval("pc.throttleLatencyType = " + throttleLatencyType + ";");
+			runner.eval("pc.throttleTargetTransactionIndex = " + throttleTargetTransactionIndex + ";");
+			runner.eval("pc.throttleTargetLatency = " + throttleTargetLatency + ";");
+			runner.eval("pc.throttlePenalty = " + throttlePenalty + ";");
+			runner.eval("pc.throttleLatencyType = " + throttleLatencyType + ";");
 			if (throttleIndividualTransactions)
 			{
-				proxy.eval("pc.throttleIndividualTransactions = true;");
+				runner.eval("pc.throttleIndividualTransactions = true;");
 			}
 			else
 			{
-				proxy.eval("pc.throttleIndividualTransactions = false;");
+				runner.eval("pc.throttleIndividualTransactions = false;");
 			}
-			proxy.eval("pc.lockType = " + lockTypeString + ";");
-			proxy.eval("pc.testMode = " + testMode + ";" );
-			proxy.eval("pc.taskName = '" + prediction + "';");
+			runner.eval("pc.lockType = " + lockTypeString + ";");
+			runner.eval("pc.testMode = " + testMode + ";" );
+			runner.eval("pc.taskName = '" + prediction + "';");
 		}
 		catch (Exception e)
 		{
@@ -249,17 +250,10 @@ public class PredictionCenter
 	public String getLastError()
 	{
 		String errorMessage = "";
-		try
-		{
-			proxy.eval("dbseer_lasterror = lasterror;");
-			Object[] returnObj = proxy.returningEval("dbseer_lasterror.message", 1);
-			errorMessage = (String)returnObj[0];
-		}
-		catch (MatlabInvocationException e)
-		{
-			JOptionPane.showMessageDialog(null, "Failed to retrieve the last error from MATLAB", "Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
+		runner.eval("dbseer_lasterror = lasterror;");
+		errorMessage = runner.getVariableString("dbseer_lasterror.message");
+//			Object[] returnObj = runner.returningEval("dbseer_lasterror.message", 1);
+//			errorMessage = (String)returnObj[0];
 		return errorMessage;
 	}
 
@@ -270,7 +264,7 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[]) proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] avgCPU = (double[])results[0];
 			double[] transactionCount = (double[])results[1];
 
@@ -297,7 +291,7 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[]) proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] readIO = (double[])results[0];
 			double[] writeIO = (double[])results[1];
 			double[] transactionCount = (double[])results[2];
@@ -327,7 +321,7 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[]) proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] avgFlushRate = (double[])results[0];
 			double[] transactionCount = (double[])results[1];
 
@@ -357,7 +351,7 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[])proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] avgLatencies = (double[])results[0];
 			double[] medianLatencies = (double[])results[1];
 			double[] q99Latencies = (double[])results[2];
@@ -374,6 +368,10 @@ public class PredictionCenter
 				textArea.setText(output);
 				return;
 			}
+
+			if (overallLatencies[0] < 0) overallLatencies[0] = 0;
+			if (overallLatencies[1] < 0) overallLatencies[1] = 0;
+			if (overallLatencies[2] < 0) overallLatencies[2] = 0;
 
 			output += String.format("The overall latency of transactions will be {Avg = %.1f milliseconds, Median = %.1f milliseconds," +
 							" 99%% Quantile = %.1f milliseconds}.\n\n",
@@ -410,8 +408,10 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[])proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] maxThroughput = (double[])results[0];
+
+			if (maxThroughput[0] < 0) maxThroughput[0] = 0;
 
 			output = String.format("Your maximum throughput will be %d transactions per second.",
 					Math.round(maxThroughput[0]));
@@ -431,10 +431,12 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[])proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] result = (double[])results[0];
 			double minThroughput = result[0];
 			String resource = (String)results[1];
+
+			if (minThroughput < 0) minThroughput = 0;
 
 			output = String.format("Your bottleneck resource is %s with the maximum throughput of %d transactions per second.",
 					resource, Math.round(minThroughput));
@@ -457,7 +459,7 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[])proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] transactionIndex = (double[])results[0];
 			int index = (int)transactionIndex[0];
 
@@ -482,7 +484,7 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[])proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] transactionIndex = (double[])results[0];
 			int readIndex = (int)transactionIndex[0];
 			int writeIndex = (int)transactionIndex[1];
@@ -510,7 +512,7 @@ public class PredictionCenter
 
 		try
 		{
-			Object[] results = (Object[])proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] transactionIndex = (double[])results[0];
 			int index = (int)transactionIndex[0];
 
@@ -534,7 +536,7 @@ public class PredictionCenter
 		List<String> transactionTypes = dataset.getTransactionTypeNames();
 		try
 		{
-			Object[] results = (Object[])proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] resultVector = (double[])results[0];
 			double[] indexVector = (double[])results[1];
 			double[] targetVector = (double[])results[2];
@@ -577,7 +579,7 @@ public class PredictionCenter
 		List<String> transactionTypes = dataset.getTransactionTypeNames();
 		try
 		{
-			Object[] results = (Object[])proxy.getVariable("extra");
+			Object[] results = (Object[])runner.getVariableCell("extra");
 			double[] returnFlags = (double[])results[0];
 			int returnVal = (int)returnFlags[0];
 			if (returnVal == 0)
@@ -830,8 +832,8 @@ public class PredictionCenter
 		String str = "";
 		try
 		{
-			proxy.eval("dbseer_mixture = pc.testMixture;");
-			double[] mixture = (double[]) proxy.getVariable("dbseer_mixture");
+			runner.eval("dbseer_mixture = pc.testMixture;");
+			double[] mixture = runner.getVariableDouble("dbseer_mixture");
 			str = "[";
 			for (int i=0;i<mixture.length;++i)
 			{

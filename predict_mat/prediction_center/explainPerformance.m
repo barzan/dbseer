@@ -2,11 +2,11 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
 
     HAS_PREDICATE = 0;
     IN_CONFLICT = 1;
-    
+
     NORMAL_PARTITION = 1;
     OUTLIER_PARTITION = 2;
 	CONFLICT_PARTITION = 3;
-    
+
     if nargin < 4
         num_discrete = 1000;
     end
@@ -16,7 +16,7 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
     if nargin < 6
         outlier_multiplier = 10;
     end
-    
+
 	mergedMatrix = [];
 	fieldNames = {};
 
@@ -44,7 +44,7 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
 				else
 					fieldNames{end+1} = mvFields{i};
 				end
-				
+
 				mergedMatrix(:,count) = field(:,k);
 				count = count + 1;
 			end
@@ -79,9 +79,9 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
 	if isNormalEmpty && outlierSize < normalSize * 0.5
 		respectUserSelectedAnomaly = true;
 	end
-    
+
     % divide matrix into two regions
-	normalMatrix = wholeMatrix(normalIdx, :); 
+	normalMatrix = wholeMatrix(normalIdx, :);
 	outlierMatrix = wholeMatrix(outlierIdx, :);
 
     normalPartitions = {};
@@ -92,20 +92,20 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
     numAlternatingPartitions = {};
     conflictCount = {};
     forcedNeutralCount = {};
-    
+
     attributeStatus = {};
     normalizedNormalAverage = {};
     normalizedOutlierAverage = {};
-    
+
     normalAverage = {};
     outlierAverage = {};
-    
+
     % Discretization
     for i=3:size(wholeMatrix, 2)
-        
+
         conflictCount{i-2} = 0;
         forcedNeutralCount{i-2} = 0;
-        
+
         maxValue = max(wholeMatrix(:,i));
         minValue = min(wholeMatrix(:,i));
         range = maxValue - minValue;
@@ -116,15 +116,15 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
             partitionLabelsInitial{i-2} = zeros(1, num_discrete);
             continue
         end
-        
+
         currentNormalPartitions = zeros(1, boundary_count);
         currentOutlierPartitions = zeros(1, boundary_count);
         currentPartitionLabels = zeros(1, boundary_count);
-        
+
         partitionLabelsInitial{i-2} = currentPartitionLabels;
-        
+
         current_boundary = boundaries{i-2};
-        
+
         isConflict = false;
         normalizedNormalSum = 0;
         normalizedNormalCount = 0;
@@ -138,15 +138,15 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
                 currentNormalPartitions(j) = sum(normalMatrix(:,i) >= current_boundary(j) & normalMatrix(:,i) < current_boundary(j+1));
                 currentOutlierPartitions(j) = sum(outlierMatrix(:,i) >= current_boundary(j) & outlierMatrix(:,i) < current_boundary(j+1));
             end
-            
+
             if currentNormalPartitions(j) > 0 && currentOutlierPartitions(j) > 0
                 isConflict = true;
                 conflictCount{i-2} = conflictCount{i-2} + 1;
                 currentPartitionLabels(j) = CONFLICT_PARTITION;
                 continue;
             end
-            
-            if currentNormalPartitions(j) > 0 
+
+            if currentNormalPartitions(j) > 0
                 currentPartitionLabels(j) = NORMAL_PARTITION;
             end
             if currentOutlierPartitions(j) > 0
@@ -177,7 +177,7 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
 				end
 			end
 		end
-        
+
         for j=1:size(current_boundary,2)
             if currentPartitionLabels(j) == NORMAL_PARTITION
                 normalizedNormalSum = normalizedNormalSum + ( (current_boundary(j) - minValue) / range );
@@ -189,7 +189,7 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
         end
         normalizedNormalAverage{i-2} = normalizedNormalSum / normalizedNormalCount;
         normalizedOutlierAverage{i-2} = normalizedOutlierSum / normalizedOutlierCount;
-        
+
         markForNeutral = zeros(size(currentPartitionLabels));
         for j=1:(size(currentPartitionLabels,2)-1)
             currentPartition = currentPartitionLabels(j);
@@ -206,14 +206,14 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
                 end
             end
         end
-        
+
         forcedNeutralCount{i-2} = sum(markForNeutral);
-        
+
         partitionLabelsInitial{i-2} = currentPartitionLabels;
-        
+
         normalCount = sum(currentPartitionLabels == NORMAL_PARTITION);
         outlierCount = sum(currentPartitionLabels == OUTLIER_PARTITION);
-             
+
         for j=1:size(markForNeutral,2)
             if (markForNeutral(j) == 1)
                 if (currentPartitionLabels(j) == NORMAL_PARTITION) && (normalCount > 1)
@@ -224,10 +224,10 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
             end
         end
         partitionLabelsAfterReset{i-2} = currentPartitionLabels;
-        
+
         normalCount = sum(currentPartitionLabels == NORMAL_PARTITION);
         outlierCount = sum(currentPartitionLabels == OUTLIER_PARTITION);
-        
+
         if (normalCount == 0 && outlierCount > 0)
             normalMean = mean(normalMatrix(:,i));
             for j=1:size(current_boundary,2)
@@ -244,11 +244,11 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
                 end
             end
         end
-        
+
         markForNeutral = zeros(size(currentPartitionLabels));
         for j=1:size(currentPartitionLabels,2)
             if (currentPartitionLabels(j) == 0)
-               
+
                 distanceToNormal = num_discrete * 2 * outlier_multiplier;
                 distanceToOutlier = num_discrete * 2 * outlier_multiplier;
                 k=j-1;
@@ -284,82 +284,82 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
                     end
                     k = k + 1;
                 end
-                
+
                 if distanceToNormal < distanceToOutlier
                     markForNeutral(j) = NORMAL_PARTITION;
                 elseif distanceToOutlier < distanceToNormal
                     markForNeutral(j) = OUTLIER_PARTITION;
                 end
-                
+
             end
         end
-        
+
         for j=1:size(currentPartitionLabels,2)
             if (currentPartitionLabels(j) == 0)
                 currentPartitionLabels(j) = markForNeutral(j);
             end
         end
-        
+
         normalPartitions{i-2} = currentNormalPartitions;
-        outlierPartitions{i-2} = currentOutlierPartitions;       
+        outlierPartitions{i-2} = currentOutlierPartitions;
         partitionLabels{i-2} = currentPartitionLabels;
         normalAverage{i-2} = mean(normalMatrix(:,i));
         outlierAverage{i-2} = mean(outlierMatrix(:,i));
     end
-    
+
     predicates = {};
-    
+
     for i=1:size(partitionLabels, 2)
-        
+
         predicates{i,1} = -1;
         predicates{i,3} = 0;
         if isempty(partitionLabels{i}) || sum(partitionLabels{i}==OUTLIER_PARTITION) == 0
             continue
         end
-        
+
         partitions = partitionLabels{i};
         boundary = boundaries{i};
-        
+
         if size(boundary,2) == 0
             continue
         end
-        
+
         predicateName = fieldNames{i+2};
         predicateString = '';
         predicateCount = 0;
         lower = inf;
         upper = inf;
-        
+
         for j=1:size(partitions,2)-1
-           
+
            if j == 1 && partitions(j) == OUTLIER_PARTITION
                predicateCount = predicateCount + 1;
            end
            if partitions(j) ~= OUTLIER_PARTITION && partitions(j+1) == OUTLIER_PARTITION
-               if ~isempty(predicateString) 
+               if ~isempty(predicateString)
                    predicateString = sprintf('%s OR %s', predicateString, sprintf('> %.6f', boundary(j+1)));
-             
+
                else
                    predicateString = sprintf('> %.6f', boundary(j+1));
-               
+
                end
                lower = boundary(j+1);
                predicateCount = predicateCount + 1;
            elseif partitions(j) == OUTLIER_PARTITION && partitions(j+1) ~= OUTLIER_PARTITION
-               if ~isempty(predicateString) 
+               if ~isempty(predicateString)
                    predicateString = sprintf('%s and ', predicateString);
-                   
+
                end
                predicateString = sprintf('%s%s', predicateString, sprintf('< %.6f', boundary(j+1)));
                upper = boundary(j+1);
                predicateCount = predicateCount + 1;
            end
         end
-        
+
         if ~isempty(predicateString)
             predicateString = sprintf('%s %s', predicateName, predicateString);
         end
-        
+
         predicates{i, 1} = predicateCount;
         predicates{i, 2} = predicateString;
         predicates{i, 3} = abs(normalizedNormalAverage{i} - normalizedOutlierAverage{i});
@@ -368,12 +368,18 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
         predicates{i, 6} = predicateName;
         predicates{i, 7} = normalAverage{i};
         predicates{i, 8} = outlierAverage{i};
-        
+
     end
 
     filtered_predicates = {};
     count = 1;
-    sorted_predicates = sortrows(predicates, [1 -3]);
+    if isOctave
+        predicatesToSort = cell2mat(predicates(:,3));
+        [dummy,sorted_idx] = sort(predicatesToSort, 'descend');
+        sorted_predicates = predicates(sorted_idx, :);
+    else
+        sorted_predicates = sortrows(predicates, [1 -3]);
+    end
     effect = {};
     effectCount = 1;
 
@@ -382,7 +388,7 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
             continue
         end
         count=count+1;
-        
+
 		if (sorted_predicates{j,1} <= 2) && (sorted_predicates{j,3} > normalized_diff_threshold)
 			effect{effectCount, 1} = sorted_predicates{j,6};
 			effect{effectCount, 2} = [sorted_predicates{j,4} sorted_predicates{j,5}];
@@ -394,16 +400,22 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
 		end
     end
 
-	predicates = sortrows(filtered_predicates, -3);
-    
+    if isOctave
+        predicatesToSort = cell2mat(filtered_predicates(:,3));
+        [dummy,sorted_idx] = sort(predicatesToSort, 'descend');
+        predicates = filtered_predicates(sorted_idx, :);
+    else
+    	predicates = sortrows(filtered_predicates, -3);
+    end
+
     causalModels = loadCausalModel(model_directory);
     causeRank = cell(size(causalModels,2), 2);
-        
+
     % Let's try causal model analysis
     for i=1:size(causalModels,2)
         cause = causalModels{i}.cause;
         effectPredicates = causalModels{i}.predicates;
-        
+
         coveredOutlierRatioAverage = 0;
 		coveredNormalRatioAverage = 0;
         precisionAverage = 0;
@@ -412,8 +424,8 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
 %             effectPredicate = effectPredicates{j};
             field = effectPredicates{j, 1};
             predicate = effectPredicates{j, 2};
-            
-            
+
+
             fieldIndex = find(ismember(fieldNames, field));
             if isempty(fieldIndex)
                 disp(sprintf('the field: %s not found!', field))
@@ -429,7 +441,7 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
                 outlierPartitionCount = 0;
                 coveredPartitionCount = 0;
                 coveredNormalCount = 0;
-        
+
                 for k=1:size(currentPartition,2)
                     if currentPartition(k) == OUTLIER_PARTITION
                         outlierPartitionCount = outlierPartitionCount + 1;
@@ -474,7 +486,7 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
                     ratio = 0;
                 end
                 coveredNormalRatioAverage = coveredNormalRatioAverage + ratio;
-                
+
                 ratio = (coveredPartitionCount / (coveredNormalCount + coveredPartitionCount));
                 if isnan(ratio)
                     ratio = 0;
@@ -493,10 +505,16 @@ function [predicates explanation] = explainPerformance(mv, outlierIdx, normalIdx
         causeRank{i, 5} = coveredOutlierRatioAverage * 100; % recall
 		causeRank{i, 6} = effectPredicates;
     end
-    
+
 %     disp ' '
 %     disp '-- Cause Ranking --'
-    causeRank = sortrows(causeRank, -2);
+    if isOctave
+        causeRankToSort = cell2mat(causeRank(:,2));
+        [dummy,sorted_idx] = sort(causeRankToSort, 'descend');
+        causeRank = causeRank(sorted_idx, :);
+    else
+        causeRank = sortrows(causeRank, -2);
+    end
     for i=1:size(causeRank,1)
 %         disp(sprintf('%d. %s: confidence = %.3f', i, causeRank{i,1}, causeRank{i,2}))
 %         disp(sprintf('%d. %s (%.3f)', i, causeRank{i,1}, causeRank{i,2}))

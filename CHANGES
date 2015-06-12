@@ -1,3 +1,6 @@
+2015-06-12
+- Added support for Octave 4.0.0.
+
 2015-05-31
 - Fixed the bug where 'Show Queries' menu hangs in transaction mix graph.
 - Added a more user-intuitive prediction console.

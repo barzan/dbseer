@@ -8,5 +8,9 @@ function createCausalModel(model_directory, modelName, causeString, effect)
 	else
 		model_path = [model_directory '/' modelName];
 	end
-	save(model_path, 'model');
+	if isOctave
+		save('-mat', [model_path '.mat'], 'model');
+	else
+		save(model_path, 'model');
+	end
 end

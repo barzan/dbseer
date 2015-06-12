@@ -5,15 +5,18 @@ if nargin == 3 && varargin{1}
     predictions = ceil(predictions);
     actualdata = ceil(actualdata);
 end;
-    
+
 % mean absolute error
 
 out = zeros(1,size(predictions,2));
 for i=1:size(predictions,2)
+    if i > size(actualdata,2)
+        continue
+    end
     act = actualdata(:,i);
     pre = predictions(:,i);
     nonz = find(act);
-    
+
     %My own definition
     out(i) = mean(abs(pre(nonz)-act(nonz))./abs(act(nonz)));
     %Weka!!
@@ -22,4 +25,3 @@ for i=1:size(predictions,2)
 end
 
 end
-

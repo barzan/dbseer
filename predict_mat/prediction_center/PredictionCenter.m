@@ -417,6 +417,9 @@ classdef PredictionCenter < handle
                 [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
 
                 actualThr = testMaxThroughput;
+                if isempty(actualThr)
+                    actualThr = max(this.testConfig.TPSUngrouped);
+                end
 
                 if exist('trainMaxThroughputIdx') && ~isempty(trainMaxThroughputIdx)
                     idx=1:trainMaxThroughputIdx;
@@ -551,10 +554,10 @@ classdef PredictionCenter < handle
                 myFlushRateThroughput = findClosestValue(@cfFlushRateApprox, (1:6000)'*this.testMixture, maxFlushRate, cfFlushRateApprox_conf);
                 modelP = barzanLinSolve(this.trainConfig.averageCpuUsage, this.trainConfig.transactionCount);
 
-                [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
+                % [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
                 [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
 
-                actualThr = testMaxThroughput;
+                actualThr = [];
 
                 if exist('trainMaxThroughputIdx') && ~isempty(trainMaxThroughputIdx)
                     idx=1:trainMaxThroughputIdx;
@@ -2009,10 +2012,10 @@ classdef PredictionCenter < handle
             % myFlushRateThroughput = findClosestValue(@cfFlushRateApprox, (1:6000)'*this.testMixture, maxFlushRate, cfFlushRateApprox_conf);
             modelP = barzanLinSolve(this.trainConfig.averageCpuUsage, this.trainConfig.transactionCount);
 
-            [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
+            % [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
             [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
 
-            actualThr = testMaxThroughput;
+            actualThr = [];
 
             if exist('trainMaxThroughputIdx') && ~isempty(trainMaxThroughputIdx)
                 idx=1:trainMaxThroughputIdx;
@@ -2137,10 +2140,10 @@ classdef PredictionCenter < handle
             myFlushRateThroughput = findClosestValue(@cfFlushRateApprox, (1:6000)'*this.testMixture, maxFlushRate, cfFlushRateApprox_conf);
             modelP = barzanLinSolve(this.trainConfig.averageCpuUsage, this.trainConfig.transactionCount);
 
-            [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
+            % [testMaxThroughputIdx testMaxThroughput] = findMaxThroughput(testTPS);
             [trainMaxThroughputIdx trainMaxThroughput] = findMaxThroughput(this.trainConfig.TPSUngrouped);
 
-            actualThr = testMaxThroughput;
+            actualThr = [];
 
             if exist('trainMaxThroughputIdx') && ~isempty(trainMaxThroughputIdx)
                 idx=1:trainMaxThroughputIdx;
@@ -2261,7 +2264,13 @@ classdef PredictionCenter < handle
                 if b > 0
                     extra = {[0] [this.throttleTargetTransactionIndex] [this.throttleTargetLatency]};
                 else
-                    [sol, fval, exitflag, output, lambda] = linprog(f,A,b,[],[],lb,ub);
+                    if isOctave
+                        pkg load optim;
+                        sol = linprog(f,A,b,[],[],lb,ub);
+                        exitflag = 1;
+                    else
+                        [sol, fval, exitflag, output, lambda] = linprog(f,A,b,[],[],lb,ub);
+                    end
                     if exitflag ~= 1
                         extra = {[1]};
                     else

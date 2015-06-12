@@ -1,6 +1,7 @@
 package dbseer.comp;
 
 import dbseer.gui.DBSeerGUI;
+import dbseer.stat.StatisticalPackageRunner;
 import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
@@ -46,20 +47,9 @@ public class UserInputValidator
 	{
 		if (!isEnabled) return true;
 
-		MatlabProxy proxy = DBSeerGUI.proxy;
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
-		try
-		{
-			proxy.eval("validate_test = " + input + ";");
-		}
-		catch (MatlabInvocationException e)
-		{
-			JOptionPane.showMessageDialog(null, "Data validation error at " + fieldName + ".\n" +
-							"It is not a valid MATLAB matrix.", "Error",
-					JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
-		return true;
+		return runner.eval("validate_test = " + input + ";");
 	}
 
 	public static boolean validateSingleRowMatrix(String input, String fieldName, boolean isEnabled)

@@ -5,6 +5,10 @@ package dbseer.gui;
  */
 public class DBSeerConstants
 {
+	// statistical packages
+	public static final int STAT_MATLAB = 0;
+	public static final int STAT_OCTAVE = 1;
+
 	// prediction test modes
 	public static final int TEST_MODE_MIXTURE_TPS = 0;
 	public static final int TEST_MODE_DATASET = 1;

@@ -12,12 +12,20 @@ import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.user.DBSeerUserSettings;
 import dbseer.gui.xml.XStreamHelper;
 import dbseer.middleware.MiddlewareSocket;
-import dbseer.comp.DataCenter;
+import dbseer.stat.MatlabRunner;
+import dbseer.stat.OctaveRunner;
+import dbseer.stat.StatisticalPackageRunner;
+import dk.ange.octave.exception.OctaveIOException;
+import dk.ange.octave.type.Octave;
 import matlabcontrol.*;
+import org.ini4j.Ini;
 
 import javax.swing.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.Socket;
 
 /**
  * Created by dyoon on 2014. 5. 17..
@@ -25,6 +33,8 @@ import java.net.Socket;
 public class DBSeerGUI
 {
 	private static final String DEFAULT_SETTING_FILE_PATH = "./settings.xml";
+
+	private static final String DEFAULT_INI_FILE_PATH = "./dbseer.ini";
 
 	public static DBSeerMainFrame mainFrame;
 
@@ -43,7 +53,7 @@ public class DBSeerGUI
 
 	public static DBSeerConfiguration trainConfig = null;
 
-	public static MatlabProxy proxy = null;
+	public static StatisticalPackageRunner runner = null;
 
 	public static JLabel status = new JLabel();
 
@@ -66,6 +76,8 @@ public class DBSeerGUI
 	public static boolean isProxyRenewing = false;
 
 	public static int liveMonitorRefreshRate = 1;
+
+	public static int whichStatisticalPackageToUse = DBSeerConstants.STAT_MATLAB;
 
 	public static String[] getProfileNames()
 	{
@@ -284,9 +296,26 @@ public class DBSeerGUI
 
 		}
 
-		options = new MatlabProxyFactoryOptions.Builder()
-				.setUsePreviouslyControlledSession(true)
-				.setHidden(true).build();
+		// check dbseer.ini for statistical package to use.
+		String iniPath;
+		if (args.length == 1)
+		{
+			iniPath = args[0];
+		}
+		else
+		{
+			iniPath = DEFAULT_INI_FILE_PATH;
+		}
+
+		try
+		{
+			checkStatPackage(iniPath);
+		}
+		catch (IOException e)
+		{
+			DBSeerExceptionHandler.handleException(e);
+			return;
+		}
 
 		SwingUtilities.invokeLater(new Runnable()
 		{
@@ -315,20 +344,64 @@ public class DBSeerGUI
 					e.printStackTrace();
 				}
 
-				MatlabProxyFactory factory = new MatlabProxyFactory(options);
+				String title;
+				switch (whichStatisticalPackageToUse)
+				{
+					case DBSeerConstants.STAT_MATLAB:
+					{
+						runner = MatlabRunner.getInstance();
+						runner.eval("mat_version = version;");
+						String version = runner.getVariableString("mat_version");
+						String[] versionDigits = version.split("\\.");
+						int firstDigit = Integer.parseInt(versionDigits[0]);
+						int secondDigit = Integer.parseInt(versionDigits[1]);
+						if (firstDigit < 7)
+						{
+							String msg = String.format("DBSeer requires MATLAB 7.5 (r2007b) or higher (The current version of MATLAB is %s).\nProgram will be terminated.", version);
+							JOptionPane.showMessageDialog(null, msg, "Error",
+									JOptionPane.ERROR_MESSAGE);
+							System.exit(-1);
+						}
+						else if (firstDigit == 7 && secondDigit < 5)
+						{
+							String msg = String.format("DBSeer requires MATLAB 7.5 (r2007b) or higher (The current version of MATLAB is %s).\nProgram will be terminated.", version);
+							JOptionPane.showMessageDialog(null, msg, "Error",
+									JOptionPane.ERROR_MESSAGE);
+							System.exit(-1);
+						}
+						title = String.format("DBSeer Console [Statistical Package: MATLAB %s]", version);
+						break;
+					}
+					case DBSeerConstants.STAT_OCTAVE:
+					{
+						try
+						{
+							runner = OctaveRunner.getInstance();
+						}
+						// Exit the program if Octave is not found or old-version.
+						catch (OctaveIOException e)
+						{
+							JOptionPane.showMessageDialog(null, "The binary 'octave' for Octave not found.\nProgram will be terminated.", "Error",
+									JOptionPane.ERROR_MESSAGE);
+							System.exit(-1);
+						}
+						String version = OctaveRunner.getInstance().getVersion();
 
-				try
-				{
-					proxy = factory.getProxy();
-					proxy.eval("clear all");
-				}
-				catch (MatlabConnectionException e)
-				{
-					JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
-				}
-				catch (MatlabInvocationException e)
-				{
-					JOptionPane.showMessageDialog(null, e.getMessage(), "Matlab proxy error", JOptionPane.ERROR_MESSAGE);
+						int versionDigit = Integer.parseInt(version.substring(0, version.indexOf('.')));
+						if (versionDigit < 4)
+						{
+							String msg = String.format("DBSeer requires Octave 4.0.0 or higher (The current version of Octave is %s).\nProgram will be terminated.", version);
+							JOptionPane.showMessageDialog(null, msg, "Error",
+									JOptionPane.ERROR_MESSAGE);
+							System.exit(-1);
+						}
+
+						title = String.format("DBSeer Console [Statistical Package: Octave %s]", OctaveRunner.getInstance().getVersion());
+						break;
+					}
+					default:
+						runner = null;
+						return;
 				}
 
 				splash.setText("Loading user settings...");
@@ -351,7 +424,7 @@ public class DBSeerGUI
 				}
 
 				splash.dispose();
-				mainFrame = new DBSeerMainFrame();
+				mainFrame = new DBSeerMainFrame(title);
 				SwingUtilities.updateComponentTreeUI(mainFrame);
 				mainFrame.pack();
 				mainFrame.setVisible(true);
@@ -361,6 +434,35 @@ public class DBSeerGUI
 		});
 	}
 
+	private static void checkStatPackage(String path) throws IOException
+	{
+		Ini ini = new Ini();
+		File iniFile = new File(path);
+		if (!iniFile.exists())
+		{
+			return;
+		}
+
+		ini.load(new FileReader(iniFile));
+		Ini.Section dbseerSection = ini.get("dbseer");
+		String statPackage = dbseerSection.get("stat_package");
+
+		if (statPackage.equalsIgnoreCase("matlab"))
+		{
+			whichStatisticalPackageToUse = DBSeerConstants.STAT_MATLAB;
+		}
+		else if (statPackage.equalsIgnoreCase("octave"))
+		{
+			whichStatisticalPackageToUse = DBSeerConstants.STAT_OCTAVE;
+		}
+		else
+		{
+			// default package is MATLAB.
+			whichStatisticalPackageToUse = DBSeerConstants.STAT_MATLAB;
+		}
+	}
+
+
 	public static void repaintMainFrame()
 	{
 		mainFrame.repaint(50L);
@@ -368,23 +470,31 @@ public class DBSeerGUI
 		mainFrame.setPreferredSize(mainFrame.getSize());
 	}
 
-	public static void renewProxy()
+	public static void resetStatRunner()
 	{
-		MatlabProxyFactory factory = new MatlabProxyFactory(options);
-
-		try
+		if (runner instanceof MatlabRunner)
 		{
-			if (proxy.isConnected())
+			MatlabRunner matlabRunner = (MatlabRunner) runner;
+			try
 			{
-				proxy.exit();
+				matlabRunner.resetProxy();
 			}
-			proxy = factory.getProxy();
-			proxy.eval("clear all");
+			catch (Exception e)
+			{
+				DBSeerExceptionHandler.handleException(e);
+			}
 		}
-		catch (Exception e)
+		else if (runner instanceof OctaveRunner)
 		{
-			DBSeerExceptionHandler.handleException(e);
+			OctaveRunner octaveRunner = (OctaveRunner) runner;
+			try
+			{
+				octaveRunner.resetRunner();
+			}
+			catch (Exception e)
+			{
+				DBSeerExceptionHandler.handleException(e);
+			}
 		}
 	}
-
 }

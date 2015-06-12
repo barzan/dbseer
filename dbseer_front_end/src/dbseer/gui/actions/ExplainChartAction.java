@@ -2,18 +2,22 @@ package dbseer.gui.actions;
 
 import dbseer.comp.UserInputValidator;
 import dbseer.gui.DBSeerConstants;
+import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.chart.DBSeerXYLineAndShapeRenderer;
 import dbseer.gui.panel.DBSeerExplainChartPanel;
 import dbseer.gui.user.DBSeerCausalModel;
 import dbseer.gui.user.DBSeerPredicate;
+import dbseer.stat.OctaveRunner;
+import dbseer.stat.StatisticalPackageRunner;
+import dk.ange.octave.type.Octave;
+import dk.ange.octave.type.OctaveDouble;
+import dk.ange.octave.type.OctaveString;
 import matlabcontrol.MatlabProxy;
 import org.jfree.chart.entity.XYItemEntity;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.font.GraphicAttribute;
 import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -227,7 +231,7 @@ public class ExplainChartAction extends AbstractAction
 //			console.setText("Analyzing data for explanation... ");
 			DBSeerGUI.explainStatus.setText("Analyzing data for explanation...");
 
-			final MatlabProxy proxy = DBSeerGUI.proxy;
+			final StatisticalPackageRunner runner = DBSeerGUI.runner;
 			final DBSeerExplainChartPanel explainPanel = this.panel;
 			final String causalModelPath = this.causalModelPath;
 			final JTextArea console = this.console;
@@ -262,9 +266,9 @@ public class ExplainChartAction extends AbstractAction
 						anomalyIdx = anomalyIdx + i.toString() + " ";
 					}
 
-					proxy.eval("normal_idx = [" + normalIdx + "];");
-					proxy.eval("anomaly_idx = [" + anomalyIdx + "];");
-					proxy.eval("[predicates explanations] = explainPerformance(plotter.mv, anomaly_idx, normal_idx, '" +
+					runner.eval("normal_idx = [" + normalIdx + "];");
+					runner.eval("anomaly_idx = [" + anomalyIdx + "];");
+					runner.eval("[predicates explanations] = explainPerformance(plotter.mv, anomaly_idx, normal_idx, '" +
 							causalModelPath + "', 500, 0.2, 10);");
 
 					return null;
@@ -276,8 +280,6 @@ public class ExplainChartAction extends AbstractAction
 					try
 					{
 						DBSeerGUI.explainStatus.setText("");
-//						explainPanel.getShowPredicatesMenuItem().setEnabled(true);
-//						explainPanel.getSavePredicatesMenuItem().setEnabled(true);
 						printExplanations();
 					}
 					catch (Exception e)
@@ -291,13 +293,13 @@ public class ExplainChartAction extends AbstractAction
 		}
 		catch(Exception e)
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			DBSeerExceptionHandler.handleException(e);
 		}
 	}
 
 	public void printExplanations()
 	{
-		final MatlabProxy proxy = DBSeerGUI.proxy;
+		final StatisticalPackageRunner runner = DBSeerGUI.runner;
 		int explanationColumnCount = 6;
 		int predicateColumnCount = 5;
 
@@ -324,13 +326,30 @@ public class ExplainChartAction extends AbstractAction
 
 		try
 		{
-			Object[] explanations = (Object[])proxy.getVariable("explanations");
+			Object[] explanations = (Object[])runner.getVariableCell("explanations");
 			explanationRowCount = explanations.length / explanationColumnCount;
 			for (int r = 0; r < explanationRowCount; ++r)
 			{
 				String causeName = (String)explanations[r];
 				double[] confidence = (double[])explanations[r+explanationRowCount*1];
 				Object[] predicates = (Object[])explanations[r+explanationRowCount*5];
+
+				if (runner instanceof OctaveRunner)
+				{
+					for (int i = 0;i < predicates.length; ++i)
+					{
+						if (predicates[i] instanceof OctaveString)
+						{
+							OctaveString str = (OctaveString)predicates[i];
+							predicates[i] = str.getString();
+						}
+						else if (predicates[i] instanceof OctaveDouble)
+						{
+							OctaveDouble val = (OctaveDouble)predicates[i];
+							predicates[i] = val.getData();
+						}
+					}
+				}
 
 				DBSeerCausalModel explanation = new DBSeerCausalModel(causeName, confidence[0]);
 				explanation.getPredicates();
@@ -354,7 +373,7 @@ public class ExplainChartAction extends AbstractAction
 		}
 		catch(Exception e)
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			DBSeerExceptionHandler.handleException(e);
 		}
 
 //		double[] mockupConf = {82.74, 21.49, 14.23, 7.86};
@@ -406,7 +425,7 @@ public class ExplainChartAction extends AbstractAction
 
 	public void printPredicates()
 	{
-		final MatlabProxy proxy = DBSeerGUI.proxy;
+		final StatisticalPackageRunner runner = DBSeerGUI.runner;
 		int predicateColumnCount = 5;
 
 		DefaultListModel predicateListModel = panel.getControlPanel().getPredicateListModel();
@@ -414,7 +433,7 @@ public class ExplainChartAction extends AbstractAction
 
 		try
 		{
-			Object[] predicates = (Object[]) proxy.getVariable("predicates");
+			Object[] predicates = (Object[])runner.getVariableCell("predicates");
 			int predicateRowCount = predicates.length / predicateColumnCount;
 			String[] predicateNames = new String[predicateRowCount];
 			double[] lowerBounds = new double[predicateRowCount];
@@ -452,15 +471,6 @@ public class ExplainChartAction extends AbstractAction
 			// print x greater than y first.
 			for (int r = 0; r < predicateRowCount; ++r)
 			{
-				//temp
-//				String name = predicateNames[r];
-//				if (!(name.equalsIgnoreCase("AvgCpuIdle") ||
-//						name.contains("NetworkSend") ||
-//						name.contains("NetworkRecv") ||
-//						name.contains("CommittedCommands")))
-//				{
-//					continue;
-//				}
 				if (!Double.isInfinite(lowerBounds[r]) && Double.isInfinite(upperBounds[r]))
 				{
 					String output = null;
@@ -485,15 +495,6 @@ public class ExplainChartAction extends AbstractAction
 			// print x less than y.
 			for (int r = 0; r < predicateRowCount; ++r)
 			{
-				//temp
-//				String name = predicateNames[r];
-//				if (!(name.equalsIgnoreCase("AvgCpuIdle") ||
-//						name.contains("NetworkSend") ||
-//						name.contains("NetworkRecv") ||
-//						name.contains("CommittedCommands")))
-//				{
-//					continue;
-//				}
 				if (Double.isInfinite(lowerBounds[r]) && !Double.isInfinite(upperBounds[r]))
 				{
 					String output = null;
@@ -518,15 +519,6 @@ public class ExplainChartAction extends AbstractAction
 			// print a < x < b
 			for (int r = 0; r < predicateRowCount; ++r)
 			{
-				//temp
-//				String name = predicateNames[r];
-//				if (!(name.equalsIgnoreCase("AvgCpuIdle") ||
-//						name.contains("NetworkSend") ||
-//						name.contains("NetworkRecv") ||
-//						name.contains("CommittedCommands")))
-//				{
-//					continue;
-//				}
 				if (!Double.isInfinite(lowerBounds[r]) && !Double.isInfinite(upperBounds[r]))
 				{
 					String output = null;
@@ -550,7 +542,7 @@ public class ExplainChartAction extends AbstractAction
 		}
 		catch(Exception e)
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			DBSeerExceptionHandler.handleException(e);
 		}
 	}
 
@@ -562,7 +554,7 @@ public class ExplainChartAction extends AbstractAction
 			JOptionPane.showMessageDialog(null, "There are no predicates to save.\nPlease generate predicates first.", "Warning", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
-		final MatlabProxy proxy = DBSeerGUI.proxy;
+		final StatisticalPackageRunner runner = DBSeerGUI.runner;
 		try
 		{
 			String cause = (String) JOptionPane.showInputDialog(null, "Enter the cause for predicates ", "New Causal Model",
@@ -601,16 +593,17 @@ public class ExplainChartAction extends AbstractAction
 				path = cause + "-" + idx;
 			}
 
-			proxy.eval("createCausalModel('" + causalModelPath + "','" + path + "','" + cause + "', predicates);");
+			runner.eval("createCausalModel('" + causalModelPath + "','" + path + "','" + cause + "', predicates);");
 
-			String output = String.format("\nA causal model with the cause '%s' has been saved as: \n%s", cause,
+			String output = String.format("A causal model with the cause '%s' has been saved as: \n%s", cause,
 					actualPath);
 
-			console.append(output + "\n");
+			JOptionPane.showMessageDialog(null, output, "Information", JOptionPane.INFORMATION_MESSAGE);
+
 		}
 		catch (Exception e)
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			DBSeerExceptionHandler.handleException(e);
 		}
 	}
 }

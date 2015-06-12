@@ -3,7 +3,6 @@ package dbseer.gui.panel;
 import dbseer.gui.DBSeerConstants;
 import dbseer.comp.PredictionCenter;
 import dbseer.comp.UserInputValidator;
-import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.events.InformationChartMouseListener;
 import dbseer.gui.panel.prediction.*;
 import dbseer.gui.user.DBSeerConfiguration;
@@ -17,7 +16,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -383,7 +381,7 @@ public class DBSeerPredictionConsolePanel extends JPanel implements ActionListen
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
-		final PredictionCenter center = new PredictionCenter(DBSeerGUI.proxy,
+		final PredictionCenter center = new PredictionCenter(DBSeerGUI.runner,
 				(String)predictionComboBox.getSelectedItem(),
 				DBSeerGUI.userSettings.getDBSeerRootPath());
 

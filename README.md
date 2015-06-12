@@ -5,42 +5,14 @@ The current DBSeer includes two sub-packages: 1) *middleware* and 2) *GUI front-
 
 The middleware works independently from DBSeer main and located under directory 'middleware'. The GUI works with both DBSeer main and middleware. The GUI is located under directory 'dbseer_front_end'
 
-The main DBSeer package is written in MATLAB. The middleware and GUI front-end are written in Java.
+The main DBSeer package is written in MATLAB, and also supports Octave (4.0.0 and higher). The middleware and GUI front-end are written in Java.
 
-You require the following to run DBSeer:
+**1. Dependencies**
 
-* MATLAB
+* MATLAB (R2007b and higher) or Octave (4.0.0 and higher)
 * JDK 1.6+
 * (for middleware) Linux ('dstat' only runs on Linux)
 * ant (to compile the GUI front-end manually)
-
-**1. DBSeer**
-
-A) INSTALLATION: You need to add the following directories to your MATLAB path: common_mat predict_data predict_mat sc
-
-B) How to use DBSeer
-
-You can use the rs-sysmon2 to collect data. For quick evaluation, you can use some of the example datasets that are provided under the example_data directory.
-
-The main entry to DBSeer is through one of the following scripts:
-
-	predict_mat/load_and_plot.m
-	predict_mat/predictionConsole.m
-
-To see how to use these scripts, you can run the provided demo example.
-To run the demo, you need to go to the example_data/mysql5
-	
-	MATLAB> cd INSTALL_DIRECTORY/example_data/mysql5
-
-where you replace the INSTALL_DIRECTORY with the path in which you have a copy of DBSeer installation.
-
-Then, assuming you have added predict_mat to MATLAB path, you can simply run the following in MATLAB prompt:
-	
-	MATLAB> demo
-
-C) Contact info
-
-Please report all bugs or questions to Barzan Mozafari (<mozafari@umich.edu>)
 
 **2. Middleware**
 
@@ -146,7 +118,7 @@ E) Dependencies
 
 **3. GUI front-end**
 
-The DBSeer GUI front-end is developed with IntelliJ IDEA 13. 
+The DBSeer GUI front-end has been developed using IntelliJ IDEA. 
 
 There are two ways to run the GUI:
 
@@ -165,7 +137,36 @@ You can run the jar file to launch the GUI with the command:
 
 	> java -jar dbseer_front_end.jar
 
-B) MATLAB interaction
+OR you can specify the INI configuration file to use as its argument:
+
+	> java -jar dbseer_front_end.jar ./dbseer.ini
+	
+If you do not specify the INI configuration file, DBSeer will automatically search for the file in the current working directory and use the default configuration values if it does not exist. A sample INI file can be found at 'dbseer_front_end/dbseer.ini'.
+	
+B) Setting the statistical package
+
+DBSeer requires MATLAB or Octave for its mathematical calculations. By default, DBSeer uses MATLAB as its statistical package. You can specify the statistical package that DBSeer uses in a separate configuration file in INI format. 
+
+The 'dbseer.ini' configuration file has the following format:
+
+	[dbseer]
+	; set a statistical package for DBSeer. DBSeer currently supports Matlab (R2007b and greater) and Octave (4.0.0 and higher).
+	; set 'matlab' for MATLAB, 'octave' for Octave. Default is 'matlab'.
+	stat_package=matlab
+	
+You can change the value of *stat_package* to *octave* and Octave will be used for DBSeer's statistical operations.
+
+C) MATLAB interaction
 
 Upon its execution, the GUI will automatically launch MATLAB in order to interact with the DBSeer engine. 
-This is done with *matlabcontrol* (<https://code.google.com/p/matlabcontrol/>)
+This is done with *matlabcontrol* (<https://code.google.com/p/matlabcontrol/>).
+
+D) Octave installation
+
+Unlike MATLAB, Octave does not come with a stand-alone installation binary that works for every operating system. Depending on the operating system, a user may need to manually build and install the package.
+
+DBSeer requires the version of Octave that is 4.0.0 or higher. You can find instructions on how to install Octave for each operating system at the *Download* section of the Octave homepage (<http://www.gnu.org/software/octave/download.html>).
+
+E) Octave interaction
+
+Likewise, the interaction with Octave has been implemented with JavaOctave (<https://kenai.com/projects/javaoctave/pages/Home>).

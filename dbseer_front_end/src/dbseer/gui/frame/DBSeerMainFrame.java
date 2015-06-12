@@ -30,14 +30,14 @@ public class DBSeerMainFrame extends JFrame
 	private DBSeerPerformancePredictionPanel performancePredictionPanel;
 	private JPanel statusPanel;
 
-	public DBSeerMainFrame()
+	public DBSeerMainFrame(String title)
 	{
+		this.setTitle(title);
 		initializeGUI();
 	}
 
 	private void initializeGUI()
 	{
-		this.setTitle("DBSeer Console");
 		System.setProperty("apple.laf.useScreenMenuBar", "true"); // for mac os
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "DBSeer"); // for mac os
 //		layout = new MigLayout("fill, ins 5 5 5 5", "[grow]", "[grow][grow,shrink 100]push[shrink 0]");
