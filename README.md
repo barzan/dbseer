@@ -137,7 +137,7 @@ Unlike MATLAB, Octave does not come with a stand-alone installation binary. Depe
 
 ***3.4. Setting the statistical package***
 
-DBSeer can work with either MATLAB or Octave for its statistical operations. You can specify the statistical package that you want DBSeer to use in a configuration file in INI format. 
+DBSeer can work with either MATLAB or Octave for its statistical operations. You can specify the statistical package that you want DBSeer to use in a configuration file (on your client) in INI format. 
 
 The 'dbseer.ini' configuration file should have the following format:
 
@@ -146,7 +146,7 @@ The 'dbseer.ini' configuration file should have the following format:
 	; set 'matlab' for MATLAB, 'octave' for Octave. Default is 'matlab'.
 	stat_package=matlab
 	
-The default statistical package in DBSeer is default. But if you change the value of *stat_package* to *octave*, Octave will be used for DBSeer's statistical operations. 
+The default statistical package in DBSeer is Matlab. But if you change the value of *stat_package* to *octave* in the INI file, Octave will be used for DBSeer's statistical operations. 
 
 
 **4. Running DBSeer **
