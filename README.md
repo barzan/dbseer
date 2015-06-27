@@ -1,81 +1,110 @@
 DBSeer Installation and Usage Guide
+
+*Watch our video demo*: http://dbseer.org/video
 ---
 
-The current DBSeer includes two sub-packages: 1) *middleware* and 2) *GUI front-end*.
+**0. Package Overview**
 
-The middleware works independently from DBSeer main and located under directory 'middleware'. The GUI works with both DBSeer main and middleware. The GUI is located under directory 'dbseer_front_end'
+DBSeer consists of two sub-packages: 1) *middleware* and 2) *GUI front-end*.
 
-The main DBSeer package is written in MATLAB, and also supports Octave (4.0.0 and higher). The middleware and GUI front-end are written in Java.
+The middleware is located under the 'middleware' directory and the GUI is located under the 'dbseer_front_end' directory.
+
+DBSeer's internal logic is written in MATLAB (or GNU Octave 4.0.0 or higher) and Julia. The middleware and GUI front-end are both written in Java.
+
+<Note>: In this documentation we will refer to both servers and clients. The server refers to the machines running your database management system (e.g., MySQL) and/or running DBSeer's middleware. The client is used to refer to the machine (e.g., your laptop) where you will lunch DBSeer's GUI and can manage your database and middleware from.
 
 **1. Dependencies**
 
-* MATLAB (R2007b and higher) or Octave (4.0.0 and higher)
+You need the following packages on the client that runs DBSeer's GUI:
+
+* MATLAB (R2007b or higher) or Octave (4.0.0 or higher)
+* Julia (0.3.10 or higher)
+* Java 1.6+
+
+If you are compiling DBSeer from source, then you need the following:
 * JDK 1.6+
-* (for middleware) Linux ('dstat' only runs on Linux)
-* ant (to compile the GUI front-end manually)
+* ant (to compile the source code)
 
-**2. Middleware**
+Your server must be running:
+* Linux (to use the middleware which in turn runs 'dstat'; however, you can use other operating systems if you can run 'dstat' command on them)
+* MySQL, MariaDB or Postgres (these are the only DBMSs that are currently supported)
 
-NOTE: All commands in this section assume you are in the root directory of the middleware. 
+**2. Building DBSeer from the source code**
 
-A) Building the Middleware
+Check out the latest release (from https://github.com/barzan/dbseer/) and then follow the instructions below:
 
-To build the middleware, please run the file named 'build', as shown below
+***2.1. Building the Middleware***
+
+To build the middleware, go to the root directory of the middleware, and run the file named 'build', as shown below
 
 	./build
 
-If the the file is not executable, use the following command to make it
-executable:
+If the the file is not executable, use the following command to make it executable:
 
 	chmod 755 build
+
+***2.2. Bulding the GUI front-end***
+
+The DBSeer GUI front-end has been developed using IntelliJ IDEA. 
+
+* Import the directory 'dbseer_front_end' as a project in IntelliJ IDEA. 
+* Manually compile the package.
+
+To manually compile the GUI, follow the following steps:
+
+The GUI front-end includes a xml file for 'ant' to compile itself. In the directory 'dbseer_front_end', run the following command:
+
+	> ant -f dbseer_front_end.xml
 	
-B) Executing the Middleware
+This will create *dbseer_front_end.jar* in the 'out/artifacts/dbseer_front_end_jar' directory.
 
-To execute the middleware, please run the file named 'middleware' with required
-arguments, as shown below
+**3. Installing DBSeer**
 
-	./middleware <listening_port> <User Name>@<MySQL IP> <MySQL Port>
-		<Thread Number> <User Password File> <port for user>(optional)
-	(for remote MySQL IP)
+***3.1. Configuring dstat***
 
-or
+To make sure the middleware can execute dstat (to monitor system resources and get the log file), please first configure the variables in rs-sysmon2/setenv. In the setenv file, you need to configure {mysql_user, mysql_pass, mysql_host, mysql_port} variables. Also, make sure that the file rs-sysmon2/dstat is executable. If not, use the following command to make it executable,
 
-	./middleware <listening_port> 127.0.0.1 <MySQL Port> <Thread Number>
-		<User Password File> <port for user>(optional)
-	(for local MySQL IP, '127.0.0.1' can be replaced with 'localhost')
+	chmod 755 rs-sysmon2/dstat
+
+***3.2. Run the Middleware***
+
+To run the middleware, please run the file named 'middleware' (in the top-level of the middleware directory) with required
+arguments, as described below.
+
+If you would like to run DBSeer's middleware on a different server than the one hosting your database: 
+
+	./middleware <listening_port> <User Name>@<DB IP> <DB Port> <Thread Number> <User Password File> <port for user>(optional)
+
+But if you would like to run DBSeer's middleware on the same server that is hosting your database:
+
+	./middleware <listening_port> 127.0.0.1 <DB Port> <Thread Number> <User Password File> <port for user>(optional)
+
+(Here, '127.0.0.1' can also be replaced with 'localhost')
 
 If the the file is not executable, use the following command to make it
 executable:
 
-	chmod 755 build
-
-If MySQL server is located on remote IP, please run the middleware with root
-privilege (simply add 'sudo' before the command line above).
+Note: If your database server is located on a remote server, please run the middleware command with root permissions (simply add 'sudo' before the ./middleware commands).
 
 Arguments details:
 
-	<listening_port>:	an integer as port number used by middleware to
-				listening to MySQL clients requests
+	<listening_port>:	(an integer) the port number that DBSeer's middleware should listen on. You should specify
+				the same port number that your users/applications send their SQL queries to.
 
-	<User Name>@<MySQL IP>:	a string contains the user name for middleware
-				to login remote server via SSH and the IP address
-				of remote server
+	<User Name>@<DB IP>:	(a string) the user name for the middleware
+				to login to the server hosting the database (via SSH) and the IP address
+				of the server hosting the database 
 
-	<MySQL Port>:		an integer as listening port number of MySQL
-				server
+	<DB Port>:		(an integer) the listening port of the DB. This should be different than the <listening_port> 
+				used by DBSeer's middleware if the middleware and the database are on the same server.
+				The middleware forwards the incoming queries to the database via this port.
 
-	<Thread Number>:	an integer which tells the program to create
-				that number of working threads, which pass
-				MySQL clients queries and log them, and this
-				number excludes the thread used to communicate
-				with users.
+	<Thread Number>:	(an integer) the number of working threads to be used by the middleware. The middleware
+				can use several threads to forward the clients queries to the database. default value: ??
 
-	<User Password File>:	a string as name of the file which contains
-				users ID and correspoding passwords, with
-				MySQL-related variables for dstat (only for the
-				remote MySQL server scenario. The file should
-				follow the format shown below
-
+	<User Password File>:	(a string) the name of the file that contains users ID and correspoding passwords, with
+				database-related variables for dstat (only for scenarios where the database server and the
+				middleware are hosted on different servers). The file should follow the format shown below:
 					<user-password>
 					user0
 					password0
@@ -88,50 +117,39 @@ Arguments details:
 					mysql_host="127.0.0.1"
 					mysql_port=3306
 
-				Please put this file in the top directory of
-				middleware, by default, named 'Middleware'
+				Place this file in the top directory of the middleware (by default, named 'Middleware')
 
-	<port for user>:	an integer as port number used by middleware to
-				listening to user (GUI front-end) requests. This argument is
-				optional, by default, it is set to 3334
+	<port for user>:	(an integer) the port number used by the middleware to listen to the GUI front-end requests.
+				This argument is optional (by default, it is set to 3334)
 
-C) Configure dstat if monitoring local MySQL server
 
-To make sure the middleware execute dstat to monitor system resources and get
-the log file, please first configure the variables in rs-sysmon2/setenv. In the setenv file, you need to configure {mysql_user, mysql_pass, mysql_host, mysql_port} variables. Also, please make sure the file rs-sysmon2/dstat is executable. If not, use the
-following command to make it executable,
 
-	chmod 755 rs-sysmon2/dstat
+***3.3. Installing the statistical package***
 
-D) Configure dstat if monitoring remote MySQL server
+You need to install Julia and either Matlab or Octave on the client that you plan to run DBSeer's front-end on. Note that the client you run DBSeer on is typically different than the server(s) you are running your database and middleware on.
 
-To make sure the middleware is able to deploy and execute dstat on remote server
-to monitor system resources and get the log file, please first configure the
-variables in dstat_for_server/setenv. In the setenv file, you need to configure {mysql_user, mysql_pass, mysql_host, mysql_port} variables. 
+To install Julia and Matlab on your client, follow their own documentation (you do not need to install Matlab if you plan to use Octave).
 
-E) Dependencies
+Octave installation:
 
-* javac (version 1.6+)
-* java (version 1.6+)
-* GNU BASH
-* Linux (for 'dstat')
+Unlike MATLAB, Octave does not come with a stand-alone installation binary. Depending on your operating system, you may need to manually build and install the package. You can find instructions on how to install Octave for different operating systems at the *Download* section of the Octave homepage (<http://www.gnu.org/software/octave/download.html>).
 
-**3. GUI front-end**
 
-The DBSeer GUI front-end has been developed using IntelliJ IDEA. 
+***3.4. Setting the statistical package***
 
-There are two ways to run the GUI:
+DBSeer can work with either MATLAB or Octave for its statistical operations. You can specify the statistical package that you want DBSeer to use in a configuration file in INI format. 
 
-* Import the directory 'dbseer_front_end' as a project in IntelliJ IDEA and run the GUI. 
-* Manually compile the package and run the generated jar file. 
+The 'dbseer.ini' configuration file should have the following format:
 
-A) Manual compilation
-
-The GUI front-end includes a xml file for 'ant' to compile itself. In the directory 'dbseer_front_end', you can run
-
-	> ant -f dbseer_front_end.xml
+	[dbseer]
+	; set a statistical package for DBSeer. DBSeer currently supports Matlab (R2007b and greater) and Octave (4.0.0 and higher).
+	; set 'matlab' for MATLAB, 'octave' for Octave. Default is 'matlab'.
+	stat_package=matlab
 	
-to compile and it will create *dbseer_front_end.jar* in the directory 'out/artifacts/dbseer_front_end_jar'
+The default statistical package in DBSeer is default. But if you change the value of *stat_package* to *octave*, Octave will be used for DBSeer's statistical operations. 
+
+
+**4. Running DBSeer **
 
 You can run the jar file to launch the GUI with the command:
 
@@ -141,32 +159,7 @@ OR you can specify the INI configuration file to use as its argument:
 
 	> java -jar dbseer_front_end.jar ./dbseer.ini
 	
-If you do not specify the INI configuration file, DBSeer will automatically search for the file in the current working directory and use the default configuration values if it does not exist. A sample INI file can be found at 'dbseer_front_end/dbseer.ini'.
-	
-B) Setting the statistical package
+If you do not specify the INI configuration file, DBSeer will automatically search for the file in the current working directory and use the default configuration values if it cannot find the INI file. A sample INI file can be found in the package as 'dbseer_front_end/dbseer.ini'.
 
-DBSeer requires MATLAB or Octave for its mathematical calculations. By default, DBSeer uses MATLAB as its statistical package. You can specify the statistical package that DBSeer uses in a separate configuration file in INI format. 
+To familiarize yourself with various features in DBSeer's GUI, watch the following video:  http://dbseer.org/video
 
-The 'dbseer.ini' configuration file has the following format:
-
-	[dbseer]
-	; set a statistical package for DBSeer. DBSeer currently supports Matlab (R2007b and greater) and Octave (4.0.0 and higher).
-	; set 'matlab' for MATLAB, 'octave' for Octave. Default is 'matlab'.
-	stat_package=matlab
-	
-You can change the value of *stat_package* to *octave* and Octave will be used for DBSeer's statistical operations.
-
-C) MATLAB interaction
-
-Upon its execution, the GUI will automatically launch MATLAB in order to interact with the DBSeer engine. 
-This is done with *matlabcontrol* (<https://code.google.com/p/matlabcontrol/>).
-
-D) Octave installation
-
-Unlike MATLAB, Octave does not come with a stand-alone installation binary that works for every operating system. Depending on the operating system, a user may need to manually build and install the package.
-
-DBSeer requires the version of Octave that is 4.0.0 or higher. You can find instructions on how to install Octave for each operating system at the *Download* section of the Octave homepage (<http://www.gnu.org/software/octave/download.html>).
-
-E) Octave interaction
-
-Likewise, the interaction with Octave has been implemented with JavaOctave (<https://kenai.com/projects/javaoctave/pages/Home>).
