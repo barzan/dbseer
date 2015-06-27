@@ -135,7 +135,7 @@ Octave installation:
 Unlike MATLAB, Octave does not come with a stand-alone installation binary. Depending on your operating system, you may need to manually build and install the package. You can find instructions on how to install Octave for different operating systems at the *Download* section of the Octave homepage (<http://www.gnu.org/software/octave/download.html>).
 
 
-***3.4. Setting the statistical package***
+***3.4. Choosing the statistical package***
 
 DBSeer can work with either MATLAB or Octave for its statistical operations. You can specify the statistical package that you want DBSeer to use in a configuration file (on your client) in INI format. 
 
