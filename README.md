@@ -11,7 +11,7 @@ The middleware is located under the 'middleware' directory and the GUI is locate
 
 DBSeer's internal logic is written in MATLAB (or GNU Octave 4.0.0 or higher) and Julia. The middleware and GUI front-end are both written in Java.
 
-<Note>: In this documentation we will refer to both servers and clients. The server refers to the machines running your database management system (e.g., MySQL) and/or running DBSeer's middleware. The client is used to refer to the machine (e.g., your laptop) where you will lunch DBSeer's GUI and can manage your database and middleware from.
+Note: In this documentation we will refer to both servers and clients. The server refers to the machines running your database management system (e.g., MySQL) and/or running DBSeer's middleware. The client is used to refer to the machine (e.g., your laptop) where you will lunch DBSeer's GUI and can manage your database and middleware from.
 
 **1. Dependencies**
 
