@@ -149,7 +149,7 @@ The 'dbseer.ini' configuration file should have the following format:
 The default statistical package in DBSeer is Matlab. But if you change the value of *stat_package* to *octave* in the INI file, Octave will be used for DBSeer's statistical operations. 
 
 
-**4. Running DBSeer **
+**4. Running DBSeer**
 
 You can run the jar file to launch the GUI with the command:
 
