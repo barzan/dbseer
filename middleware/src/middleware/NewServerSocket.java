@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 Barzan Mozafari
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package middleware;
 
 import java.io.BufferedOutputStream;
@@ -51,11 +67,14 @@ public class NewServerSocket extends Thread {
   private boolean dstatDeployed;
   private boolean failDeployDstat;
   private boolean configSetenv;
+  private boolean sendLog = false;
 
   private String mysql_user;
   private String mysql_pass;
   private String mysql_host;
   private String mysql_port;
+
+  private Thread liveAggregateProcessThread = null;
 
   private Map<String, byte[]> userInfo;
 
@@ -363,13 +382,15 @@ public class NewServerSocket extends Thread {
                   buffer.putLong(response.length());
                   buffer.put(response.getBytes());
                   middleSocketChannel.sendOutput(buffer, buffer.position());
-                } else if (middleSocketChannel != curUser) {
-                  String response = "Monitoring running by other user";
-                  buffer.clear();
-                  buffer.putInt(302);
-                  buffer.putLong(response.length());
-                  buffer.put(response.getBytes());
-                  middleSocketChannel.sendOutput(buffer, buffer.position());
+                  // DY : I think this use case is not right at the moment where
+                  // monitoring is only stoppable by a user who started it.
+//                } else if (middleSocketChannel != curUser) {
+//                  String response = "Monitoring running by other user";
+//                  buffer.clear();
+//                  buffer.putInt(302);
+//                  buffer.putLong(response.length());
+//                  buffer.put(response.getBytes());
+//                  middleSocketChannel.sendOutput(buffer, buffer.position());
                 } else if (endingMonitoring) {
                   String response = "Writing log files, please wait";
                   buffer.clear();
@@ -378,6 +399,42 @@ public class NewServerSocket extends Thread {
                   buffer.put(response.getBytes());
                   middleSocketChannel.sendOutput(buffer, buffer.position());
                 } else {
+                  sendLog = true;
+                  stopMonitoring();
+                }
+              } else {
+                buffer.clear();
+                buffer.putInt(102);
+                String response = "You have not been registered";
+                buffer.putLong(response.length());
+                buffer.put(response.getBytes());
+                middleSocketChannel.sendOutput(buffer, buffer.position());
+              }
+            } else if (packetID == 303) {
+              if (userList.contains(middleSocketChannel)) {
+                if (!sharedData.isOutputToFile()) {
+                  String response = "No monitoring running";
+                  buffer.clear();
+                  buffer.putInt(302);
+                  buffer.putLong(response.length());
+                  buffer.put(response.getBytes());
+                  middleSocketChannel.sendOutput(buffer, buffer.position());
+//                } else if (middleSocketChannel != curUser) {
+//                  String response = "Monitoring running by other user";
+//                  buffer.clear();
+//                  buffer.putInt(302);
+//                  buffer.putLong(response.length());
+//                  buffer.put(response.getBytes());
+//                  middleSocketChannel.sendOutput(buffer, buffer.position());
+                } else if (endingMonitoring) {
+                  String response = "Writing log files, please wait";
+                  buffer.clear();
+                  buffer.putInt(302);
+                  buffer.putLong(response.length());
+                  buffer.put(response.getBytes());
+                  middleSocketChannel.sendOutput(buffer, buffer.position());
+                } else {
+                  sendLog = false;
                   stopMonitoring();
                 }
               } else {
@@ -411,6 +468,53 @@ public class NewServerSocket extends Thread {
                 middleSocketChannel.sendOutput(buffer, buffer.position());
               }
 
+            } else if (packetID == 500) {
+              if (!sharedData.isLiveMonitoring()) {
+                buffer.clear();
+                buffer.putInt(501);
+                middleSocketChannel.sendOutput(buffer, buffer.position());
+              } else {
+                buffer.clear();
+                buffer.putInt(502);
+								LiveAggregateGlobal globalAggregate = sharedData.liveMonitor.globalAggregate;
+								int numTransactionType = globalAggregate.getNumTransactionType();
+								buffer.putInt(numTransactionType);
+                buffer.putDouble(globalAggregate.totalTransactionCount);
+								for (int i = 0; i < numTransactionType; ++i)
+								{
+									buffer.putDouble(globalAggregate.transactionStatistics.get(i).currentTransactionCounts); // current TPS
+									buffer.putDouble(globalAggregate.transactionStatistics.get(i).currentAverageLatency); // current average latency.
+									buffer.putDouble(globalAggregate.transactionStatistics.get(i).totalTransactionCounts); // total transaction count
+								}
+                middleSocketChannel.sendOutput(buffer, buffer.position());
+              }
+            } else if (packetID == 600) {
+              int type = buffer.getInt();
+              int index = buffer.getInt();
+              String[] samples = sharedData.liveMonitor.getTransactionSamples(type);
+              if (samples == null) {
+                buffer.clear();
+                buffer.putInt(601);
+                middleSocketChannel.sendOutput(buffer, buffer.position());
+              } else if (samples.length < index + 1) {
+                buffer.clear();
+                buffer.putInt(601);
+                middleSocketChannel.sendOutput(buffer, buffer.position());
+              } else {
+                String sample = samples[index];
+                buffer.clear();
+                buffer.putInt(602);
+                buffer.putLong(sample.length());
+                buffer.put(sample.getBytes());
+                middleSocketChannel.sendOutput(buffer, buffer.position());
+              }
+            } else if (packetID == 700) {
+              int type = buffer.getInt();
+                sharedData.liveMonitor.removeTransactionType(type);
+              buffer.clear();
+              buffer.putInt(701);
+              buffer.putInt(sharedData.liveMonitor.globalAggregate.getNumTransactionType());
+              middleSocketChannel.sendOutput(buffer, buffer.position());
             } else {
               buffer.clear();
               buffer.putInt(102);
@@ -460,7 +564,7 @@ public class NewServerSocket extends Thread {
           e.printStackTrace();
         }
 
-        if (curUser != null) {
+        if (curUser != null && sendLog) {
 
           System.out.println("ready to compress log files");
 
@@ -501,7 +605,7 @@ public class NewServerSocket extends Thread {
             long len = 0;
             while (remaining > 0) {
               try {
-                len = fc.transferTo(position, 1024, curUser.socketChannel);
+               len = fc.transferTo(position, 1024, curUser.socketChannel);
               } catch (IOException e) {
                 e.printStackTrace();
               }
@@ -520,11 +624,11 @@ public class NewServerSocket extends Thread {
             buffer.put(response.getBytes());
             curUser.sendOutput(buffer, buffer.position());
           }
-          endingMonitoring = false;
-          monitoring = false;
           curUser = null;
         }
 
+        endingMonitoring = false;
+        monitoring = false;
         if (System.getProperty("user.name").contentEquals("root")) {
           String[] cmd = { "/bin/bash", "shell/chmod" };
           try {
@@ -735,6 +839,14 @@ public class NewServerSocket extends Thread {
     startDstat();
     sharedData.setOutputToFile(true);
 
+    sharedData.liveMonitor = new LiveMonitor();
+//    liveAggregateProcessThread = new Thread(new LiveAggregateProcessor(sharedData.liveMonitor.getAggregateMap(),
+//        System.currentTimeMillis() / 1000L, sharedData));
+    liveAggregateProcessThread = new Thread(new LiveAggregateProcessor(sharedData.liveMonitor.getAggregateMap(),
+        System.currentTimeMillis() / 1000L, sharedData.liveMonitor.globalAggregate));
+    liveAggregateProcessThread.start();
+    sharedData.setIsLiveMonitoring(true);
+
     System.out.println("start monitoring");
 
   }
@@ -798,6 +910,12 @@ public class NewServerSocket extends Thread {
         sharedData.allTransactionData.remove(i);
       }
     }
+
+    if (liveAggregateProcessThread != null)
+    {
+      liveAggregateProcessThread.interrupt();
+    }
+    sharedData.setIsLiveMonitoring(false);
 
     System.out.println("stop monitoring");
 

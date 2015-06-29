@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 Barzan Mozafari
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package dbseer.comp;
 
 import dbseer.gui.DBSeerConstants;
@@ -373,6 +389,8 @@ public class PredictionCenter
 			if (overallLatencies[1] < 0) overallLatencies[1] = 0;
 			if (overallLatencies[2] < 0) overallLatencies[2] = 0;
 
+			overallLatencies[2] = validateQuantileLatency(overallLatencies[2], overallLatencies[0], overallLatencies[1]);
+
 			output += String.format("The overall latency of transactions will be {Avg = %.1f milliseconds, Median = %.1f milliseconds," +
 							" 99%% Quantile = %.1f milliseconds}.\n\n",
 					overallLatencies[0]*1000, overallLatencies[1]*1000, overallLatencies[2]*1000);
@@ -387,6 +405,8 @@ public class PredictionCenter
 				if (avg<0 || transactionCount[0] == 0) avg = 0;
 				if (median<0 || transactionCount[0] == 0) median = 0;
 				if (q99<0 || transactionCount[0] == 0) q99 = 0;
+
+				q99 = validateQuantileLatency(q99, avg, median);
 
 				output += String.format("The latency of '%s' transactions will be {Avg = %.1f milliseconds, Median = %.1f milliseconds, 99%% Quantile = %.1f milliseconds}.\n",
 						transaction, avg, median, q99);
@@ -875,5 +895,20 @@ public class PredictionCenter
 	public void setThrottleLatencyType(int type)
 	{
 		throttleLatencyType = type;
+	}
+
+	private double validateLatency(double val)
+	{
+		return (val < 0.0) ? 0 : val;
+	}
+
+	private double validateQuantileLatency(double latency, double v1, double v2)
+	{
+		if (latency < v1 && latency < v2)
+		{
+			if (v1 > v2) return v1;
+			else return v2;
+		}
+		return latency;
 	}
 }

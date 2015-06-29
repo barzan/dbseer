@@ -1,3 +1,17 @@
+% Copyright 2013 Barzan Mozafari
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
 useful_header;
 filtered_header = {'cpu_usr' 'cpu_sys' 'cpu_total' 'cpu_wai' 'cpu_hiq' 'cpu_siq' 'memory_used' 'memory_buff' 'memory_cach' 'memory_free' 'net_recv' 'net_send' 'dsk_read' 'dsk_writ' 'io_read' 'io_writ' 'swap_used' 'swap_free' 'paging_in' 'paging_out' 'virtual_majpf' 'virtual_minpf' 'virtual_alloc' 'virtual_free' 'filesystem_files' 'filesystem_inodes' 'interupts_33' 'interupts_79' 'interupts_80' 'interupts_81' 'interupts_82' 'interupts_83' 'interupts_84' 'interupts_85' 'interupts_86' 'system_int' 'system_csw' 'procs_run' 'procs_blk' 'procs_new' 'sda_util' 'Bytes_received' 'Bytes_sent' 'Com_commit' 'Com_delete' 'Com_insert' 'Com_rollback' 'Com_select' 'Com_update' 'Created_tmp_tables' 'Handler_commit' 'Handler_delete' 'Handler_read_key' 'Handler_read_next' 'Handler_read_prev' 'Handler_rollback' 'Handler_update' 'Handler_write' 'Innodb_buffer_pool_pages_data' 'Innodb_buffer_pool_pages_dirty' 'Innodb_buffer_pool_pages_flushed' 'Innodb_buffer_pool_pages_free' 'Innodb_buffer_pool_pages_misc' 'Innodb_buffer_pool_read_requests' 'Innodb_buffer_pool_reads' 'Innodb_buffer_pool_write_requests' 'Innodb_data_fsyncs' 'Innodb_data_pending_reads' 'Innodb_data_read' 'Innodb_data_reads' 'Innodb_data_writes' 'Innodb_data_written' 'Innodb_dblwr_pages_written' 'Innodb_dblwr_writes' 'Innodb_log_write_requests' 'Innodb_log_writes' 'Innodb_os_log_fsyncs' 'Innodb_os_log_written' 'Innodb_pages_created' 'Innodb_pages_read' 'Innodb_pages_written' 'Innodb_row_lock_current_waits' 'Innodb_row_lock_time' 'Innodb_row_lock_time_avg' 'Innodb_row_lock_time_max' 'Innodb_row_lock_waits' 'Innodb_rows_deleted' 'Innodb_rows_inserted' 'Innodb_rows_read' 'Innodb_rows_updated' 'Open_tables' 'Opened_tables' 'Queries' 'Questions' 'Select_range' 'Slow_queries' 'Table_locks_immediate' 'Threads_running' 'Uptime' 'Uptime_since_flush_status'};
 

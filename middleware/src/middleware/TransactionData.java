@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 Barzan Mozafari
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package middleware;
 
 import java.io.BufferedOutputStream;
@@ -6,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 /**
  * The class to store and print data and info about transaction between one
@@ -113,10 +130,14 @@ public class TransactionData {
     String s = "," + clientPortNum + "," + userId + "," + (traxStart / 1000L)
         + "," +(traxEnd/1000L) + "," + (traxEnd - traxStart) + "\n";
 
+    sharedData.liveMonitor.endTransaction(txId, userId, traxStart/1000L, traxEnd/1000L, (traxEnd - traxStart));
     sharedData.allTransactions.put(txId, s.getBytes());
     try {
-      txFileOutputStream.write(Integer.toString(txId).getBytes());
-      txFileOutputStream.write(s.getBytes());
+      if (txFileOutputStream != null)
+      {
+        txFileOutputStream.write(Integer.toString(txId).getBytes());
+        txFileOutputStream.write(s.getBytes());
+      }
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -136,6 +157,12 @@ public class TransactionData {
       tmp.position(0);
       queryBuffer.put(tmp);
     }
+
+    byte[] originalArray = queryBuffer.array();
+    byte[] queryArray = new byte[queryBuffer.position()-1];
+    System.arraycopy(originalArray, 1, queryArray, 0, queryBuffer.position()-1);
+    sharedData.liveMonitor.addQuery(txId, queryId, (queryStart / 1000L), (t / 1000L), (t - queryStart),
+        new String(queryArray, Charset.forName("UTF-8")));
     queryBuffer.put((byte) 0);
     queryBuffer.put((byte) '\n');
     // sharedData.allStatementsInfo.add(s.getBytes());
@@ -143,13 +170,19 @@ public class TransactionData {
         .put(queryId, new QueryData(s.getBytes(), queryBuffer));
 
     try {
-      stFileOutputStream.write(s.getBytes());
+      if (stFileOutputStream != null)
+      {
+        stFileOutputStream.write(s.getBytes());
+      }
     } catch (IOException e) {
       e.printStackTrace();
     }
     try {
-      qFileOutputStream.write(Long.toString(queryId).getBytes());
-      qFileOutputStream.write(queryBuffer.array(), 0, queryBuffer.position());
+      if (qFileOutputStream != null)
+      {
+        qFileOutputStream.write(Long.toString(queryId).getBytes());
+        qFileOutputStream.write(queryBuffer.array(), 0, queryBuffer.position());
+      }
     } catch (IOException e) {
       e.printStackTrace();
     }

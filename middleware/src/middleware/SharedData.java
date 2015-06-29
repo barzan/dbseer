@@ -1,15 +1,29 @@
+/*
+ * Copyright 2013 Barzan Mozafari
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package middleware;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,6 +47,7 @@ public class SharedData {
 	private int numWorkers;
 	private String userInfoFilePath;
 	private boolean isRemoteServer;
+	private boolean isLiveMonitoring;
 	public String remoteServerUser;
 
 	private long selectTime, inputTime, outputTime, returnTime;
@@ -50,6 +65,8 @@ public class SharedData {
   public BufferedOutputStream sAllLogFileOutputStream;
   public BufferedOutputStream qAllLogFileOutputStream;
 
+	public LiveMonitor liveMonitor;
+	public LiveAggregateGlobal globalAggregate;
 
 	public HashMap<SocketChannel, MiddleSocketChannel> socketMap;
 	public Selector selector;
@@ -66,7 +83,9 @@ public class SharedData {
 
     txId = new AtomicInteger(0);
     queryId = new AtomicLong(0);
-		
+		isLiveMonitoring = false;
+		liveMonitor = new LiveMonitor();
+    globalAggregate = new LiveAggregateGlobal();
 	}
 
 	synchronized public SelectionKey getSelectionKey() {
@@ -243,4 +262,13 @@ public class SharedData {
     this.isRemoteServer = isRemoteServer;
   }
 
+	public boolean isLiveMonitoring()
+	{
+		return isLiveMonitoring;
+	}
+
+	public void setIsLiveMonitoring(boolean isLiveMonitoring)
+	{
+		this.isLiveMonitoring = isLiveMonitoring;
+	}
 }
