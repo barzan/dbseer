@@ -14,6 +14,7 @@
   <property name="compiler.generate.no.warnings" value="off"/>
   <property name="compiler.args" value=""/>
   <property name="compiler.max.memory" value="1024m"/>
+  <property environment="env" />
   <patternset id="ignored.files">
     <exclude name="**/*.hprof/**"/>
     <exclude name="**/*.pyc/**"/>
@@ -58,9 +59,9 @@
 
   <!-- JDK definitions -->
 
-  <property name="jdk.bin.1.6" value="${jdk.home.1.6}/bin"/>
+  <property name="jdk.bin.1.6" value="${env.JAVA_HOME}/bin"/>
   <path id="jdk.classpath.1.6">
-    <fileset dir="${jdk.home.1.6}">
+    <fileset dir="${env.JAVA_HOME}">
       <include name="lib/deploy.jar"/>
       <include name="lib/dt.jar"/>
       <include name="lib/javaws.jar"/>
@@ -81,7 +82,7 @@
     </fileset>
   </path>
 
-  <property name="project.jdk.home" value="${jdk.home.1.6}"/>
+  <property name="project.jdk.home" value="${env.JAVA_HOME}}"/>
   <property name="project.jdk.bin" value="${jdk.bin.1.6}"/>
   <property name="project.jdk.classpath" value="jdk.classpath.1.6"/>
 
