@@ -16,7 +16,6 @@
 
 package dbseer.gui.actions;
 
-import com.sun.jmx.snmp.tasks.Task;
 import dbseer.comp.DataCenter;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.dialog.ProgressDialog;
