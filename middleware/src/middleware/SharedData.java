@@ -65,12 +65,19 @@ public class SharedData {
   public BufferedOutputStream sAllLogFileOutputStream;
   public BufferedOutputStream qAllLogFileOutputStream;
 
+	public long tStartOffset = 0;
+	public long sStartOffset = 0;
+	public long qStartOffset = 0;
+	public long sysStartOffset = 0;
+
 	public LiveMonitor liveMonitor;
 	public LiveAggregateGlobal globalAggregate;
 
 	public HashMap<SocketChannel, MiddleSocketChannel> socketMap;
 	public Selector selector;
 	public Iterator<SelectionKey> keyIterator;
+
+	private volatile int loginCount;
 
 	SharedData() {
 		maxSize = 1024;
@@ -80,6 +87,7 @@ public class SharedData {
 		filePathName = null;
 		outputFlag = false;
 		isRemoteServer = false;
+		loginCount = 0;
 
     txId = new AtomicInteger(0);
     queryId = new AtomicLong(0);

@@ -16,6 +16,9 @@
 
 package middleware;
 
+import org.apache.commons.io.input.Tailer;
+import org.apache.commons.io.input.TailerListener;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,6 +41,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -68,13 +73,26 @@ public class NewServerSocket extends Thread {
   private boolean failDeployDstat;
   private boolean configSetenv;
   private boolean sendLog = false;
+  private boolean isIncrementalLogging = false;
 
   private String mysql_user;
   private String mysql_pass;
   private String mysql_host;
   private String mysql_port;
 
-  private Thread liveAggregateProcessThread = null;
+//  private Thread liveAggregateProcessThread = null;
+  private Thread incrementalLogThread = null;
+  private IncrementalLogSender incrementalLogSender = null;
+
+  private LogTailer sysLogTailer = null;
+  private LogTailer sLogTailer = null;
+  private LogTailer qLogTailer = null;
+  private LogTailer tLogTailer = null;
+
+  private Thread sysLogTailerThread = null;
+  private Thread sLogTailerThread = null;
+  private Thread qLogTailerThread = null;
+  private Thread tLogTailerThread = null;
 
   private Map<String, byte[]> userInfo;
 
@@ -91,6 +109,8 @@ public class NewServerSocket extends Thread {
   private Process ntpdate;
 
   private Process stopRemoteDstat;
+
+  private BlockingQueue<IncrementalLog> incrementalLogQueue;
 
   NewServerSocket(SharedData s) {
     sharedData = s;
@@ -183,6 +203,8 @@ public class NewServerSocket extends Thread {
     ntpdate = null;
 
     stopRemoteDstat = null;
+
+    incrementalLogQueue = new ArrayBlockingQueue<IncrementalLog>(64 * 1024);
   }
 
   public void run() {
@@ -307,36 +329,45 @@ public class NewServerSocket extends Thread {
           }
 
           if (isValidPacket) {
-            if (packetID == 100) {
-              if (userList.contains(middleSocketChannel)) {
+            if (packetID == 100)
+            {
+              if (userList.contains(middleSocketChannel))
+              {
                 buffer.clear();
                 buffer.putInt(102);
                 String response = "You have already logged in";
                 buffer.putLong(response.length());
                 buffer.put(response.getBytes());
                 middleSocketChannel.sendOutput(buffer, buffer.position());
-              } else if (packetLength <= 0) {
+              }
+              else if (packetLength <= 0)
+              {
                 buffer.clear();
                 buffer.putInt(102);
                 String response = "Invalid packet length";
                 buffer.putLong(response.length());
                 buffer.put(response.getBytes());
                 middleSocketChannel.sendOutput(buffer, buffer.position());
-              } else {
+              }
+              else
+              {
                 String userID = null;
                 byte[] password = new byte[Encrypt.MAX_LENGTH];
                 byte[] packet = new byte[(int) packetLength];
                 buffer.get(packet);
                 userID = parseLogInPacket(packet, password);
                 if (userInfo.get(userID) != null
-                    && Arrays.equals(((byte[]) userInfo.get(userID)),
-                        Encrypt.encrypt(password))) {
+                        && Arrays.equals(((byte[]) userInfo.get(userID)),
+                        Encrypt.encrypt(password)))
+                {
                   buffer.clear();
                   buffer.putInt(101);
                   buffer.putLong(0);
                   middleSocketChannel.sendOutput(buffer, buffer.position());
                   userList.add(middleSocketChannel);
-                } else {
+                }
+                else
+                {
                   buffer.clear();
                   buffer.putInt(102);
                   String response = "Invalid User ID or password";
@@ -345,7 +376,8 @@ public class NewServerSocket extends Thread {
                   middleSocketChannel.sendOutput(buffer, buffer.position());
                 }
               }
-
+            } else if (packetID == 103) {
+              stopIncrementalLogging();
             } else if (packetID == 200) {
               if (userList.contains(middleSocketChannel)) {
                 if (sharedData.isOutputToFile() || endingMonitoring
@@ -400,6 +432,7 @@ public class NewServerSocket extends Thread {
                   middleSocketChannel.sendOutput(buffer, buffer.position());
                 } else {
                   sendLog = true;
+                  curUser = middleSocketChannel;
                   stopMonitoring();
                 }
               } else {
@@ -448,7 +481,13 @@ public class NewServerSocket extends Thread {
 
             } else if (packetID == 400) {
               if (userList.contains(middleSocketChannel)) {
+                // when the GUI reconnects and the middleware is still monitoring...
                 if (monitoring) {
+
+                  // start new logging threads and resume monitoring
+                  stopIncrementalLogging();
+                  startIncrementalLogging(true);
+
                   buffer.clear();
                   buffer.putInt(402);
                   buffer.putLong(0);
@@ -566,7 +605,7 @@ public class NewServerSocket extends Thread {
 
         if (curUser != null && sendLog) {
 
-          System.out.println("ready to compress log files");
+//          System.out.println("ready to compress log files");
 
           if (stopRemoteDstat != null) {
             Interrupter interrupter = new Interrupter(Thread.currentThread());
@@ -579,51 +618,55 @@ public class NewServerSocket extends Thread {
             }
             stopRemoteDstat = null;
           }
-
-          if (zipAllFiles()) {
-
-            System.out
-                .println("finish compressing files, ready to send zip file");
-
-            File zipFile = new File(zipFileName);
-
-            FileInputStream fis = null;
-            try {
-              fis = new FileInputStream(zipFile);
-            } catch (FileNotFoundException e) {
-              e.printStackTrace();
-            }
-
-            FileChannel fc = fis.getChannel();
-
             buffer.clear();
             buffer.putInt(301);
-            buffer.putLong(zipFile.length());
+            buffer.putLong(0);
             curUser.sendOutput(buffer, buffer.position());
-            long position = 0;
-            long remaining = zipFile.length();
-            long len = 0;
-            while (remaining > 0) {
-              try {
-               len = fc.transferTo(position, 1024, curUser.socketChannel);
-              } catch (IOException e) {
-                e.printStackTrace();
-              }
-              position += len;
-              remaining -= len;
-              len = 0;
-            }
 
-            System.out.println("finish sending zip file");
-
-          } else {
-            String response = "fail to compress log files";
-            buffer.clear();
-            buffer.putInt(302);
-            buffer.putLong(response.length());
-            buffer.put(response.getBytes());
-            curUser.sendOutput(buffer, buffer.position());
-          }
+//          if (zipAllFiles()) {
+//
+//            System.out
+//                .println("finish compressing files, ready to send zip file");
+//
+//            File zipFile = new File(zipFileName);
+//
+//            FileInputStream fis = null;
+//            try {
+//              fis = new FileInputStream(zipFile);
+//            } catch (FileNotFoundException e) {
+//              e.printStackTrace();
+//            }
+//
+//            FileChannel fc = fis.getChannel();
+//
+//            buffer.clear();
+//            buffer.putInt(301);
+//            buffer.putLong(zipFile.length());
+//            curUser.sendOutput(buffer, buffer.position());
+//            long position = 0;
+//            long remaining = zipFile.length();
+//            long len = 0;
+//            while (remaining > 0) {
+//              try {
+//               len = fc.transferTo(position, 1024, curUser.socketChannel);
+//              } catch (IOException e) {
+//                e.printStackTrace();
+//              }
+//              position += len;
+//              remaining -= len;
+//              len = 0;
+//            }
+//
+//            System.out.println("finish sending zip file");
+//
+//          } else {
+//            String response = "fail to compress log files";
+//            buffer.clear();
+//            buffer.putInt(302);
+//            buffer.putLong(response.length());
+//            buffer.put(response.getBytes());
+//            curUser.sendOutput(buffer, buffer.position());
+//          }
           curUser = null;
         }
 
@@ -666,22 +709,27 @@ public class NewServerSocket extends Thread {
 
       for (int i = 0; i < files.length; i++) {
 
-        FileInputStream fis = new FileInputStream(files[i]);
+        // only sends the dstat log file.
+        if (files[i].getName().contains("log_exp_1"))
+        {
+          FileInputStream fis = new FileInputStream(files[i]);
 
-        // begin writing a new ZIP entry, positions the stream to the start of
-        // the entry data
-        zos.putNextEntry(new ZipEntry(files[i].getName()));
+          // begin writing a new ZIP entry, positions the stream to the start of
+          // the entry data
+          zos.putNextEntry(new ZipEntry(files[i].getName()));
 
-        int length;
+          int length;
 
-        while ((length = fis.read(fileBuffer)) > 0) {
-          zos.write(fileBuffer, 0, length);
+          while ((length = fis.read(fileBuffer)) > 0)
+          {
+            zos.write(fileBuffer, 0, length);
+          }
+
+          zos.closeEntry();
+
+          // close the InputStream
+          fis.close();
         }
-
-        zos.closeEntry();
-
-        // close the InputStream
-        fis.close();
       }
 
       // close the ZipOutputStream
@@ -740,9 +788,16 @@ public class NewServerSocket extends Thread {
     byte[] tmpB = tmpE.getValue();
 
     try {
-      sharedData.tAllLogFileOutputStream.write(TxID.toString().getBytes());
-      sharedData.tAllLogFileOutputStream.write(tmpB);
-    } catch (IOException e) {
+      byte[] id = TxID.toString().getBytes();
+      byte[] combined = new byte[id.length + tmpB.length];
+      System.arraycopy(id, 0, combined, 0, id.length);
+      System.arraycopy(tmpB, 0, combined, id.length, tmpB.length);
+
+      sharedData.tAllLogFileOutputStream.write(combined);
+//      sharedData.tAllLogFileOutputStream.write(TxID.toString().getBytes());
+//      sharedData.tAllLogFileOutputStream.write(tmpB);
+    }
+    catch (IOException e) {
       e.printStackTrace();
     }
 
@@ -772,9 +827,15 @@ public class NewServerSocket extends Thread {
     }
 
     try {
-      sharedData.qAllLogFileOutputStream.write(qId.toString().getBytes());
-      sharedData.qAllLogFileOutputStream.write(tmp.query.array(), 0,
-          tmp.query.position());
+      byte[] id = qId.toString().getBytes();
+      byte[] combined = new byte[id.length + tmp.query.position()];
+      System.arraycopy(id, 0, combined, 0, id.length);
+      System.arraycopy(tmp.query.array(), 0, combined, id.length, tmp.query.position());
+
+      sharedData.qAllLogFileOutputStream.write(combined);
+//      sharedData.qAllLogFileOutputStream.write(qId.toString().getBytes());
+//      sharedData.qAllLogFileOutputStream.write(tmp.query.array(), 0,
+//          tmp.query.position());
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -842,9 +903,13 @@ public class NewServerSocket extends Thread {
     sharedData.liveMonitor = new LiveMonitor();
 //    liveAggregateProcessThread = new Thread(new LiveAggregateProcessor(sharedData.liveMonitor.getAggregateMap(),
 //        System.currentTimeMillis() / 1000L, sharedData));
-    liveAggregateProcessThread = new Thread(new LiveAggregateProcessor(sharedData.liveMonitor.getAggregateMap(),
-        System.currentTimeMillis() / 1000L, sharedData.liveMonitor.globalAggregate));
-    liveAggregateProcessThread.start();
+//    liveAggregateProcessThread = new Thread(new LiveAggregateProcessor(sharedData.liveMonitor.getAggregateMap(),
+//        System.currentTimeMillis() / 1000L, sharedData.liveMonitor.globalAggregate));
+//    liveAggregateProcessThread.start();
+
+    // start incremental logging.
+    startIncrementalLogging(false);
+
     sharedData.setIsLiveMonitoring(true);
 
     System.out.println("start monitoring");
@@ -911,10 +976,8 @@ public class NewServerSocket extends Thread {
       }
     }
 
-    if (liveAggregateProcessThread != null)
-    {
-      liveAggregateProcessThread.interrupt();
-    }
+    stopIncrementalLogging();
+
     sharedData.setIsLiveMonitoring(false);
 
     System.out.println("stop monitoring");
@@ -1081,6 +1144,154 @@ public class NewServerSocket extends Thread {
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
+    }
+  }
+
+  private void startIncrementalLogging(boolean resume)
+  {
+    if (isIncrementalLogging)
+    {
+      return;
+    }
+    // start dstat log tailer
+    File[] files = dir.listFiles();
+    File dstatFile = null;
+    for (File file : files)
+    {
+      // use the first file found for now
+      if (file.getName().contains("log_exp"))
+      {
+        dstatFile = file;
+        break;
+      }
+    }
+
+    if (dstatFile == null)
+    {
+      dstatFile = new File(dir + File.separator + "log_exp_1.csv");
+    }
+
+    if (dstatFile != null)
+    {
+      LogTailerListener tailerListener = new LogTailerListener(IncrementalLog.TYPE_SYSLOG, incrementalLogQueue, resume);
+      sysLogTailer = new LogTailer(dstatFile, tailerListener, 1000, sharedData.sysStartOffset); // delay is 1s
+      sysLogTailerThread = new Thread(sysLogTailer);
+      sysLogTailerThread.start();
+    }
+
+    File qFile = new File(sharedData.getFilePathName() + "/Transactions/allLogs-q.txt");
+    File sFile = new File(sharedData.getFilePathName() + "/Transactions/allLogs-s.txt");
+    File tFile = new File(sharedData.getFilePathName() + "/Transactions/allLogs-t.txt");
+
+    LogTailerListener qListener = new LogTailerListener(IncrementalLog.TYPE_QUERY, incrementalLogQueue, resume);
+    LogTailerListener sListener = new LogTailerListener(IncrementalLog.TYPE_STATEMENT, incrementalLogQueue, resume);
+    LogTailerListener tListener = new LogTailerListener(IncrementalLog.TYPE_TRANSACTION, incrementalLogQueue, resume);
+
+    qLogTailer = new LogTailer(qFile, qListener, 1000, -1);
+    sLogTailer = new LogTailer(sFile, sListener, 1000, -1);
+    tLogTailer = new LogTailer(tFile, tListener, 1000, -1);
+
+    qLogTailerThread = new Thread(qLogTailer);
+    sLogTailerThread = new Thread(sLogTailer);
+    tLogTailerThread = new Thread(tLogTailer);
+
+    qLogTailerThread.start();
+    sLogTailerThread.start();
+    tLogTailerThread.start();
+
+    try
+    {
+      Thread.sleep(100);
+    }
+    catch (InterruptedException e)
+    {
+      e.printStackTrace();
+    }
+
+    incrementalLogSender = new IncrementalLogSender(34444, incrementalLogQueue, sharedData);
+    incrementalLogThread = new Thread(incrementalLogSender);
+    incrementalLogThread.start();
+
+    isIncrementalLogging = true;
+  }
+
+  private void stopIncrementalLogging()
+  {
+    if (!isIncrementalLogging)
+    {
+      return;
+    }
+
+    if (sysLogTailerThread != null)
+    {
+      sysLogTailer.stop();
+    }
+    if (sLogTailerThread != null)
+    {
+      sLogTailer.stop();
+    }
+    if (tLogTailerThread != null)
+    {
+      tLogTailer.stop();
+    }
+    if (qLogTailerThread != null)
+    {
+      qLogTailer.stop();
+    }
+    if (incrementalLogThread != null)
+    {
+      incrementalLogSender.setTerminate(true);
+    }
+
+    try
+    {
+      if (sysLogTailerThread != null)
+      {
+        sysLogTailerThread.interrupt();
+        sysLogTailerThread.join();
+      }
+      if (sLogTailerThread != null)
+      {
+        sLogTailerThread.interrupt();
+        sLogTailerThread.join();
+      }
+      if (tLogTailerThread != null)
+      {
+        tLogTailerThread.interrupt();
+        tLogTailerThread.join();
+      }
+      if (qLogTailerThread != null)
+      {
+        qLogTailerThread.interrupt();
+        qLogTailerThread.join();
+      }
+      if (incrementalLogThread != null)
+      {
+        incrementalLogThread.interrupt();
+        incrementalLogThread.join();
+      }
+    }
+    catch (InterruptedException e)
+    {
+      e.printStackTrace();
+    }
+
+    isIncrementalLogging = false;
+  }
+
+  private void offerLog(IncrementalLog log)
+  {
+    if (!incrementalLogQueue.offer(log))
+    {
+      try
+      {
+        Thread.sleep(250);
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
+      incrementalLogQueue.offer(log);
     }
   }
 

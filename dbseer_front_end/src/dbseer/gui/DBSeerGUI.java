@@ -18,7 +18,7 @@ package dbseer.gui;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.io.StreamException;
-import dbseer.comp.LiveMonitoringThread;
+import dbseer.comp.live.LiveMonitoringThread;
 import dbseer.comp.data.LiveMonitor;
 import dbseer.gui.frame.DBSeerMainFrame;
 import dbseer.gui.panel.DBSeerLiveMonitorPanel;
@@ -32,16 +32,15 @@ import dbseer.stat.MatlabRunner;
 import dbseer.stat.OctaveRunner;
 import dbseer.stat.StatisticalPackageRunner;
 import dk.ange.octave.exception.OctaveIOException;
-import dk.ange.octave.type.Octave;
 import matlabcontrol.*;
 import org.ini4j.Ini;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by dyoon on 2014. 5. 17..
@@ -89,11 +88,24 @@ public class DBSeerGUI
 
 	public static LiveMonitoringThread liveMonitoringThread = new LiveMonitoringThread();
 
+	public static DBSeerDataSet liveDataset = null;
+
+	public static DBSeerConfiguration liveConfig = null;
+
 	public static boolean isProxyRenewing = false;
+
+	public static boolean isLiveMonitoring = false;
+
+	public static boolean isLiveDataReady = false;
 
 	public static int liveMonitorRefreshRate = 1;
 
 	public static int whichStatisticalPackageToUse = DBSeerConstants.STAT_MATLAB;
+
+	public static BlockingQueue<String> queryLogQueue = new LinkedBlockingQueue<String>();
+	public static BlockingQueue<String> stmtLogQueue = new LinkedBlockingQueue<String>();
+	public static BlockingQueue<String> trxLogQueue = new LinkedBlockingQueue<String>();
+	public static BlockingQueue<String> sysLogQueue = new LinkedBlockingQueue<String>();
 
 	public static String[] getProfileNames()
 	{
@@ -239,8 +251,8 @@ public class DBSeerGUI
 	};
 
 	public static final String[] availablePredictions = {
-			"Disk Flush Rate by TPS",
-			"Disk Flush Rate by Individual Transactions",
+//			"Disk Flush Rate by TPS",
+//			"Disk Flush Rate by Individual Transactions", // disabled for now
 			"Max Throughput",
 			"CPU by TPS",
 			"CPU by Individual Transactions",
@@ -259,8 +271,8 @@ public class DBSeerGUI
 	};
 
 	public static final String[] actualPredictionFunctions = {
-			"FlushRatePredictionByTPS",
-			"FlushRatePredictionByCounts",
+//			"FlushRatePredictionByTPS",
+//			"FlushRatePredictionByCounts", // disabled for now
 			"MaxThroughputPrediction",
 			"TransactionCountsToCpuByTPS",
 			"TransactionCountsToCpuByCounts",
@@ -373,14 +385,14 @@ public class DBSeerGUI
 						int secondDigit = Integer.parseInt(versionDigits[1]);
 						if (firstDigit < 7)
 						{
-							String msg = String.format("DBSeer requires MATLAB 7.5 (r2007b) or higher (The current version of MATLAB is %s).\nProgram will be terminated.", version);
+							String msg = String.format("DBSeer requires MATLAB 7.5 (r2007b) or higher (your version of MATLAB is %s).\nProgram will be terminated.", version);
 							JOptionPane.showMessageDialog(null, msg, "Error",
 									JOptionPane.ERROR_MESSAGE);
 							System.exit(-1);
 						}
 						else if (firstDigit == 7 && secondDigit < 5)
 						{
-							String msg = String.format("DBSeer requires MATLAB 7.5 (r2007b) or higher (The current version of MATLAB is %s).\nProgram will be terminated.", version);
+							String msg = String.format("DBSeer requires MATLAB 7.5 (r2007b) or higher (your version of MATLAB is %s).\nProgram will be terminated.", version);
 							JOptionPane.showMessageDialog(null, msg, "Error",
 									JOptionPane.ERROR_MESSAGE);
 							System.exit(-1);
@@ -406,7 +418,7 @@ public class DBSeerGUI
 						int versionDigit = Integer.parseInt(version.substring(0, version.indexOf('.')));
 						if (versionDigit < 4)
 						{
-							String msg = String.format("DBSeer requires Octave 4.0.0 or higher (The current version of Octave is %s).\nProgram will be terminated.", version);
+							String msg = String.format("DBSeer requires Octave 4.0.0 or higher (your version of Octave is %s).\nProgram will be terminated.", version);
 							JOptionPane.showMessageDialog(null, msg, "Error",
 									JOptionPane.ERROR_MESSAGE);
 							System.exit(-1);
@@ -418,6 +430,34 @@ public class DBSeerGUI
 					default:
 						runner = null;
 						return;
+				}
+
+				// Check version for Julia
+				try
+				{
+					String cmd="julia -v";
+					Process p=Runtime.getRuntime().exec(cmd);
+					InputStreamReader ir=new InputStreamReader(p.getInputStream());
+					LineNumberReader inr=new LineNumberReader(ir);
+					String version=inr.readLine();
+					String[] split=version.split(" ");
+					int length=split.length;
+					version=split[length-1];
+					String[] split2=version.split("\\.");
+					if(Integer.parseInt(split2[0])==0)
+					{
+						if(Integer.parseInt(split2[1])<3 || (Integer.parseInt(split2[1])==3 && Integer.parseInt(split2[2])<10))
+						{
+							String msg = String.format("DBSeer requires Julia 0.3.10 or higher (your version of Julia is %s).\nProgram will be terminated.", version);
+							JOptionPane.showMessageDialog(null, msg, "Error",
+									JOptionPane.ERROR_MESSAGE);
+							System.exit(-1);
+						}
+					}
+				}
+				catch(Exception e)
+				{
+					DBSeerExceptionHandler.handleException(e);
 				}
 
 				// Removing reference to statistical package in the title.
@@ -442,13 +482,14 @@ public class DBSeerGUI
 					splash.setText("Default setting file not found...");
 				}
 
+				DBSeerGUI.liveDataset = new DBSeerDataSet(true); // live dataset
+				DBSeerGUI.datasets.add(0, DBSeerGUI.liveDataset);
+
 				splash.dispose();
 				mainFrame = new DBSeerMainFrame(title);
 				SwingUtilities.updateComponentTreeUI(mainFrame);
 				mainFrame.pack();
 				mainFrame.setVisible(true);
-//				mainFrame.setPreferredSize(mainFrame.getSize());
-
 			}
 		});
 	}

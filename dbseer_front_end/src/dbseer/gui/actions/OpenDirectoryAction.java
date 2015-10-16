@@ -18,6 +18,7 @@ package dbseer.gui.actions;
 
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.dialog.DBSeerFileLoadDialog;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -42,12 +43,19 @@ public class OpenDirectoryAction extends AbstractAction
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
+		if (profile.getLive())
+		{
+			JOptionPane.showMessageDialog(null, "You cannot import a directory for the live dataset.", "Warning",
+					JOptionPane.WARNING_MESSAGE);
+			return;
+		}
 		//DBSeerConfiguration config = DBSeerGUI.config;
 		loadDialog.createFileDialog("Import from Directory", DBSeerFileLoadDialog.DIRECTORY_ONLY);
 		loadDialog.showDialog();
 
 		if (loadDialog.getFile() != null)
 		{
+			profile.clearTransactionTypes();
 			String[] files = loadDialog.getFile().list();
 			String directory = loadDialog.getFile().getAbsolutePath();
 			if (files != null)
@@ -87,7 +95,10 @@ public class OpenDirectoryAction extends AbstractAction
 							String line = reader.readLine(); // read first line.
 							String[] tokens = line.trim().split("\\s+");
 							int numTransactionType = tokens.length - 1;
-							profile.setNumTransactionTypes(numTransactionType);
+							for (int i = 0; i < numTransactionType; ++i)
+							{
+								profile.addTransactionType("Type " + (i+1));
+							}
 						}
 						catch (FileNotFoundException e)
 						{
@@ -102,7 +113,7 @@ public class OpenDirectoryAction extends AbstractAction
 					{
 						profile.setTransCountPath(file);
 					}
-					else if (fileLower.contains("prctile") || fileLower.contains("percentile"))
+					else if (fileLower.contains("prctile_latencies.mat"))
 					{
 						profile.setPercentileLatencyPath(file);
 					}
@@ -114,8 +125,44 @@ public class OpenDirectoryAction extends AbstractAction
 					{
 						profile.setPageInfoPath(file);
 					}
+//					else if( fileLower.contains("trans_types"))
+//					{
+//						File typeFile = new File(file);
+//						try
+//						{
+//							BufferedReader reader = new BufferedReader(new FileReader(typeFile));
+//							String line = reader.readLine(); // read first line.
+//							String[] tokens = line.trim().split(",");
+//							for (String type : tokens)
+//							{
+//
+//							}
+//							int numTransactionType = tokens.length;
+//							profile.setNumTransactionTypes(numTransactionType);
+//						}
+//						catch (FileNotFoundException e)
+//						{
+//							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+//						}
+//						catch (IOException e)
+//						{
+//							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+//						}
+//					}
 				}
 			}
+
+			File dir = loadDialog.getFile();
+			FileFilter filter = new WildcardFileFilter("prctile_latency_*");
+			File[] latencies = dir.listFiles(filter);
+			if (latencies.length > profile.getNumTransactionTypes())
+			{
+				for (int i = profile.getNumTransactionTypes(); i < latencies.length; ++i)
+				{
+					profile.addTransactionType("Type " + (i+1));
+				}
+			}
+			profile.addTransactionRows();
 		}
 	}
 }

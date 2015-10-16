@@ -21,7 +21,7 @@ classdef DataSet < handle
         avg_latency_path
         percentile_latency_path
         statement_stat_path
-        %tranTypes
+        tranTypes
 		use_entire = true;
         startIdx
         endIdx
@@ -197,11 +197,11 @@ classdef DataSet < handle
 			if this.use_entire
 				[this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
 					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ...
-					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, 0, 0, true);
+					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, 0, 0, true, this.tranTypes);
 			else
 				[this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
 					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ...
-					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, this.startIdx, this.endIdx, false);
+					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, this.startIdx, this.endIdx, false, this.tranTypes);
 			end
             this.statReady = true;
         end

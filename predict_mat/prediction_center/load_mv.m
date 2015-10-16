@@ -12,7 +12,7 @@
 % See the License for the specific language governing permissions and
 % limitations under the License.
 
-function [mvGrouped mvUngrouped] = load_mv(header, monitor, avglat, prclat, IndividualCounts, dM, groupingStrategy)
+function [mvGrouped mvUngrouped] = load_mv(header, monitor, avglat, prclat, IndividualCounts, dM, groupingStrategy, tranTypes)
 overallTime = tic;
 
 mvGrouped = struct();
@@ -20,6 +20,9 @@ mvUngrouped = struct();
 
 mvUngrouped.prclat = prclat;
 mvGrouped.prclat = prclat;
+
+% mvUngrouped.tranTypes = tranTypes;
+% mvGrouped.tranTypes = tranTypes;
 
 if nargin > 6
     [monitor_grouped avglat_grouped IndividualCounts_grouped dM_grouped] = applyGroupingPolicy(groupingStrategy, monitor, avglat, IndividualCounts, dM);
@@ -80,8 +83,8 @@ mvUngrouped.osNumberOfAllocatedPage = monitor(:,header.columns.virtual_alloc);
 mvUngrouped.osNumberOfFreePages = monitor(:,header.columns.virtual_free);
 mvUngrouped.osNumberOfMajorPageFaults = monitor(:,header.columns.virtual_majpf);
 mvUngrouped.osNumberOfMinorPageFaults = monitor(:,header.columns.virtual_minpf);
-mvUngrouped.osNetworkSendKB=monitor(:,header.metadata.net_send) ./1024;
-mvUngrouped.osNetworkRecvKB=monitor(:,header.metadata.net_recv)./1024;
+mvUngrouped.osNetworkSendKB=sum(monitor(:,header.metadata.net_send),2) ./1024;
+mvUngrouped.osNetworkRecvKB=sum(monitor(:,header.metadata.net_recv),2) ./1024;
 
 mvUngrouped.clientTotalSubmittedTrans=sum(IndividualCounts(:,:), 2);
 mvUngrouped.clientIndividualSubmittedTrans=IndividualCounts;

@@ -16,6 +16,8 @@
 
 package dbseer.comp.data;
 
+import dbseer.comp.clustering.Cluster;
+
 import java.util.Comparator;
 
 /**

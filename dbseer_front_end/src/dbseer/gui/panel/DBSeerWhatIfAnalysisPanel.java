@@ -55,9 +55,9 @@ public class DBSeerWhatIfAnalysisPanel extends JPanel implements ActionListener
 
 	private DBSeerPerformancePredictionPanel predictionPanel;
 
-	public static String[] predictionTargets = {"latency", "disk I/O (read/write)", "CPU usage", "disk flush rate"};
+	public static String[] predictionTargets = {"latency", "disk I/O (read/write)", "CPU usage"}; // "disk flush rate"};
 	public static String[] actualPredictions = {"WhatIfAnalysisLatency",
-			"WhatIfAnalysisIO", "WhatIfAnalysisCPU", "WhatIfAnalysisFlushRate"};
+			"WhatIfAnalysisIO", "WhatIfAnalysisCPU"}; //, "WhatIfAnalysisFlushRate"};
 	private static String[] mixtureOptions = {"the same mixture of different transaction types as",
 			"a different mixture of transactions than"};
 	private static String[] ratioOptions = {"No", "0.25x", "0.5x", "2x", "3x", "4x", "5x", "10x", "Only"};

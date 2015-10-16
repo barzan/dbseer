@@ -81,7 +81,7 @@ classdef Plotter < handle
 
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotAvgCpuUsage(this)
             mv = this.mv;
-            Xdata = {this.Xdata}
+            Xdata = {this.Xdata};
             % Ydata = {[mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq mv.measuredCPU mv.AvgCpuIdle]};
             Ydata = {[mv.AvgCpuUser mv.AvgCpuSys mv.AvgCpuWai mv.AvgCpuHiq mv.AvgCpuSiq mv.AvgCpuIdle]};
             Xlabel = this.Xlabel;
@@ -200,7 +200,7 @@ classdef Plotter < handle
             if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
                 Xdata = {this.Xdata};
                 Ydata = {[mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites mv.osAsynchronousIO mv.dbmsNumberOfPendingWrites mv.dbmsNumberOfPendingLogWrites mv.dbmsNumberOfPendingLogFsyncs]};
-                legends = {'DB No. Physical Log Writes','DB No. Data Writes','DB Double Writes Operations','DB No. Log Write Requests','DB Buffer Pool Writes','DB No. Fysnc Log Writes','osAsynchronousIO', 'dbmsNumberOfPendingWrites','dbmsNumberOfPendingLogWrites','dbmsNumberOfPendingLogFsyncs'}
+                legends = {'DB No. Physical Log Writes','DB No. Data Writes','DB Double Writes Operations','DB No. Log Write Requests','DB Buffer Pool Writes','DB No. Fysnc Log Writes','osAsynchronousIO', 'dbmsNumberOfPendingWrites','dbmsNumberOfPendingLogWrites','dbmsNumberOfPendingLogFsyncs'};
                 Xlabel = this.Xlabel;
                 Ylabel = 'Number of';
                 title = 'Write Requests (#)';
@@ -457,7 +457,9 @@ classdef Plotter < handle
             Xlabel = 'Average CPU';
             Ydata = {};
             legends = {};
-            temp = [mean(mv.cpu_usr,2) mv.clientTransLatency this.Xdata];
+            min_length = min([size(mv.cpu_usr, 1) size(mv.clientTransLatency,1) size(this.Xdata,1)]);
+            temp = [mean(mv.cpu_usr(1:min_length,:),2) mv.clientTransLatency(1:min_length,:) this.Xdata(1:min_length,:)];
+            % temp = [mean(mv.cpu_usr,2) mv.clientTransLatency this.Xdata];
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -480,7 +482,9 @@ classdef Plotter < handle
             legends = {};
 			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],7);
 			latencies(isnan(latencies)) = 0;
-            temp = [mean(mv.cpu_usr,2) latencies this.Xdata];
+            min_length = min([size(mv.cpu_usr, 1) size(latencies,1) size(this.Xdata,1)]);
+            temp = [mean(mv.cpu_usr(1:min_length,:),2) latencies(1:min_length,:) this.Xdata(1:min_length,:)];
+            temp(isnan(temp)) = 0;
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -503,7 +507,9 @@ classdef Plotter < handle
             legends = {};
 			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],3);
 			latencies(isnan(latencies)) = 0;
-            temp = [mean(mv.cpu_usr,2) latencies this.Xdata];
+            min_length = min([size(mv.cpu_usr, 1) size(latencies,1) size(this.Xdata,1)]);
+            temp = [mean(mv.cpu_usr(1:min_length,:),2) latencies(1:min_length,:) this.Xdata(1:min_length,:)];
+            % temp = [mean(mv.cpu_usr,2) latencies this.Xdata];
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -531,7 +537,7 @@ classdef Plotter < handle
                 Xdata = {this.Xdata};
                 Xlabel = this.Xlabel;
                 Ydata = {normMatrix(temp)};
-                Ylabel = '?';
+                Ylabel = 'Normalized';
                 legends = {'InnodbBufferPoolReadAheadRnd', 'InnodbBufferPoolReadAheadSeq', 'InnodbBufferPoolReadRequests', 'InnodbBufferPoolReads','InnodbBufferPoolWaitFree'};
                 title = 'Working Set Analysis';
 				timestamp = this.Xdata;
@@ -545,7 +551,7 @@ classdef Plotter < handle
                 Xdata = {this.Xdata};
                 Xlabel = this.Xlabel;
                 Ydata = {normMatrix(temp)};
-                Ylabel = '?';
+                Ylabel = 'Normalized';
                 legends = {'Handler_read_first', 'Handler_read_key', 'Handler_read_next', 'Handler_read_prev', 'Handler_read_rnd', 'Handler_read_rnd_next'};
                 title = 'Working Set Analysis';
 				timestamp = this.Xdata;
@@ -554,7 +560,8 @@ classdef Plotter < handle
 
         function [title legends Xdata Ydata Xlabel Ylabel timestamp] = plotLatencyPerTPS(this)
             mv = this.mv;
-            temp = [mv.clientTotalSubmittedTrans mv.clientTransLatency this.Xdata];
+            min_length = min([size(mv.clientTotalSubmittedTrans, 1) size(mv.clientTransLatency,1) size(this.Xdata,1)]);
+            temp = [mv.clientTotalSubmittedTrans(1:min_length,:) mv.clientTransLatency(1:min_length,:) this.Xdata(1:min_length,:)];
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -575,7 +582,8 @@ classdef Plotter < handle
             mv = this.mv;
 			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],7);
 			latencies(isnan(latencies)) = 0;
-            temp = [mv.clientTotalSubmittedTrans latencies this.Xdata];
+            min_length = min([size(mv.clientTotalSubmittedTrans, 1) size(latencies,1) size(this.Xdata,1)]);
+            temp = [mv.clientTotalSubmittedTrans(1:min_length,:) latencies(1:min_length,:) this.Xdata(1:min_length,:)];
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -596,7 +604,8 @@ classdef Plotter < handle
             mv = this.mv;
 			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],3);
 			latencies(isnan(latencies)) = 0;
-            temp = [mv.clientTotalSubmittedTrans latencies this.Xdata];
+            min_length = min([size(mv.clientTotalSubmittedTrans, 1) size(latencies,1) size(this.Xdata,1)]);
+            temp = [mv.clientTotalSubmittedTrans(1:min_length,:) latencies(1:min_length,:) this.Xdata(1:min_length,:)];
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -617,7 +626,8 @@ classdef Plotter < handle
             mv = this.mv;
             CurrentRowLockTime=mv.dbmsCurrentLockWaits;
 
-            temp = [CurrentRowLockTime mv.clientTransLatency this.Xdata];
+            min_length = min([size(CurrentRowLockTime, 1) size(mv.clientTransLatency,1) size(this.Xdata,1)]);
+            temp = [CurrentRowLockTime(1:min_length,:) mv.clientTransLatency(1:min_length,:) this.Xdata(1:min_length,:)];
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -638,7 +648,11 @@ classdef Plotter < handle
 
 			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],7);
 			latencies(isnan(latencies)) = 0;
-            temp = [CurrentRowLockTime latencies this.Xdata];
+
+            min_length = min([size(CurrentRowLockTime, 1) size(latencies,1) size(this.Xdata,1)]);
+            temp = [CurrentRowLockTime(1:min_length,:) latencies(1:min_length,:) this.Xdata(1:min_length,:)];
+
+            % temp = [CurrentRowLockTime latencies this.Xdata];
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -659,7 +673,10 @@ classdef Plotter < handle
 
 			latencies = mv.prclat.latenciesPCtile(:,[2:mv.numOfTransType+1],3);
 			latencies(isnan(latencies)) = 0;
-            temp = [CurrentRowLockTime latencies this.Xdata];
+
+            min_length = min([size(CurrentRowLockTime, 1) size(latencies,1) size(this.Xdata,1)]);
+            temp = [CurrentRowLockTime(1:min_length,:) latencies(1:min_length,:) this.Xdata(1:min_length,:)];
+            
             temp = sortrows(temp,1);
 			timestamp = temp(:, end);
 			temp = temp(:,1:end-1);
@@ -730,6 +747,5 @@ classdef Plotter < handle
             title = 'DBMS Transactions';
 			timestamp = this.Xdata;
         end
-
     end % end methods
 end

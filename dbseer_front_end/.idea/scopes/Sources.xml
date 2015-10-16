@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Sources" pattern="src:dbseer.comp..*||src:dbseer.comp.data..*||src:dbseer.gui..*||src:dbseer.gui.actions..*||src:dbseer.gui.chart..*||src:dbseer.gui.dialog..*||src:dbseer.gui.events..*||src:dbseer.gui.frame..*||src:dbseer.gui.model..*||src:dbseer.gui.panel..*||src:dbseer.gui.panel.prediction..*||src:dbseer.gui.user..*||src:dbseer.gui.xml..*||src:dbseer.middleware..*||src:dbseer.stat..*" />
+</component>

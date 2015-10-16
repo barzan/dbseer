@@ -27,6 +27,7 @@ import java.util.Set;
 public class Statement
 {
 	private int id;
+	private int txId;
 	private long startTime;
 	private long endTime;
 	private long latency;
@@ -36,6 +37,7 @@ public class Statement
 	private long fileOffset;
 
 	private long queryOffset;
+	private Transaction transaction = null;
 
 	public Statement()
 	{
@@ -142,4 +144,24 @@ public class Statement
 		this.queryOffset = queryOffset;
 	}
 
+	public int getTxId()
+	{
+		return txId;
+	}
+
+	public void setTxId(int txId)
+	{
+		this.txId = txId;
+	}
+
+	public Transaction getTransaction()
+	{
+		return transaction;
+	}
+
+	public void setTransaction(Transaction transaction)
+	{
+		this.transaction = transaction;
+	}
 }
+

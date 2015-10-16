@@ -109,9 +109,9 @@ classdef PredictionConfig < handle
                 this.datasetList{i}.loadStatistics;
                 conf = this.datasetList{i}.getStruct;
                 if ~isempty(this.groupingStrategy)
-                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, this.groupingStrategy);
+                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, this.groupingStrategy, conf.tranTypes);
                 else
-                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor);
+                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, [], conf.tranTypes);
                 end
     
                 if i==1
@@ -128,7 +128,8 @@ classdef PredictionConfig < handle
                     this.mvUngrouped = merge_structs(this.mvUngrouped, mv_ungrouped_i);
                 end
     
-                tps = sum(this.mv.clientIndividualSubmittedTrans(:,this.transactionType), 2);
+                % tps = sum(this.mv.clientIndividualSubmittedTrans(:,this.transactionType), 2);
+                tps = sum(this.mv.clientIndividualSubmittedTrans, 2);
                 this.configSummary = [this.configSummary num2str(min(tps)) '-' num2str(max(tps))];
                 if i < howManyDesc
                     this.configSummary = [this.configSummary ',' ];
@@ -137,11 +138,12 @@ classdef PredictionConfig < handle
         end
         
         function initialize(this)
-            this.transactionType = this.transactionType;
             this.mergeDataset;
             mv = this.mv;
+            this.transactionType = [1:size(mv.clientIndividualSubmittedTrans,2)];
             
-            this.transactionCount = mv.clientIndividualSubmittedTrans(:,this.transactionType);
+            % this.transactionCount = mv.clientIndividualSubmittedTrans(:,this.transactionType);
+            this.transactionCount = mv.clientIndividualSubmittedTrans;
             this.averageCpuUsage = mean(mv.cpu_usr, 2);
             this.diskWrite = mv.osNumberOfSectorWrites;
             if isfield(mv, 'dbmsLockWaitTime')
@@ -151,7 +153,8 @@ classdef PredictionConfig < handle
                 this.lockWaitTime = [];
                 this.currentLockWait = [];
             end
-            this.transactionLatency = mv.clientTransLatency(:,this.transactionType);
+            % this.transactionLatency = mv.clientTransLatency(:,this.transactionType);
+            this.transactionLatency = mv.clientTransLatency;
 			this.transactionLatencyPercentile = mv.prclat;
             this.TPS = sum(this.transactionCount,2);
             if isfield(mv, 'dbmsChangedRows')
@@ -177,7 +180,8 @@ classdef PredictionConfig < handle
             %% Do it again for ungrouped.
             mvUngrouped = this.mvUngrouped;
             
-            this.transactionCountUngrouped = mvUngrouped.clientIndividualSubmittedTrans(:,this.transactionType);
+            % this.transactionCountUngrouped = mvUngrouped.clientIndividualSubmittedTrans(:,this.transactionType);
+            this.transactionCountUngrouped = mvUngrouped.clientIndividualSubmittedTrans;
             this.averageCpuUsageUngrouped = mean(mvUngrouped.cpu_usr, 2);
             this.diskWriteUngrouped = mvUngrouped.osNumberOfSectorWrites;
             if isfield(mvUngrouped, 'dbmsLockWaitTime')
@@ -187,7 +191,8 @@ classdef PredictionConfig < handle
                 this.lockWaitTimeUngrouped = [];
                 this.currentLockWaitUngrouped = [];
             end
-            this.transactionLatencyUngrouped = mvUngrouped.clientTransLatency(:,this.transactionType);
+            % this.transactionLatencyUngrouped = mvUngrouped.clientTransLatency(:,this.transactionType);
+            this.transactionLatencyUngrouped = mvUngrouped.clientTransLatency;
 			this.transactionLatencyPercentileUngrouped = mvUngrouped.prclat;
             this.TPSUngrouped = sum(this.transactionCount,2);
             if isfield(mvUngrouped, 'dbmsChangedRows')

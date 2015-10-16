@@ -132,6 +132,20 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 						JOptionPane.WARNING_MESSAGE);
 				return;
 			}
+
+			if (trainConfig.isLive() && !DBSeerGUI.isLiveDataReady)
+			{
+				JOptionPane.showMessageDialog(null, "It should be monitoring to perform predictions with live config.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
+			if (trainConfig.getDataset(0).getTransactionTypeNames().size() == 0)
+			{
+				JOptionPane.showMessageDialog(null, "The dataset needs to have at least one transaction type enabled.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return;
+			}
 			if (tabbedPane.getSelectedIndex() == DBSeerConstants.ANALYSIS_THROTTLING)
 			{
 				if (throttlingAnalysisPanel.getTargetLatency() == 0)

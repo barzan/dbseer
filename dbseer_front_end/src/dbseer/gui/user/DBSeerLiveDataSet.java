@@ -14,44 +14,24 @@
  * limitations under the License.
  */
 
-package dbseer.comp.data;
-
-import java.util.ArrayList;
-import java.util.List;
+package dbseer.gui.user;
 
 /**
- * Created by dyoon on 2014. 7. 6..
+ * Created by dyoon on 10/1/15.
  */
-public class Cluster
+public class DBSeerLiveDataSet extends DBSeerDataSet
 {
-	private int id;
-	private List<Transaction> transactions;
-
-	public Cluster()
+	public DBSeerLiveDataSet()
 	{
-		id = -1;
-		transactions = new ArrayList<Transaction>();
+		super();
+		tableModel = new DBSeerDataSetTableModel(null, new String[]{"Name", "Value"}, false);
 	}
 
-	public void addTransaction(Transaction transaction)
+	@Override
+	protected Object readResolve()
 	{
-		transactions.add(transaction);
-		transaction.setClassification(Transaction.CLASSIFIED);
-		transaction.setCluster(this);
-	}
-
-	public List<Transaction> getTransactions()
-	{
-		return transactions;
-	}
-
-	public int getId()
-	{
-		return id;
-	}
-
-	public void setId(int id)
-	{
-		this.id = id;
+		Object obj = super.readResolve();
+		tableModel = new DBSeerDataSetTableModel(null, new String[]{"Name", "Value"}, false);
+		return obj;
 	}
 }

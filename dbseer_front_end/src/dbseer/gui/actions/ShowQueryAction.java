@@ -17,6 +17,7 @@
 package dbseer.gui.actions;
 
 import dbseer.gui.frame.DBSeerShowQueryFrame;
+import dbseer.gui.frame.DBSeerShowTransactionExampleFrame;
 import dbseer.gui.user.DBSeerDataSet;
 
 import javax.swing.*;
@@ -77,16 +78,28 @@ public class ShowQueryAction extends AbstractAction
 			@Override
 			public void run()
 			{
-				DBSeerShowQueryFrame queryFrame = new DBSeerShowQueryFrame(dataset, series, category, timestamp, showAll);
-				if (queryFrame.isQueryAvailable())
+				if (dataset.getLive())
 				{
-					queryFrame.pack();
-					queryFrame.setVisible(true);
+					if (category < 0)
+					{
+						DBSeerShowTransactionExampleFrame sampleFrame = new DBSeerShowTransactionExampleFrame(series);
+						sampleFrame.pack();
+						sampleFrame.setVisible(true);
+					}
 				}
 				else
 				{
-					JOptionPane.showMessageDialog(null, "Queries for the highlighted point are not available.", "Warning",
-							JOptionPane.WARNING_MESSAGE);
+					DBSeerShowQueryFrame queryFrame = new DBSeerShowQueryFrame(dataset, series, category, timestamp, showAll);
+					if (queryFrame.isQueryAvailable())
+					{
+						queryFrame.pack();
+						queryFrame.setVisible(true);
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(null, "Queries for the highlighted point are not available.", "Warning",
+								JOptionPane.WARNING_MESSAGE);
+					}
 				}
 			}
 		});

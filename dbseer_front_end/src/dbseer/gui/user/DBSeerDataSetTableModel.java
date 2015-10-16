@@ -25,11 +25,13 @@ import javax.swing.table.DefaultTableModel;
  */
 public class DBSeerDataSetTableModel extends DefaultTableModel
 {
-	private boolean useEntireDataSet = true;
+	protected boolean useEntireDataSet = true;
+	protected boolean editable = true;
 
-	public DBSeerDataSetTableModel(Object obj, String[] strings)
+	public DBSeerDataSetTableModel(Object obj, String[] strings, boolean editable)
 	{
 		super((Object[][]) obj, strings);
+		this.editable = editable;
 	}
 
 	public void setUseEntireDataSet(boolean useEntireDataSet)
@@ -40,6 +42,11 @@ public class DBSeerDataSetTableModel extends DefaultTableModel
 	@Override
 	public boolean isCellEditable(int row, int col)
 	{
+		if (!editable)
+		{
+			return false;
+		}
+
 		if ( col != 0 )
 		{
 			if (useEntireDataSet)

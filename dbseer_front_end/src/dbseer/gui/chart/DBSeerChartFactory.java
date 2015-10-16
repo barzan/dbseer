@@ -62,6 +62,169 @@ public class DBSeerChartFactory
 
 	public static double[] timestamp;
 
+	public static XYSeriesCollection getXYSeriesCollection(String chartName, DBSeerDataSet dataset)
+	{
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		runner.eval("[title legends Xdata Ydata Xlabel Ylabel timestamp] = plotter.plot" + chartName + ";");
+
+		String title = runner.getVariableString("title");
+		Object[] legends = (Object[])runner.getVariableCell("legends");
+		Object[] xCellArray = (Object[])runner.getVariableCell("Xdata");
+		Object[] yCellArray = (Object[])runner.getVariableCell("Ydata");
+		String xLabel = runner.getVariableString("Xlabel");
+		String yLabel = runner.getVariableString("Ylabel");
+
+		timestamp = runner.getVariableDouble("timestamp");
+
+		XYSeriesCollection XYdataSet = new XYSeriesCollection();
+
+		int numLegends = legends.length;
+		int numXCellArray = xCellArray.length;
+		int numYCellArray = yCellArray.length;
+		int dataCount = 0;
+
+		if (numXCellArray != numYCellArray)
+		{
+			JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
+					"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
+			System.out.println(numXCellArray + " : " + numYCellArray);
+			return null;
+		}
+
+		java.util.List<String> transactionNames = dataset.getTransactionTypeNames();
+
+		for (int i = 0; i < numLegends; ++i)
+		{
+			String legend = (String)legends[i];
+			for (int j = 0; j < transactionNames.size(); ++j)
+			{
+				if (legend.contains("Type " + (j+1)))
+				{
+					legends[i] = legend.replace("Type " + (j+1), transactionNames.get(j));
+					break;
+				}
+			}
+		}
+
+		for (int i = 0; i < numYCellArray; ++i)
+		{
+			double[] xArray = (double[])xCellArray[i];
+			int row = 0, col = 0;
+			int xLength = 0;
+
+			runner.eval("yArraySize = size(Ydata{" + (i+1) + "});");
+			runner.eval("yArray = Ydata{" + (i+1) + "};");
+			double[] yArraySize = runner.getVariableDouble("yArraySize");
+			double[] yArray = runner.getVariableDouble("yArray");
+
+			xLength = xArray.length;
+			row = (int)yArraySize[0];
+			col = (int)yArraySize[1];
+
+			for (int c = 0; c < col; ++c)
+			{
+				XYSeries series;
+				String legend = "";
+				int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
+				if (legendIdx >= 0)
+				{
+					legend = (String)legends[legendIdx];
+				}
+				if (numLegends == 0)
+				{
+					series = new XYSeries("Data " + dataCount+1);
+				}
+				else if (dataCount >= numLegends)
+				{
+					series = new XYSeries(legend + (dataCount+1));
+				}
+				else
+				{
+					series = new XYSeries(legend);
+				}
+
+				for (int r = 0; r < row; ++r)
+				{
+					int xRow = (r >= xLength) ? xLength - 1 : r;
+					double yValue = yArray[r+c*row];
+					// remove negatives
+					if (yValue < 0)
+					{
+						yValue = 0;
+					}
+					series.add(xArray[xRow], yValue);
+				}
+				XYdataSet.addSeries(series);
+				++dataCount;
+			}
+		}
+
+		return XYdataSet;
+	}
+
+	public static DefaultPieDataset getPieDataset(String chartName, DBSeerDataSet dataset)
+	{
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		runner.eval("[title legends Xdata Ydata Xlabel Ylabel timestamp] = plotter.plot" + chartName + ";");
+
+		String title = runner.getVariableString("title");
+		Object[] legends = (Object[])runner.getVariableCell("legends");
+		Object[] xCellArray = (Object[])runner.getVariableCell("Xdata");
+		Object[] yCellArray = (Object[])runner.getVariableCell("Ydata");
+		String xLabel = runner.getVariableString("Xlabel");
+		String yLabel = runner.getVariableString("Ylabel");
+		timestamp = runner.getVariableDouble("timestamp");
+
+		DefaultPieDataset pieDataSet = new DefaultPieDataset();
+
+		int numLegends = legends.length;
+		int numXCellArray = xCellArray.length;
+		int numYCellArray = yCellArray.length;
+		int dataCount = 0;
+
+		if (numXCellArray != numYCellArray)
+		{
+			JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
+					"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
+
+		final java.util.List<String> transactionTypeNames = dataset.getTransactionTypeNames();
+
+		for (int i = 0; i < numYCellArray; ++i)
+		{
+			double[] xArray = (double[])xCellArray[i];
+			runner.eval("yArraySize = size(Ydata{" + (i+1) + "});");
+			runner.eval("yArray = Ydata{" + (i+1) + "};");
+			double[] yArraySize = runner.getVariableDouble("yArraySize");
+			double[] yArray = runner.getVariableDouble("yArray");
+
+			int xLength = xArray.length;
+			int row = (int)yArraySize[0];
+			int col = (int)yArraySize[1];
+
+			for (int c = 0; c < col; ++c)
+			{
+				if (c < transactionTypeNames.size())
+				{
+					String name = transactionTypeNames.get(c);
+					if (!name.isEmpty())
+					{
+						pieDataSet.setValue(name, yArray[c]);
+					}
+					else
+					{
+						pieDataSet.setValue("Transaction Type " + (c+1), yArray[c]);
+					}
+				}
+			}
+		}
+
+		return pieDataSet;
+	}
+
 	public static JFreeChart createXYLineChart(String chartName, DBSeerDataSet dataset)
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
@@ -125,8 +288,12 @@ public class DBSeerChartFactory
 			for (int c = 0; c < col; ++c)
 			{
 				XYSeries series;
+				String legend = "";
 				int legendIdx = (dataCount >= numLegends) ? numLegends - 1 : dataCount;
-				String legend = (String)legends[legendIdx];
+				if (legendIdx >= 0)
+				{
+					legend = (String)legends[legendIdx];
+				}
 				if (numLegends == 0)
 				{
 					series = new XYSeries("Data " + dataCount+1);
@@ -177,6 +344,8 @@ public class DBSeerChartFactory
 			chart.getXYPlot().setRenderer(new DBSeerXYLineAndShapeRenderer());
 
 		}
+
+		chart.getXYPlot().getDomainAxis().setUpperMargin(0);
 
 		return chart;
 	}
@@ -535,6 +704,60 @@ public class DBSeerChartFactory
 		}
 
 		return errorTable;
+	}
+
+	public static XYSeriesCollection getCustomXYSeriesCollection(String xAxisName, String yAxisName)
+	{
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		runner.eval("[Xdata Ydata] = plotter.plotCustom('" +
+				DBSeerPlotControlPanel.axisMap.get(xAxisName) +
+				"', '" +
+				DBSeerPlotControlPanel.axisMap.get(yAxisName) + "');");
+
+		Object[] xCellArray = (Object[])runner.getVariableCell("Xdata");
+		Object[] yCellArray = (Object[])runner.getVariableCell("Ydata");
+
+		XYSeriesCollection dataSet = new XYSeriesCollection();
+
+		int numXCellArray = xCellArray.length;
+		int numYCellArray = yCellArray.length;
+
+		if (numXCellArray != numYCellArray)
+		{
+			JOptionPane.showMessageDialog(null, "The number of X dataset and Y dataset does not match.",
+					"The number of X dataset and Y dataset does not match.", JOptionPane.ERROR_MESSAGE);
+			System.out.println(numXCellArray + " : " + numYCellArray);
+			return null;
+		}
+
+		for (int i = 0; i < numYCellArray; ++i)
+		{
+			double[] xArray = (double[])xCellArray[i];
+
+			runner.eval("yArraySize = size(Ydata{" + (i+1) + "});");
+			runner.eval("yArray = Ydata{" + (i+1) + "};");
+			double[] yArraySize = runner.getVariableDouble("yArraySize");
+			double[] yArray = runner.getVariableDouble("yArray");
+
+			int xLength = xArray.length;
+			int row = (int)yArraySize[0];
+			int col = (int)yArraySize[1];
+
+			for (int c = 0; c < col; ++c)
+			{
+				XYSeries series = new XYSeries(yAxisName);
+
+				for (int r = 0; r < row; ++r)
+				{
+					int xRow = (r >= xLength) ? xLength - 1 : r;
+					series.add(xArray[xRow], yArray[r+c*row]);
+				}
+				dataSet.addSeries(series);
+			}
+		}
+
+		return dataSet;
 	}
 
 	public static JFreeChart createCustomXYLineChart(String xAxisName, String yAxisName)

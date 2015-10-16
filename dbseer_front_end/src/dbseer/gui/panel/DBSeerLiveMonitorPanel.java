@@ -20,12 +20,14 @@ import dbseer.comp.data.LiveMonitor;
 import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.frame.DBSeerShowTransactionExampleFrame;
+import dbseer.gui.user.DBSeerDataSet;
 import net.miginfocom.swing.MigLayout;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.data.time.Millisecond;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
@@ -38,6 +40,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by dyoon on 5/17/15.
@@ -58,6 +61,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 	private ArrayList<JButton> transactionDeleteButtons;
 	private ArrayList<JButton> transactionRenameButtons;
 	private ArrayList<JButton> transactionViewSampleButtons;
+	private ArrayList<JButton> transactionEnableDisableButtons;
 
 	private TimeSeriesCollection throughputCollection;
 	private TimeSeriesCollection latencyCollection;
@@ -101,6 +105,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 		transactionDeleteButtons = new ArrayList<JButton>();
 		transactionRenameButtons = new ArrayList<JButton>();
 		transactionViewSampleButtons = new ArrayList<JButton>();
+		transactionEnableDisableButtons = new ArrayList<JButton>();
 
 		initialize();
 	}
@@ -120,7 +125,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 
 		transactionTypesScrollPane.setViewportView(transactionTypesPanel);
 		transactionTypesScrollPane.setBorder(BorderFactory.createTitledBorder("Transaction types"));
-		transactionTypesScrollPane.setPreferredSize(new Dimension(400,300));
+		transactionTypesScrollPane.setPreferredSize(new Dimension(360,300));
 
 		throughputCollection = new TimeSeriesCollection();
 		throughputChartPanel = new ChartPanel(createThroughputChart(throughputCollection));
@@ -165,6 +170,11 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 				transactionTypesPanel.remove(button);
 			}
 			transactionViewSampleButtons.clear();
+			for (JButton button : transactionEnableDisableButtons)
+			{
+				transactionTypesPanel.remove(button);
+			}
+			transactionEnableDisableButtons.clear();
 			transactionNames.clear();
 			numTransactionType = 0;
 
@@ -185,7 +195,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 		model.setValueAt(String.format("%.1f", tps), 1, 1);
 	}
 
-	public synchronized void setCurrentTPS(int index, double tps)
+	public synchronized void setCurrentTPS(long time, int index, double tps)
 	{
 		synchronized (LiveMonitor.LOCK)
 		{
@@ -204,17 +214,29 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 				JLabel newLabel = new JLabel(newName);
 				JButton renameButton = new JButton("Rename");
 				JButton viewSampleButton = new JButton("View Examples");
+//				JButton enableDisableButton;
+//				if (DBSeerGUI.liveDataset.isTransactionEnabled(index))
+//				{
+//					enableDisableButton = new JButton("Disable");
+//				}
+//				else
+//				{
+//					enableDisableButton = new JButton("Enable");
+//				}
 
 				renameButton.addActionListener(this);
 				viewSampleButton.addActionListener(this);
+//				enableDisableButton.addActionListener(this);
 
 				transactionTypesPanel.add(newLabel);
 				transactionTypesPanel.add(renameButton);
 				transactionTypesPanel.add(viewSampleButton);
+//				transactionTypesPanel.add(enableDisableButton);
 
 				transactionLabels.add(newLabel);
 				transactionRenameButtons.add(renameButton);
 				transactionViewSampleButtons.add(viewSampleButton);
+//				transactionEnableDisableButtons.add(enableDisableButton);
 
 //			TimeSeriesCollection newThroughputCollection = new TimeSeriesCollection(new TimeSeries(newName, Millisecond.class));
 //			TimeSeriesCollection collection = (TimeSeriesCollection) throughputChartPanel.getChart().getXYPlot().getDataset();
@@ -233,12 +255,13 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 			if (index < throughputCollection.getSeriesCount())
 			{
 				TimeSeries series = throughputCollection.getSeries(index);
-				series.add(new Millisecond(), tps);
+//				series.add(new Millisecond(), tps);
+				series.addOrUpdate(new Millisecond(new Date(time * 1000)), tps);
 			}
 		}
 	}
 
-	public synchronized void setCurrentAverageLatency(int index, double latency)
+	public synchronized void setCurrentAverageLatency(long time, int index, double latency)
 	{
 		synchronized (LiveMonitor.LOCK)
 		{
@@ -257,17 +280,29 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 				JLabel newLabel = new JLabel(newName);
 				JButton renameButton = new JButton("Rename");
 				JButton viewSampleButton = new JButton("View Examples");
+//				JButton enableDisableButton;
+//				if (DBSeerGUI.liveDataset.isTransactionEnabled(index))
+//				{
+//					enableDisableButton = new JButton("Disable");
+//				}
+//				else
+//				{
+//					enableDisableButton = new JButton("Enable");
+//				}
 
 				renameButton.addActionListener(this);
 				viewSampleButton.addActionListener(this);
+//				enableDisableButton.addActionListener(this);
 
 				transactionTypesPanel.add(newLabel);
 				transactionTypesPanel.add(renameButton);
 				transactionTypesPanel.add(viewSampleButton);
+//				transactionTypesPanel.add(enableDisableButton);
 
 				transactionLabels.add(newLabel);
 				transactionRenameButtons.add(renameButton);
 				transactionViewSampleButtons.add(viewSampleButton);
+//				transactionEnableDisableButtons.add(enableDisableButton);
 
 				throughputCollection.addSeries(new TimeSeries(newName, Millisecond.class));
 				latencyCollection.addSeries(new TimeSeries(newName, Millisecond.class));
@@ -281,8 +316,32 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 			if (index < latencyCollection.getSeriesCount())
 			{
 				TimeSeries series = latencyCollection.getSeries(index);
-				series.add(new Millisecond(), latency);
+//				series.add(new Millisecond(), latency);
+				series.addOrUpdate(new Millisecond(new Date(time * 1000)), latency);
 			}
+		}
+	}
+
+	public synchronized void updateTransactionNames()
+	{
+		for (int i = 0; i < transactionRenameButtons.size(); ++i)
+		{
+			String newName = DBSeerGUI.liveDataset.getAllTransactionTypeNames().get(i);
+
+			newName = newName.trim();
+			transactionLabels.get(i).setText(newName);
+			transactionNames.set(i, newName);
+
+			DefaultTableModel model = (DefaultTableModel) monitorTable.getModel();
+			model.setValueAt(String.format("Current TPS of '%s' transactions", newName),
+					2+(i*ROW_PER_TX_TYPE), 0);
+			model.setValueAt(String.format("Current average latency of '%s' transactions", newName),
+					2 + (i * ROW_PER_TX_TYPE) + 1, 0);
+
+			throughputCollection.getSeries(i).setKey(newName);
+			latencyCollection.getSeries(i).setKey(newName);
+
+			return;
 		}
 	}
 
@@ -316,6 +375,11 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 					throughputCollection.getSeries(i).setKey(newName);
 					latencyCollection.getSeries(i).setKey(newName);
 
+					if (DBSeerGUI.isLiveMonitoring)
+					{
+						DBSeerGUI.liveDataset.setTransactionTypeName(i, newName);
+					}
+
 					return;
 				}
 			}
@@ -334,6 +398,40 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 						DBSeerShowTransactionExampleFrame sampleFrame = new DBSeerShowTransactionExampleFrame(type);
 						sampleFrame.pack();
 						sampleFrame.setVisible(true);
+					}
+				});
+			}
+		}
+
+		for (int i = 0; i < transactionEnableDisableButtons.size(); ++i)
+		{
+			if (event.getSource() == transactionEnableDisableButtons.get(i))
+			{
+				final XYItemRenderer throughputRenderer = throughputChartPanel.getChart().getXYPlot().getRenderer();
+				final XYItemRenderer latencyRenderer = latencyChartPanel.getChart().getXYPlot().getRenderer();
+				final int type = i;
+				final JButton button = transactionEnableDisableButtons.get(i);
+				final DBSeerDataSet dataset = DBSeerGUI.liveDataset;
+
+				SwingUtilities.invokeLater(new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						if (button.getText() == "Disable")
+						{
+							dataset.disableTransaction(type);
+							throughputRenderer.setSeriesVisible(type, false);
+							latencyRenderer.setSeriesVisible(type, false);
+							button.setText("Enable");
+						}
+						else if (button.getText() == "Enable")
+						{
+							dataset.enableTransaction(type);
+							throughputRenderer.setSeriesVisible(type, true);
+							latencyRenderer.setSeriesVisible(type, true);
+							button.setText("Disable");
+						}
 					}
 				});
 			}

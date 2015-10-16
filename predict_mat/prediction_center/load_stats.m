@@ -13,7 +13,7 @@
 % limitations under the License.
 
 function [Header Monitor LatencyAvg LatencyPercentile Counts DiffedMonitor] = ...
-  load_stats(header_path, monitor_path, trans_count_path, avg_latency_path, percentile_latency_path, statement_stat_path, skipFromBegining, skipFromEnd, flag, page_info_path)
+  load_stats(header_path, monitor_path, trans_count_path, avg_latency_path, percentile_latency_path, statement_stat_path, skipFromBegining, skipFromEnd, flag, tranTypes)
 
 Monitor = csvread(monitor_path,2,0); % dyoon: 0 added as third argument for col.
 
@@ -51,14 +51,27 @@ Header = header;
 %StatementStat{end+1} = StatementCounts;
 
 DiffedMonitor = diff(Monitor(startIdx:endIdx,:));
-LatencyAvg = load(avg_latency_path);
-LatencyAvg = LatencyAvg(:,2:end); % getting rid of the rightmost column which is just some timestamps!
+% LatencyAvg = load(avg_latency_path);
+LatencyAvg = dlmread(avg_latency_path);
 %prclat = load(horzcat(inputDir,'/trans-',signature,'_prctile_latencies.mat'));
-Counts = load(trans_count_path);
+% Counts = load(trans_count_path);
+Counts = dlmread(trans_count_path);
+
+if isempty(percentile_latency_path)
+  [currentPath, name, ext] = fileparts(avg_latency_path);
+  LatencyPercentile = struct();
+  LatencyPercentile.latenciesPCtile = load_prctile_from_file(currentPath, LatencyAvg);
+else
+  LatencyPercentile = load(percentile_latency_path); 
+  LatencyPercentile.latenciesPCtile = LatencyPercentile.latenciesPCtile(startIdx:endIdx, :, :); 
+end
+
+LatencyAvg = LatencyAvg(:,2:end); % getting rid of the rightmost column which is just some timestamps!
 Counts = Counts(:,2:end); % getting rid of the rightmost column which is just some timestamps!
 
-LatencyPercentile = load(percentile_latency_path);
-LatencyPercentile.latenciesPCtile = LatencyPercentile.latenciesPCtile(startIdx:endIdx, :, :);
+LatencyAvg = LatencyAvg(:, tranTypes);
+Counts = Counts(:, tranTypes);
+LatencyPercentile.latenciesPCtile = LatencyPercentile.latenciesPCtile(:, [1 tranTypes+1], :);
 
 if nargin == 6
    Monitor = Monitor(startIdx:end,:);

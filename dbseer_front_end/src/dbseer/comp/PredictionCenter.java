@@ -22,8 +22,6 @@ import dbseer.gui.DBSeerGUI;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.stat.StatisticalPackageRunner;
-import matlabcontrol.MatlabInvocationException;
-import matlabcontrol.MatlabProxy;
 
 import javax.swing.*;
 import java.util.List;
@@ -119,7 +117,63 @@ public class PredictionCenter
 		}
 		try
 		{
-			runner.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader extra] = pc.performPrediction;");
+			// For Lock Prediction and MaxThroughputPrediciton, use julia
+			if (this.prediction == "LockPrediction")
+			{
+				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
+				cmd = cmd + "include(\"julia_init.jl\");";
+				cmd = cmd + "include(\"load_mat_data.jl\");";
+				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=lockPrediction(pc);";
+				cmd = cmd + "include(\"write_mat_lockP.jl\");";
+				runner.eval("pc.initialize");
+				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
+				Process p = Runtime.getRuntime().exec(cmd);
+				int exitVal = p.waitFor();
+				runner.eval("read_mat_lockP;");
+			}
+			else if (this.prediction == "MaxThroughputPrediction")
+			{
+				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
+				cmd = cmd + "include(\"julia_init.jl\");";
+				cmd = cmd + "include(\"load_mat_data.jl\");";
+				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=maxThroughputPrediction(pc);";
+				cmd = cmd + "include(\"write_mat_maxT.jl\");";
+				runner.eval("pc.initialize");
+				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
+				Process p = Runtime.getRuntime().exec(cmd);
+				int exitVal = p.waitFor();
+				runner.eval("read_mat_maxT;");
+			}
+			else if (this.prediction == "BottleneckAnalysisMaxThroughput")
+			{
+				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
+				cmd = cmd + "include(\"julia_init.jl\");";
+				cmd = cmd + "include(\"load_mat_data.jl\");";
+				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=bottleneckAnalysisMaxThroughput(pc);";
+				cmd = cmd + "include(\"write_mat_bottleneck_maxT.jl\");";
+				runner.eval("pc.initialize");
+				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
+				Process p = Runtime.getRuntime().exec(cmd);
+				int exitVal = p.waitFor();
+				runner.eval("read_mat_bottleneck_maxT;");
+			}
+			else if (this.prediction == "BottleneckAnalysisResource")
+			{
+				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
+				cmd = cmd + "include(\"julia_init.jl\");";
+				cmd = cmd + "include(\"load_mat_data.jl\");";
+				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=bottleneckAnalysisResource(pc);";
+				cmd = cmd + "include(\"write_mat_bottleneck_res.jl\");";
+				runner.eval("pc.initialize");
+				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
+				Process p = Runtime.getRuntime().exec(cmd);
+				int exitVal = p.waitFor();
+				runner.eval("read_mat_bottleneck_res;");
+			}
+			else
+			{
+				runner.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader extra] = pc.performPrediction;");
+			}
 		}
 		catch (Exception e)
 		{
@@ -138,12 +192,14 @@ public class PredictionCenter
 			runner.eval("rmpath " + dbseerPath + "/predict_mat;");
 			runner.eval("rmpath " + dbseerPath + "/predict_data;");
 			runner.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+			runner.eval("rmpath " + dbseerPath + "/predict_mat/julia;");
 
 			runner.eval("addpath " + dbseerPath + ";");
 			runner.eval("addpath " + dbseerPath + "/common_mat;");
 			runner.eval("addpath " + dbseerPath + "/predict_mat;");
 			runner.eval("addpath " + dbseerPath + "/predict_data;");
 			runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+			runner.eval("addpath " + dbseerPath + "/predict_mat/julia;");
 
 			runner.eval("pc = PredictionCenter;");
 			if (!trainConfig.initialize())

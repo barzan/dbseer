@@ -28,6 +28,7 @@ public class LiveMonitor
 	private static int MAX_TABLE = 200;
 
 	private int numTransactionTypes;
+	private long currentTimestamp;
 
 	private double globalTransactionCount;
 	private String[] transactionTypeNames;
@@ -40,6 +41,17 @@ public class LiveMonitor
 	public LiveMonitor()
 	{
 		numTransactionTypes = 0;
+		transactionTypeNames = new String[MAX_TABLE];
+		currentTPS = new double[MAX_TABLE];
+		currentAverageLatencies = new double[MAX_TABLE];
+		totalTransactionCounts = new double[MAX_TABLE];
+	}
+
+	public void reset()
+	{
+		currentTimestamp = 0;
+		numTransactionTypes = 0;
+		globalTransactionCount = 0;
 		transactionTypeNames = new String[MAX_TABLE];
 		currentTPS = new double[MAX_TABLE];
 		currentAverageLatencies = new double[MAX_TABLE];
@@ -109,5 +121,15 @@ public class LiveMonitor
 	public double getCurrentAverageLatency(int i)
 	{
 		return currentAverageLatencies[i];
+	}
+
+	public long getCurrentTimestamp()
+	{
+		return currentTimestamp;
+	}
+
+	public void setCurrentTimestamp(long currentTimestamp)
+	{
+		this.currentTimestamp = currentTimestamp;
 	}
 }

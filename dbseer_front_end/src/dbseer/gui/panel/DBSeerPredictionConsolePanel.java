@@ -447,6 +447,7 @@ public class DBSeerPredictionConsolePanel extends JPanel implements ActionListen
 		{
 			elapsedTimeLabel.setText("");
 			final DBSeerConfiguration trainConfig = (DBSeerConfiguration)trainConfigComboBox.getSelectedItem();
+			DBSeerDataSet dataset = trainConfig.getDataset();
 
 			if (trainConfig == null)
 			{
@@ -454,6 +455,14 @@ public class DBSeerPredictionConsolePanel extends JPanel implements ActionListen
 						JOptionPane.WARNING_MESSAGE);
 				return;
 			}
+
+			if (dataset.getTransactionTypeNames().size() == 0)
+			{
+				JOptionPane.showMessageDialog(null, "The dataset needs to have at least one transaction type enabled.", "Warning",
+						JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
 
 			if (setupPane.getSelectedIndex() == DBSeerConstants.TEST_MODE_DATASET &&
 					testDatasetPanel.getTestDataset() == null)

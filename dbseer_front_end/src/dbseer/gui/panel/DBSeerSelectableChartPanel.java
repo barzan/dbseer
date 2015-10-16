@@ -350,6 +350,7 @@ public class DBSeerSelectableChartPanel extends ChartPanel implements ChartMouse
 					PiePlot plot = (PiePlot)chart.getPlot();
 					String oldName = (String)oldDataset.getKey(idx);
 					names.set(idx, name);
+					dataset.setTransactionTypeName(idx, name);
 
 					for (int i = 0; i < oldDataset.getItemCount(); ++i)
 					{
@@ -368,8 +369,22 @@ public class DBSeerSelectableChartPanel extends ChartPanel implements ChartMouse
 							newDataset.setValue(key, number);
 						}
 					}
+
+					Paint[] tempPaint = new Paint[oldDataset.getItemCount()];
+					for (int i = 0; i < oldDataset.getItemCount(); ++i)
+					{
+						String key = (String)oldDataset.getKey(i);
+						tempPaint[i] = plot.getSectionPaint(key);
+					}
+
 					((DefaultPieDataset)oldDataset).clear();
 					plot.setDataset(newDataset);
+
+					for (int i = 0; i < newDataset.getItemCount(); ++i)
+					{
+						String key = (String)newDataset.getKey(i);
+						plot.setSectionPaint(key, tempPaint[i]);
+					}
 				}
 			}
 		}

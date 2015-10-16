@@ -63,6 +63,7 @@ public class DBSeerPathChoosePanel extends JPanel implements ActionListener
 				String rootPath = fileLoadDialog.getFile().getAbsolutePath();
 				pathToDBSeerLabel.setText("Current DBSeer Root Directory: " + rootPath);
 				DBSeerGUI.userSettings.setDBSeerRootPath(rootPath);
+				DBSeerGUI.liveDataset.updateLiveDataSet();
 			}
 		}
 	}

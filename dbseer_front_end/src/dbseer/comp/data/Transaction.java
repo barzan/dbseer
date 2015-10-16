@@ -16,6 +16,8 @@
 
 package dbseer.comp.data;
 
+import dbseer.comp.clustering.Cluster;
+import dbseer.comp.clustering.StreamClustering;
 import dbseer.gui.DBSeerConstants;
 
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ public class Transaction
 	private long endTime;
 	private long latency; // in milliseconds
 	private int port;
+	private int maxIdx;
 	private String user;
 	private List<Statement> statements;
 	private long[] numRowsRead;
@@ -55,6 +58,7 @@ public class Transaction
 
 	private long minStatementOffset;
 	private long maxStatementOffset;
+	private long lastStatementId;
 
 	private long minQueryOffset;
 	private long maxQueryOffset;
@@ -67,6 +71,7 @@ public class Transaction
 
 	public Transaction()
 	{
+		cluster = null;
 		classification = Transaction.UNCLASSIFIED;
 		statements = new ArrayList<Statement>();
 		visited = false;
@@ -77,6 +82,8 @@ public class Transaction
 
 		minStatementOffset = Long.MAX_VALUE;
 		maxStatementOffset = Long.MIN_VALUE;
+		lastStatementId = 0;
+		maxIdx = 0;
 	}
 
 	public void printAll()
@@ -118,6 +125,10 @@ public class Transaction
 		for (Statement s : statements)
 		{
 			String content = s.getContent();
+			if (content == null)
+			{
+				return null;
+			}
 			if (content.contains("commit") || content.contains("COMMIT") || content.contains("SET SESSION") ||
 					content.contains("rollback") || content.contains("ROLLBACK"))
 			{
@@ -275,6 +286,10 @@ public class Transaction
 
 	public void addSelect(int idx)
 	{
+		if (idx > maxIdx)
+		{
+			maxIdx = idx;
+		}
 		numSelect[idx]++;
 		tableAccessed.add(idx);
 		typeAccessed.add(DBSeerConstants.STATEMENT_READ);
@@ -282,6 +297,10 @@ public class Transaction
 
 	public void addInsert(int idx)
 	{
+		if (idx > maxIdx)
+		{
+			maxIdx = idx;
+		}
 		numInsert[idx]++;
 		tableAccessed.add(idx);
 		typeAccessed.add(DBSeerConstants.STATEMENT_INSERT);
@@ -289,6 +308,10 @@ public class Transaction
 
 	public void addUpdate(int idx)
 	{
+		if (idx > maxIdx)
+		{
+			maxIdx = idx;
+		}
 		numUpdate[idx]++;
 		tableAccessed.add(idx);
 		typeAccessed.add(DBSeerConstants.STATEMENT_UPDATE);
@@ -296,9 +319,28 @@ public class Transaction
 
 	public void addDelete(int idx)
 	{
+		if (idx > maxIdx)
+		{
+			maxIdx = idx;
+		}
 		numDelete[idx]++;
 		tableAccessed.add(idx);
 		typeAccessed.add(DBSeerConstants.STATEMENT_DELETE);
+	}
+
+	public double[] toDoubleArray()
+	{
+		int numTable = StreamClustering.getTableCount();
+		double[] val = new double[4 * numTable];
+
+		for (int i = 0; i < numTable; ++i)
+		{
+			val[i * 4] = numSelect[i];
+			val[i * 4 + 1] = numInsert[i];
+			val[i * 4 + 2] = numDelete[i];
+			val[i * 4 + 3] = numUpdate[i];
+		}
+		return val;
 	}
 
 	public long[] getNumRowsRead()
@@ -353,7 +395,7 @@ public class Transaction
 
 	public boolean isNoRowsReadWritten()
 	{
-		for (int i = 0; i < numRowsRead.length; ++i)
+		for (int i = 0; i <= maxIdx; ++i)
 		{
 //			if (numRowsRead[i] != 0 || numRowsInserted[i] != 0 ||
 //					numRowsUpdated[i] != 0 || numRowsDeleted[i] != 0)
@@ -387,15 +429,10 @@ public class Transaction
 		double scale = 1.0;
 		double distance = 0.0;
 
-		for (int i = 0; i < numSelect.length; ++i)
-		{
-//			distance += Math.pow(numRowsRead[i] - otherNumRowsRead[i], 2.0);
-//			distance += Math.pow(numRowsInserted[i] + numRowsUpdated[i] + numRowsDeleted[i] -
-//					otherNumRowsInserted[i] - otherNumRowsUpdated[i] - otherNumRowsDeleted[i], 2.0);
-//			distance += Math.pow(numRowsInserted[i] - otherNumRowsInserted[i], 2.0);
-//			distance += Math.pow(numRowsUpdated[i] - otherNumRowsUpdated[i], 2.0);
-//			distance += Math.pow(numRowsDeleted[i] - otherNumRowsDeleted[i], 2.0);
+		int maxIndex = (maxIdx > other.maxIdx) ? maxIdx : other.maxIdx;
 
+		for (int i = 0; i <= maxIndex; ++i)
+		{
 			if (numSelect[i] == 0 || otherNumSelect[i] == 0) scale = DIFF_SCALE;
 			else scale = 1.0;
 			distance += Math.pow(numSelect[i] - otherNumSelect[i], 2.0) * scale;
@@ -409,11 +446,15 @@ public class Transaction
 			else scale = 1.0;
 			distance += Math.pow(numDelete[i] - otherNumDelete[i], 2.0) * scale;
 
-//			if (tableAccessed.get(i).intValue() != otherTableAccessed.get(i).intValue() ||
-//					typeAccessed.get(i).intValue() != otherTypeAccessed.get(i).intValue())
-//			{
-//				++distance;
-//			}
+//			long numRead = numSelect[i];
+//			long numReadOther = otherNumSelect[i];
+//			long numWrite = numDelete[i] + numInsert[i] + numUpdate[i];
+//			long numWriteOther = otherNumDelete[i] + otherNumInsert[i] + otherNumUpdate[i];
+//			long readDist = numRead - numReadOther;
+//			long writeDist = numWrite - numWriteOther;
+//			distance += readDist * readDist;
+//			distance += writeDist * writeDist;
+
 		}
 		distance = Math.sqrt(distance);
 //		if (distance > 2.44 && distance < 2.45)
@@ -498,8 +539,13 @@ public class Transaction
 		return maxQueryOffset;
 	}
 
-	public void setMaxQueryOffset(long maxQueryOffset)
+	public long getLastStatementId()
 	{
-		this.maxQueryOffset = maxQueryOffset;
+		return lastStatementId;
+	}
+
+	public void setLastStatementId(long lastStatementId)
+	{
+		this.lastStatementId = lastStatementId;
 	}
 }

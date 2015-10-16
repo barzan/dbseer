@@ -16,6 +16,7 @@
 
 package dbseer.comp;
 
+import dbseer.comp.clustering.Cluster;
 import dbseer.comp.data.*;
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.DBSeerGUI;
@@ -25,7 +26,6 @@ import dbseer.gui.xml.XStreamHelper;
 import dbseer.stat.MatlabRunner;
 import dbseer.stat.OctaveRunner;
 import dbseer.stat.StatisticalPackageRunner;
-import matlabcontrol.MatlabProxy;
 
 import javax.swing.*;
 import java.io.*;
@@ -161,7 +161,7 @@ public class DataCenter
 
 	private void assignSingleCluster()
 	{
-		Cluster cluster = new Cluster();
+		Cluster cluster = new Cluster(0);
 		cluster.setId(0);
 
 		clusters.clear();

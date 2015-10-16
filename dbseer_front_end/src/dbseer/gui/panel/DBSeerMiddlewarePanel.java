@@ -23,6 +23,7 @@ import dbseer.gui.DBSeerGUI;
 import dbseer.gui.xml.XStreamHelper;
 import dbseer.middleware.MiddlewareSocket;
 import net.miginfocom.swing.MigLayout;
+import org.apache.commons.io.FileUtils;
 
 import javax.swing.*;
 import javax.swing.text.NumberFormatter;
@@ -169,7 +170,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 					}
 					if (socket.login(id, password))
 					{
-						if (socket.isMonitoring())
+						if (socket.isMonitoring(true))
 						{
 							DBSeerGUI.middlewareStatus.setText("Middleware Connected: " + socket.getIp() + ":" + socket.getPort() + " as " +
 									socket.getId() + " (Monitoring)");
@@ -196,7 +197,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 					}
 					else
 					{
-//						JOptionPane.showMessageDialog(null, socket.getErrorMessage(), "Middleware Login Error", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(null, socket.getErrorMessage(), "Middleware Login Error", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 				catch (Exception e)
@@ -247,13 +248,17 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 				startMonitoringButton.setEnabled(true);
 				stopMonitoringButton.setEnabled(false);
 
-				if (!socket.isMonitoring())
+				if (!socket.isMonitoring(false))
 				{
 					return;
 				}
 
+				final String datasetRootPath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator +
+						DBSeerConstants.ROOT_DATASET_PATH;
+				final String liveDatasetPath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator +
+						DBSeerConstants.LIVE_DATASET_PATH;
 
-				File rawDatasetDir = new File(DBSeerConstants.RAW_DATASET_PATH);
+				final File rawDatasetDir = new File(datasetRootPath);
 				if (!rawDatasetDir.exists())
 				{
 					rawDatasetDir.mkdirs();
@@ -271,13 +276,14 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 				}
 				else
 				{
-					newRawDatasetDir = new File(DBSeerConstants.RAW_DATASET_PATH + File.separator + datasetName);
+//					newRawDatasetDir = new File(DBSeerConstants.RAW_DATASET_PATH + File.separator + datasetName);
+					newRawDatasetDir = new File(datasetRootPath + File.separator + datasetName);
 					while (newRawDatasetDir.exists())
 					{
 						datasetName = (String) JOptionPane.showInputDialog(this, datasetName + " already exists.\n" +
 										"Enter the name of new dataset", "New Dataset",
 								JOptionPane.PLAIN_MESSAGE, null, null, "NewDataset");
-						newRawDatasetDir = new File(DBSeerConstants.RAW_DATASET_PATH + File.separator + datasetName);
+						newRawDatasetDir = new File(datasetRootPath + File.separator + datasetName);
 					}
 					newRawDatasetDir.mkdirs();
 				}
@@ -285,6 +291,9 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 				final boolean downloadData = getData;
 				final File datasetDir = newRawDatasetDir;
 				final String datasetNameFinal = datasetName;
+				final JPanel middlewarePanel = this;
+				final JButton logButton = logInOutButton;
+				final JButton startButton = startMonitoringButton;
 
 				SwingWorker<Void, Void> datasetWorker = new SwingWorker<Void, Void>()
 				{
@@ -293,7 +302,10 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 					{
 						if (downloadData)
 						{
-							DBSeerGUI.status.setText("Downloading the monitoring data...");
+							DBSeerGUI.status.setText("Stopping monitoring...");
+							middlewarePanel.setEnabled(false);
+							logButton.setEnabled(false);
+							startButton.setEnabled(false);
 						}
 						if (socket.stopMonitoring(downloadData))
 						{
@@ -306,62 +318,70 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 								return null;
 							}
 
-							byte[] monitoringData = socket.getMonitoringData();
-							byte[] buf = new byte[8192];
-							int length = 0;
+//							File logFile = socket.getLogFile();
+//							byte[] buf = new byte[8192];
+//							int length = 0;
+//
+//							FileInputStream byteStream = new FileInputStream(logFile);
+//							ZipInputStream zipInputStream = new ZipInputStream(byteStream);
+//							ZipEntry entry = null;
+//
+//							// unzip the monitor package.
+//							while ((entry = zipInputStream.getNextEntry()) != null)
+//							{
+//								File entryFile = new File(liveDatasetPath + File.separator + entry.getName());
+//								new File(entryFile.getParent()).mkdirs();
+//
+//								FileOutputStream out = new FileOutputStream(liveDatasetPath + File.separator + entry.getName());
+//
+//								try
+//								{
+//									while ((length = zipInputStream.read(buf, 0, 8192)) >= 0)
+//									{
+//										out.write(buf, 0, length);
+//									}
+//								}
+//								catch (EOFException e)
+//								{
+//									// do nothing
+//								}
+//
+//								//zipInputStream.closeEntry();
+//								out.flush();
+//								out.close();
+//							}
+//							zipInputStream.close();
 
-							ByteArrayInputStream byteStream = new ByteArrayInputStream(monitoringData);
-							ZipInputStream zipInputStream = new ZipInputStream(byteStream);
-							ZipEntry entry = null;
-
-							// unzip the monitor package.
-							while ((entry = zipInputStream.getNextEntry()) != null)
+							// move dataset from 'temp' to user-specified directory
+							File liveDir = new File(DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator + DBSeerConstants.LIVE_DATASET_PATH);
+							File[] files = liveDir.listFiles();
+							for (File f : files)
 							{
-								File entryFile = new File(datasetDir + File.separator + entry.getName());
-								new File(entryFile.getParent()).mkdirs();
-
-								FileOutputStream out = new FileOutputStream(datasetDir + File.separator + entry.getName());
-
-								try
-								{
-									while ((length = zipInputStream.read(buf, 0, 8192)) >= 0)
-									{
-										out.write(buf, 0, length);
-									}
-								}
-								catch (EOFException e)
-								{
-									// do nothing
-								}
-
-								//zipInputStream.closeEntry();
-								out.flush();
-								out.close();
+								FileUtils.moveFileToDirectory(f, datasetDir, false);
 							}
-							zipInputStream.close();
 
-
-							int confirm = JOptionPane.showConfirmDialog(null,
-									"The monitoring data has been downloaded.\nDo you want to proceed and process the downloaded dataset?",
-									"Warning",
-									JOptionPane.YES_NO_OPTION);
-
-							if (confirm == JOptionPane.YES_OPTION)
-							{
-								// process the dataset
-								DBSeerGUI.status.setText("Processing the dataset...");
-								DataCenter dc = new DataCenter(DBSeerConstants.RAW_DATASET_PATH, datasetNameFinal, true);
-								if (!dc.parseLogs())
-								{
-									JOptionPane.showMessageDialog(null, "Failed to parse received monitoring logs", "Error", JOptionPane.ERROR_MESSAGE);
-								}
-
-								if (!dc.processDataset())
-								{
-									JOptionPane.showMessageDialog(null, "Failed to process received dataset", "Error", JOptionPane.ERROR_MESSAGE);
-								}
-
-							}
+							// We may not need to process the data after all?
+//							int confirm = JOptionPane.showConfirmDialog(null,
+//									"The monitoring data has been downloaded.\n" +
+//											"Do you want to proceed and process the downloaded dataset?",
+//									"Warning",
+//									JOptionPane.YES_NO_OPTION);
+//
+//							if (confirm == JOptionPane.YES_OPTION)
+//							{
+//								// process the dataset
+//								DBSeerGUI.status.setText("Processing the dataset...");
+//								DataCenter dc = new DataCenter(DBSeerConstants.ROOT_DATASET_PATH, datasetNameFinal, true);
+//								if (!dc.parseLogs())
+//								{
+//									JOptionPane.showMessageDialog(null, "Failed to parse received monitoring logs", "Error", JOptionPane.ERROR_MESSAGE);
+//								}
+//
+//								if (!dc.processDataset())
+//								{
+//									JOptionPane.showMessageDialog(null, "Failed to process received dataset", "Error", JOptionPane.ERROR_MESSAGE);
+//								}
+//							}
 						}
 						else
 						{
@@ -374,6 +394,9 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 					protected void done()
 					{
 						DBSeerGUI.status.setText("");
+						middlewarePanel.setEnabled(true);
+						logButton.setEnabled(true);
+						startButton.setEnabled(true);
 					}
 				};
 				datasetWorker.execute();

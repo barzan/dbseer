@@ -134,6 +134,13 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener, Mo
 				{
 					DBSeerDataSet profile = (DBSeerDataSet) profileObj;
 
+					if (profile.getLive())
+					{
+						JOptionPane.showMessageDialog(null, "You cannot remove the live dataset.", "Warning",
+								JOptionPane.WARNING_MESSAGE);
+						continue;
+					}
+
 					// delete configurations containing the profile being removed.
 					for (int i = 0; i < DBSeerGUI.configs.getSize(); ++i)
 					{

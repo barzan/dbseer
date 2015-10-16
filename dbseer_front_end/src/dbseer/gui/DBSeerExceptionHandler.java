@@ -57,9 +57,18 @@ public class DBSeerExceptionHandler
 		}
 		else
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Error",
-					JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
+			if (e instanceof NullPointerException)
+			{
+				JOptionPane.showMessageDialog(null, "NullPointerException: consult the stack trace for debugging.",
+						"Error",
+						JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, e.getMessage(), "Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
 		}
 	}
 

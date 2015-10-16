@@ -179,6 +179,13 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 				return;
 			}
 
+			if (profile.getLive() && !DBSeerGUI.isLiveDataReady)
+			{
+				JOptionPane.showMessageDialog(null, "DBSeer must be monitoring in order to draw plots from its live dataset.",
+						"Warning", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
 			if (plotTabbedPane.getSelectedIndex() == 0 && charts.length == 0)
 			{
 				JOptionPane.showMessageDialog(null, "Please select one or more default plots to draw.", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -222,7 +229,8 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 								profile.getUniqueVariableName() + ".percentileLatency," +
 								profile.getUniqueVariableName() + ".transactionCount," +
 								profile.getUniqueVariableName() + ".diffedMonitor," +
-								profile.getUniqueVariableName() + ".statementStat);");
+								profile.getUniqueVariableName() + ".statementStat," +
+								profile.getUniqueVariableName() + ".tranTypes);");
 						runner.eval("plotter.mv = mvUngrouped;");
 
 					}
@@ -247,6 +255,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 								DBSeerPlotPresetFrame plotFrame = new DBSeerPlotPresetFrame(charts, profile);
 								plotFrame.pack();
 								plotFrame.setVisible(true);
+								plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 								plotButton.setEnabled(true);
 								plotButton.requestFocus();
 								DBSeerGUI.status.setText("");
@@ -255,10 +264,11 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 							if (plotTabbedPane.getSelectedIndex() == 1)
 							{
 								DBSeerPlotCustomFrame plotFrame = new DBSeerPlotCustomFrame(plotCustomPanel.getXAxis(),
-										plotCustomPanel.getYAxis());
+										plotCustomPanel.getYAxis(), profile);
 								plotFrame.setPreferredSize(new Dimension(1024, 768));
 								plotFrame.pack();
 								plotFrame.setVisible(true);
+								plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 								plotButton.setEnabled(true);
 								plotButton.requestFocus();
 								DBSeerGUI.status.setText("");

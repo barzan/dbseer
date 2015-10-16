@@ -128,7 +128,7 @@ public class TransactionData {
 
     traxEnd = t;
     String s = "," + clientPortNum + "," + userId + "," + (traxStart / 1000L)
-        + "," +(traxEnd/1000L) + "," + (traxEnd - traxStart) + "\n";
+        + "," +(traxEnd/1000L) + "," + (traxEnd - traxStart) + "," + queryId + "\n";
 
     sharedData.liveMonitor.endTransaction(txId, userId, traxStart/1000L, traxEnd/1000L, (traxEnd - traxStart));
     sharedData.allTransactions.put(txId, s.getBytes());

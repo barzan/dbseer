@@ -70,7 +70,11 @@ public class DBSeerUserSettings
 
 		for (int i= 0; i < configList.getSize(); ++i)
 		{
-			configs.add((DBSeerConfiguration) configList.get(i));
+			DBSeerConfiguration config = (DBSeerConfiguration) configList.get(i);
+			if (!config.isLive())
+			{
+				configs.add((DBSeerConfiguration) configList.get(i));
+			}
 		}
 	}
 
@@ -87,7 +91,11 @@ public class DBSeerUserSettings
 
 		for (int i = 0; i < datasetList.getSize(); ++i)
 		{
-			datasets.add((DBSeerDataSet) datasetList.get(i));
+			DBSeerDataSet dataset = (DBSeerDataSet) datasetList.get(i);
+			if (!dataset.getLive())
+			{
+				datasets.add((DBSeerDataSet) datasetList.get(i));
+			}
 		}
 	}
 

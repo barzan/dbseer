@@ -16,6 +16,8 @@
 
 package dbseer.gui;
 
+import java.io.File;
+
 /**
  * Created by dyoon on 2014. 6. 17..
  */
@@ -49,7 +51,8 @@ public class DBSeerConstants
 	public static final String[] LOCK_TYPES = {"Wait Time", "Number of Locks", "Number of Conflicts"};
 	public static final String[] LEARN_LOCK = {"True", "False"};
 
-	public static final String RAW_DATASET_PATH = "./dataset";
+	public static final String LIVE_DATASET_PATH = "." + File.separator + "dataset" + File.separator + "live";
+	public static final String ROOT_DATASET_PATH = "." + File.separator + "dataset";
 
 	// Statement types
 	public static final int STATEMENT_NONE = 0;
@@ -86,5 +89,10 @@ public class DBSeerConstants
 	public static final int ANALYSIS_BLAME = 2;
 	public static final int ANALYSIS_THROTTLING = 3;
 
+	public static final int MAX_NUM_TABLE = 200;
+	public static final int MAX_TRANSACTION_SAMPLE = 30;
+
+	public static final int DBSCAN_INIT_PTS = 1000;
+	public static final int DBSCAN_MIN_PTS = 20;
 }
 

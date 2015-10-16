@@ -16,7 +16,10 @@
 
 package dbseer.gui.frame;
 
+import com.orsonpdf.Stream;
 import dbseer.comp.TransactionReader;
+import dbseer.comp.clustering.Cluster;
+import dbseer.comp.clustering.StreamClustering;
 import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.user.DBSeerDataSet;
@@ -27,6 +30,7 @@ import javax.swing.text.DefaultCaret;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,6 +44,7 @@ public class DBSeerShowTransactionExampleFrame extends JFrame implements ActionL
 
 	private int type;
 	private int nextIndex;
+	private String[] samples;
 
 	public DBSeerShowTransactionExampleFrame(int type)
 	{
@@ -71,10 +76,12 @@ public class DBSeerShowTransactionExampleFrame extends JFrame implements ActionL
 		closeButton.addActionListener(this);
 		this.add(closeButton);
 
-		try
-		{
-			String firstSample = DBSeerGUI.middlewareSocket.requestTransactionSample(type, nextIndex);
-			if (firstSample == null)
+		samples = StreamClustering.getDBSCAN().getTransactionSamples(type);
+//		try
+//		{
+//			String firstSample = DBSeerGUI.middlewareSocket.requestTransactionSample(type, nextIndex);
+//			if (firstSample == null)
+			if (samples == null || samples.length == 0)
 			{
 				textArea.setText("An example for this transaction type is not available.");
 				nextButton.setEnabled(false);
@@ -82,15 +89,16 @@ public class DBSeerShowTransactionExampleFrame extends JFrame implements ActionL
 			else
 			{
 				String output = String.format("<Example #%d>\n", nextIndex + 1);
-				output += firstSample;
+//				output += firstSample;
+				output += samples[0];
 				textArea.setText(output);
 				nextIndex++;
 			}
-		}
-		catch (IOException e)
-		{
-			DBSeerExceptionHandler.handleException(e);
-		}
+//		}
+//		catch (IOException e)
+//		{
+//			DBSeerExceptionHandler.handleException(e);
+//		}
 	}
 
 	@Override
@@ -110,20 +118,21 @@ public class DBSeerShowTransactionExampleFrame extends JFrame implements ActionL
 		}
 		else if (actionEvent.getSource() == nextButton)
 		{
-			String sample = null;
-			try
-			{
-				sample = DBSeerGUI.middlewareSocket.requestTransactionSample(type, nextIndex);
-			}
-			catch (IOException e)
-			{
-				DBSeerExceptionHandler.handleException(e);
-			}
+//			String sample = null;
+//			try
+//			{
+//				sample = DBSeerGUI.middlewareSocket.requestTransactionSample(type, nextIndex);
+//			}
+//			catch (IOException e)
+//			{
+//				DBSeerExceptionHandler.handleException(e);
+//			}
 
 			String output = textArea.getText();
 			output += "\n\n";
 
-			if (sample == null)
+//			if (sample == null)
+			if (samples.length <= nextIndex)
 			{
 				output += "<End of transaction examples>";
 				textArea.setText(output);
@@ -132,7 +141,8 @@ public class DBSeerShowTransactionExampleFrame extends JFrame implements ActionL
 			else
 			{
 				output += String.format("<Example #%d>\n", nextIndex + 1);
-				output += sample;
+//				output += sample;
+				output += samples[nextIndex];
 				textArea.setText(output);
 				nextIndex++;
 			}

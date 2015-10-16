@@ -16,8 +16,9 @@
 
 package dbseer.gui.frame;
 
+import dbseer.gui.chart.DBSeerChart;
 import dbseer.gui.chart.DBSeerChartFactory;
-import dbseer.gui.panel.DBSeerDatasetListPanel;
+import dbseer.gui.chart.DBSeerChartRefreshWorker;
 import dbseer.gui.panel.DBSeerSelectableChartPanel;
 import dbseer.gui.user.DBSeerDataSet;
 import net.miginfocom.swing.MigLayout;
@@ -25,6 +26,9 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 
 import javax.swing.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
@@ -46,6 +50,7 @@ public class DBSeerPlotPresetFrame extends JFrame
 		this.dataset = dataset;
 		numCharts = chartNames.length;
 		numChartInRow = (int)Math.ceil(Math.sqrt(numCharts));
+
 		initializeGUI();
 	}
 
@@ -54,6 +59,7 @@ public class DBSeerPlotPresetFrame extends JFrame
 		chartPanels.clear();
 		this.setLayout(new MigLayout("fill"));
 		int count = 0;
+		ArrayList<DBSeerChart> charts = new ArrayList<DBSeerChart>();
 		for (String chartName : chartNames)
 		{
 			JFreeChart chart;
@@ -71,7 +77,8 @@ public class DBSeerPlotPresetFrame extends JFrame
 				timestamp[i] = DBSeerChartFactory.timestamp[i];
 			}
 
-
+			DBSeerChart newChart = new DBSeerChart(chartName, chart);
+			charts.add(newChart);
 			DBSeerSelectableChartPanel chartPanel = new DBSeerSelectableChartPanel(chart, dataset, chartName, timestamp);
 			chartPanels.add(chartPanel);
 			if (++count == numChartInRow)
@@ -84,5 +91,24 @@ public class DBSeerPlotPresetFrame extends JFrame
 				this.add(chartPanel, "grow");
 			}
 		}
+
+		// if live dataset, launch the chart refresher.
+		if (dataset.getLive())
+		{
+			final DBSeerChartRefreshWorker refresher = new DBSeerChartRefreshWorker(charts, dataset);
+			this.addWindowListener(new WindowAdapter()
+			{
+				@Override
+				public void windowClosed(WindowEvent windowEvent)
+				{
+					refresher.stop();
+					refresher.cancel(false);
+					super.windowClosed(windowEvent);
+				}
+			});
+
+			refresher.execute();
+		}
 	}
+
 }

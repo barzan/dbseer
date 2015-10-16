@@ -102,28 +102,28 @@ public class DBSeerXYLineAndShapeRenderer extends XYLineAndShapeRenderer
 //					return reader.getNextTransaction();
 //				}
 
-				if (series >= theSampleLists.size())
-				{
-					return null;
-				}
-				DBSeerTransactionSampleList list = theSampleLists.get(series);
-				int time = (int)timestamps[category];
-				ArrayList<DBSeerTransactionSample> samples = list.getSamples();
-				for (DBSeerTransactionSample sample : samples)
-				{
-					if (sample.getTimestamp() == time)
-					{
-						String statement = sample.getStatement();
-						if (statement.length() > maxLength)
-						{
-							return String.format("%.80s...", statement);
-						}
-						else
-						{
-							return statement;
-						}
-					}
-				}
+//				if (series >= theSampleLists.size())
+//				{
+//					return null;
+//				}
+//				DBSeerTransactionSampleList list = theSampleLists.get(series);
+//				int time = (int)timestamps[category];
+//				ArrayList<DBSeerTransactionSample> samples = list.getSamples();
+//				for (DBSeerTransactionSample sample : samples)
+//				{
+//					if (sample.getTimestamp() == time)
+//					{
+//						String statement = sample.getStatement();
+//						if (statement.length() > maxLength)
+//						{
+//							return String.format("%.80s...", statement);
+//						}
+//						else
+//						{
+//							return statement;
+//						}
+//					}
+//				}
 				return null;
 			}
 		});

@@ -1,3 +1,7 @@
+2015-10-16
+- Added support for Julia.
+- Added support for incremental logging and live clustering.
+
 2015-06-29
 - Applied Apache License Version 2.0.
 

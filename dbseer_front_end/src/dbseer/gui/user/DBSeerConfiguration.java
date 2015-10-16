@@ -77,6 +77,9 @@ public class DBSeerConfiguration
 	@XStreamOmitField
 	private String uniqueVariableName = "";
 
+	@XStreamOmitField
+	private boolean live = false;
+
 	private String name = ""; // table
 	private String ioConfiguration = "[]"; // table
 	private String lockConfiguration = "[]"; // table
@@ -120,6 +123,41 @@ public class DBSeerConfiguration
 		datasets = new ArrayList<DBSeerDataSet>();
 		uniqueVariableName = "config_" + UUID.randomUUID().toString().replace('-', '_');
 		name = "Unnamed config";
+		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
+		isInitialized = false;
+
+		table = new JTable(tableModel);
+		table.setFillsViewportHeight(true);
+		table.getColumnModel().getColumn(0).setMaxWidth(600);
+		table.getColumnModel().getColumn(0).setPreferredWidth(500);
+		table.getColumnModel().getColumn(1).setPreferredWidth(800);
+		table.setRowHeight(20);
+
+//		groupTypeComboBox = new JComboBox(groupingTypes);
+//		groupTargetComboBox = new JComboBox(groupingTargets);
+//		groupsTextArea = new JTextArea();
+
+		for (String header : tableHeaders)
+		{
+			tableModel.addRow(new Object[]{header, ""});
+		}
+		this.updateTable();
+	}
+
+	public DBSeerConfiguration(boolean live)
+	{
+		this.live = live;
+		if (this.live)
+		{
+			name = "Live Config";
+		}
+		else
+		{
+			name = "Unnamed Config";
+		}
+		datasetList = new DefaultListModel();
+		datasets = new ArrayList<DBSeerDataSet>();
+		uniqueVariableName = "config_" + UUID.randomUUID().toString().replace('-', '_');
 		tableModel = new DBSeerConfigurationTableModel(null, new String[]{"Name", "Value"});
 		isInitialized = false;
 
@@ -210,7 +248,9 @@ public class DBSeerConfiguration
 				return false;
 			}
 			DBSeerDataSet firstProfile = (DBSeerDataSet) datasetList.getElementAt(0);
-			numTransactionType = firstProfile.getNumTransactionTypes();
+			List<String> transactionTypeNames = firstProfile.getTransactionTypeNames();
+//			numTransactionType = firstProfile.getNumTransactionTypes();
+			numTransactionType = transactionTypeNames.size();
 			for (int i = 0; i < datasetList.getSize(); ++i)
 			{
 				DBSeerDataSet profile = (DBSeerDataSet) datasetList.getElementAt(i);
@@ -252,6 +292,14 @@ public class DBSeerConfiguration
 //		}
 
 		List<String> testTransactionTypeNames = testDataset.getTransactionTypeNames();
+
+		if (numTransactionType != testTransactionTypeNames.size())
+		{
+			JOptionPane.showMessageDialog(null, "Transaction types between the test dataset and the dataset in the train config must match.\n" +
+							 "The number of transaction types are different between the two datasets.", "Error",
+					JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
 
 		for (int i = 0; i < numTransactionType; ++i)
 		{
@@ -595,6 +643,11 @@ public class DBSeerConfiguration
 		}
 		str += "]";
 		return str;
+	}
+
+	public boolean isLive()
+	{
+		return live;
 	}
 
 	public void setReinitialize()
