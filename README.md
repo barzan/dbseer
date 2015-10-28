@@ -21,19 +21,26 @@ You need the following packages on the client that runs DBSeer's GUI:
 * Julia (0.3.10 or higher)
 * Java 1.6+
 
+The middleware requires the following packages:
+
+* Java 1.6+
+* Python 2.7+ and MySQL-python (for MySQL and MariaDB)
+
 If you are compiling DBSeer from source, then you need the following:
+
 * JDK 1.6+
 * ant (to compile the source code)
 
 Your server must be running:
-* Linux (to use the middleware which in turn runs 'dstat'; however, you can use other operating systems if you can run 'dstat' command on them)
+
+* Linux (to use the middleware which in turn runs '*dstat*'; however, you can use other operating systems if you can run '*dstat*' command on them)
 * MySQL, MariaDB or Postgres (these are the only DBMSs that are currently supported)
 
 **2. Building DBSeer from the source code**
 
 Check out the latest release (from https://github.com/barzan/dbseer/) and then follow the instructions below:
 
-***2.1. Building the Middleware***
+***2.1. Building the middleware***
 
 To build the middleware, go to the root directory of the middleware, and run the file named 'build', as shown below
 
@@ -66,9 +73,9 @@ To make sure the middleware can execute dstat (to monitor system resources and g
 
 	chmod 755 rs-sysmon2/dstat
 
-***3.2. Run the Middleware***
+***3.2. Running the middleware***
 
-To run the middleware, please run the file named 'middleware' (in the top-level of the middleware directory) with required
+To run the middleware, please run the file named '*middleware*' (in the top-level of the middleware directory) with required
 arguments, as described below.
 
 If you would like to run DBSeer's middleware on a different server than the one hosting your database: 
@@ -130,9 +137,35 @@ You need to install Julia and either Matlab or Octave on the client that you pla
 
 To install Julia and Matlab on your client, follow their own documentation (you do not need to install Matlab if you plan to use Octave).
 
-Octave installation:
+**3.3.1 Notes on Julia**
 
-Unlike MATLAB, Octave does not come with a stand-alone installation binary. Depending on your operating system, you may need to manually build and install the package. You can find instructions on how to install Octave for different operating systems at the *Download* section of the Octave homepage (<http://www.gnu.org/software/octave/download.html>).
+Julia must be executable from the terminal with the command '*julia*'. Please set the environment variables of your operating systems accordingly so that you can launch Julia from the terminal.
+
+For Mac OS X, you may need to add a symbolic link as follows:
+
+	> sudo ln -s /Applications/Julia-x.x.x.app/Contents/Resources/julia/bin/julia /usr/local/bin/julia
+
+**3.3.2. Octave installation** 
+
+Unlike MATLAB, Octave does not come with a stand-alone installation binary. Depending on your operating system, you may need to manually build and install the package. You can find instructions on how to install Octave for different operating systems at the *Download* section of the Octave homepage (<http://www.gnu.org/software/octave/download.html>). 
+
+For Mac OS X users, the easiest way to install Octave is to install it via [Homebrew](http://brew.sh/). The instructions to install Octave using Homebrew can be found at Octave's wiki [page](http://wiki.octave.org/Octave_for_MacOS_X#Homebrew).
+
+Once Octave is installed in your system, you also need to install the following required packages for DBSeer:
+
+* *io*
+* *control*
+* *struct*
+* *statistics*
+* *signal*
+* *optim*
+
+The above packages can be installed by executing the following command in Octave (requires an internet connection):
+
+	> pkg install -forge <package_name>
+	 
+	# for example, to install io package, run:
+	> pkg install -forge io
 
 
 ***3.4. Choosing the statistical package***
@@ -159,7 +192,7 @@ OR you can specify the INI configuration file to use as its argument:
 
 	> java -jar dbseer_front_end.jar ./dbseer.ini
 	
-If you do not specify the INI configuration file, DBSeer will automatically search for the file in the current working directory and use the default configuration values if it cannot find the INI file. A sample INI file can be found in the package as 'dbseer_front_end/dbseer.ini'.
+If you do not specify the INI configuration file, DBSeer will automatically search for the file in the current working directory and use the default configuration values if it cannot find the INI file. A sample INI file can be found in the package as 'dbseer\_front\_end/dbseer.ini'.
 
 To familiarize yourself with various features in DBSeer's GUI, watch the following video:  http://dbseer.org/video
 
