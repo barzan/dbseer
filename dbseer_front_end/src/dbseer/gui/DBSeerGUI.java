@@ -335,6 +335,12 @@ public class DBSeerGUI
 			iniPath = DEFAULT_INI_FILE_PATH;
 		}
 
+		// change user setting file if arg exists.
+		if (args.length == 2)
+		{
+			settingsPath = args[1];
+		}
+
 		try
 		{
 			checkStatPackage(iniPath);
