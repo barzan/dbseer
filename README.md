@@ -1,5 +1,7 @@
 DBSeer Installation and Usage Guide
 
+****
+
 *Watch our video demo*: http://dbseer.org/video
 ---
 
@@ -195,4 +197,6 @@ OR you can specify the INI configuration file to use as its argument:
 If you do not specify the INI configuration file, DBSeer will automatically search for the file in the current working directory and use the default configuration values if it cannot find the INI file. A sample INI file can be found in the package as 'dbseer\_front\_end/dbseer.ini'.
 
 To familiarize yourself with various features in DBSeer's GUI, watch the following video:  http://dbseer.org/video
+
+For a detailed usage guide of DBSeer, please refer to *'DBSeer Usage Guide.pdf'* in the repository.
 
