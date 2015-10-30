@@ -94,6 +94,12 @@ public class DBSeerMainFrame extends JFrame
 		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		menu.add(menuItem);
 
+		menu.addSeparator();
+
+		menuItem = new JMenuItem(new QuitAction());
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		menu.add(menuItem);
+
 //
 //		// and menu item.
 //		// set header

@@ -16,14 +16,17 @@
 
 package dbseer.gui.panel;
 
+import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.dialog.DBSeerFileLoadDialog;
 import dbseer.gui.DBSeerGUI;
+import dbseer.gui.xml.XStreamHelper;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileNotFoundException;
 
 /**
  * Created by dyoon on 2014. 5. 18..
@@ -64,6 +67,16 @@ public class DBSeerPathChoosePanel extends JPanel implements ActionListener
 				pathToDBSeerLabel.setText("Current DBSeer Root Directory: " + rootPath);
 				DBSeerGUI.userSettings.setDBSeerRootPath(rootPath);
 				DBSeerGUI.liveDataset.updateLiveDataSet();
+
+				XStreamHelper xmlHelper = new XStreamHelper();
+				try
+				{
+					xmlHelper.toXML(DBSeerGUI.userSettings, DBSeerGUI.settingsPath);
+				}
+				catch (FileNotFoundException e)
+				{
+					DBSeerExceptionHandler.handleException(e, "Failed to save the root path configuration.");
+				}
 			}
 		}
 	}
