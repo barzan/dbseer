@@ -173,7 +173,8 @@ public class DBSeerDataSet implements TableModelListener
 			@Override
 			public TableCellEditor getCellEditor(int row, int col)
 			{
-				if (row == DBSeerDataSet.TYPE_USE_ENTIRE_DATASET || col == 1)
+				if ((row == DBSeerDataSet.TYPE_USE_ENTIRE_DATASET || row > TYPE_NUM_TRANSACTION_TYPE + numTransactionTypes) &&
+						col == 1)
 					return dce;
 				return super.getCellEditor(row, col);
 			}
@@ -273,7 +274,8 @@ public class DBSeerDataSet implements TableModelListener
 			@Override
 			public TableCellEditor getCellEditor(int row, int col)
 			{
-				if (row == DBSeerDataSet.TYPE_USE_ENTIRE_DATASET && col == 1)
+				if ((row == DBSeerDataSet.TYPE_USE_ENTIRE_DATASET || row > TYPE_NUM_TRANSACTION_TYPE + numTransactionTypes) &&
+						col == 1)
 					return dce;
 				return super.getCellEditor(row, col);
 			}
