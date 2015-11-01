@@ -1,4 +1,4 @@
-DBSeer Documentation Overview
+DBSeer
 ---
 
 Please refer to the following documentations, which are located at the root path of the package for necessary information of installing and running DBSeer:
