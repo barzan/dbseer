@@ -102,8 +102,10 @@ public class TransactionData {
 
       queryStart = recTime;
 
-      if (len - 5 + 1 > bufferSize)
+      while (len - 5 + 1 > bufferSize)
+      {
         bufferSize *= 2;
+      }
 
       queryBuffer = ByteBuffer.allocate(bufferSize);
       queryBuffer.put((byte) ',');
