@@ -9,11 +9,11 @@ The middleware is located under the 'middleware' directory and the GUI is locate
 
 DBSeer's internal logic is written in MATLAB (or GNU Octave 4.0.0 or higher) and Julia. The middleware and GUI front-end are both written in Java.
 
-Note: In this documentation we will refer to both servers and clients. The server refers to the machines running your database management system (e.g., MySQL) and/or running DBSeer's middleware. The client is used to refer to the machine (e.g., your laptop) where you will lunch DBSeer's GUI and can manage your database and middleware from.
+Note: In this documentation we will refer to both servers and clients. The server refers to the machines running your database management system (e.g., MySQL) and/or running DBSeer's middleware. The client is used to refer to the machine (e.g., your laptop) where you will launch DBSeer's GUI and can manage your database and middleware from.
 
 **1. Dependencies**
 
-Note: You can run DBSeer from a Docker image, which is a lightweight VM with every dependency installed. If you are interested to run DBSeer this way. Please refer to **Docker Usage Guide for DBSeer.pdf**
+Note: You can run DBSeer from a Docker image, which is a lightweight VM with every dependency installed. If you are interested in running DBSeer this way. Please refer to **Docker Usage Guide for DBSeer.pdf**
 
 You need the following packages on the client that runs DBSeer's GUI:
 
@@ -42,7 +42,7 @@ Check out the latest release (from https://github.com/barzan/dbseer/) and then f
 
 ***2.1. Building the middleware***
 
-To build the middleware, go to the root directory of the middleware, and run the file named 'build', as shown below
+To build the middleware, go to the root directory of the middleware, and run the file named 'build', as shown below:
 
 	./build
 
@@ -57,7 +57,7 @@ The DBSeer GUI front-end has been developed using IntelliJ IDEA.
 * Import the directory 'dbseer_front_end' as a project in IntelliJ IDEA. 
 * Manually compile the package.
 
-To manually compile the GUI, follow the following steps:
+To manually compile the GUI, follow these steps:
 
 The GUI front-end includes a xml file for 'ant' to compile itself. In the directory 'dbseer_front_end', run the following command:
 
@@ -69,7 +69,7 @@ This will create *dbseer_front_end.jar* in the 'out/artifacts/dbseer_front_end_j
 
 ***3.1. Configuring dstat***
 
-To make sure the middleware can execute dstat (to monitor system resources and get the log file), please first configure the variables in rs-sysmon2/setenv. In the setenv file, you need to configure {mysql_user, mysql_pass, mysql_host, mysql_port} variables. Also, make sure that the file rs-sysmon2/dstat is executable. If not, use the following command to make it executable,
+To make sure the middleware can execute dstat (to monitor system resources and get the log file), please first configure the variables in rs-sysmon2/setenv. In the setenv file, you need to configure {mysql_user, mysql_pass, mysql_host, mysql_port} variables. Also, make sure that the file rs-sysmon2/dstat is executable. If not, use the following command to make it executable:
 
 	chmod 755 rs-sysmon2/dstat
 
@@ -107,7 +107,7 @@ Arguments details:
 				The middleware forwards the incoming queries to the database via this port.
 
 	<Thread Number>:	(an integer) the number of working threads to be used by the middleware. The middleware
-				can use several threads to forward the clients queries to the database. default value: ??
+				can use several threads to forward the clients queries to the database.
 
 	<User Password File>:	(a string) the name of the file that contains users ID and correspoding passwords, with
 				database-related variables for dstat (only for scenarios where the database server and the
