@@ -56,7 +56,7 @@ public class MatlabRunner extends StatisticalPackageRunner
 		return runner;
 	}
 
-	public void resetProxy() throws MatlabInvocationException, MatlabConnectionException
+	public void resetProxy() throws Exception
 	{
 		MatlabProxyFactory factory = new MatlabProxyFactory(options);
 
@@ -70,18 +70,20 @@ public class MatlabRunner extends StatisticalPackageRunner
 
 
 	@Override
-	public boolean eval(String str)
+	public boolean eval(String str) throws Exception
 	{
-		try
-		{
-			proxy.eval(str);
-		}
-		catch (MatlabInvocationException e)
-		{
-			DBSeerExceptionHandler.handleException(e);
-			return false;
-		}
+		proxy.eval(str);
 		return true;
+//		try
+//		{
+//			proxy.eval(str);
+//		}
+//		catch (MatlabInvocationException e)
+//		{
+//			DBSeerExceptionHandler.handleException(e);
+//			return false;
+//		}
+//		return true;
 	}
 
 	@Override

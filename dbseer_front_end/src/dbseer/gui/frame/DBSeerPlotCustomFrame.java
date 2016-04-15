@@ -54,7 +54,15 @@ public class DBSeerPlotCustomFrame extends JFrame
 	{
 		this.setLayout(new MigLayout("fill"));
 
-		JFreeChart chart = DBSeerChartFactory.createCustomXYLineChart(xAxisName, yAxisName);
+		JFreeChart chart = null;
+		try
+		{
+			chart = DBSeerChartFactory.createCustomXYLineChart(xAxisName, yAxisName);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 		chartPanel = new ChartPanel(chart);
 
 		this.add(chartPanel, "grow");
@@ -65,8 +73,8 @@ public class DBSeerPlotCustomFrame extends JFrame
 		newChart.setYAxisName(yAxisName);
 		charts.add(newChart);
 
-		// if live dataset, launch the chart refresher.
-		if (dataset.getLive())
+		// if live/current dataset, launch the chart refresher.
+		if (dataset.isCurrent())
 		{
 			final DBSeerChartRefreshWorker refresher = new DBSeerChartRefreshWorker(charts, dataset);
 			this.addWindowListener(new WindowAdapter()

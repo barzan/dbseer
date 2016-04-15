@@ -62,7 +62,7 @@ public class DBSeerChartFactory
 
 	public static double[] timestamp;
 
-	public static XYSeriesCollection getXYSeriesCollection(String chartName, DBSeerDataSet dataset)
+	public static XYSeriesCollection getXYSeriesCollection(String chartName, DBSeerDataSet dataset) throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -163,7 +163,7 @@ public class DBSeerChartFactory
 		return XYdataSet;
 	}
 
-	public static DefaultPieDataset getPieDataset(String chartName, DBSeerDataSet dataset)
+	public static DefaultPieDataset getPieDataset(String chartName, DBSeerDataSet dataset) throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -225,7 +225,7 @@ public class DBSeerChartFactory
 		return pieDataSet;
 	}
 
-	public static JFreeChart createXYLineChart(String chartName, DBSeerDataSet dataset)
+	public static JFreeChart createXYLineChart(String chartName, DBSeerDataSet dataset) throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -350,7 +350,7 @@ public class DBSeerChartFactory
 		return chart;
 	}
 
-	public static JFreeChart createPieChart(String chartName, DBSeerDataSet dataset)
+	public static JFreeChart createPieChart(String chartName, DBSeerDataSet dataset) throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -432,7 +432,7 @@ public class DBSeerChartFactory
 		return chart;
 	}
 
-	public static JFreeChart createXYLinePredictionChart(PredictionCenter center)
+	public static JFreeChart createXYLinePredictionChart(PredictionCenter center) throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -559,7 +559,7 @@ public class DBSeerChartFactory
 		return chart;
 	}
 
-	public static JFreeChart createPredictionBarChart(PredictionCenter center)
+	public static JFreeChart createPredictionBarChart(PredictionCenter center) throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -656,7 +656,7 @@ public class DBSeerChartFactory
 		return chart;
 	}
 
-	public static JTable createErrorTable(PredictionCenter center)
+	public static JTable createErrorTable(PredictionCenter center) throws Exception
 	{
 		JTable errorTable = null;
 		DefaultTableModel errorTableModel = null;
@@ -706,7 +706,7 @@ public class DBSeerChartFactory
 		return errorTable;
 	}
 
-	public static XYSeriesCollection getCustomXYSeriesCollection(String xAxisName, String yAxisName)
+	public static XYSeriesCollection getCustomXYSeriesCollection(String xAxisName, String yAxisName) throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -760,7 +760,7 @@ public class DBSeerChartFactory
 		return dataSet;
 	}
 
-	public static JFreeChart createCustomXYLineChart(String xAxisName, String yAxisName)
+	public static JFreeChart createCustomXYLineChart(String xAxisName, String yAxisName) throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -805,7 +805,7 @@ public class DBSeerChartFactory
 
 			for (int c = 0; c < col; ++c)
 			{
-				XYSeries series = new XYSeries(yAxisName);
+				XYSeries series = new XYSeries(yAxisName + " " + (c+1));
 
 				for (int r = 0; r < row; ++r)
 				{

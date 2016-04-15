@@ -72,7 +72,7 @@ public class Cluster
 		long[] numInsert = t.getNumInsert();
 		long[] numDelete = t.getNumDelete();
 		long[] numUpdate = t.getNumUpdate();
-		int numTable = StreamClustering.getTableCount();
+		int numTable = Transaction.numTable;
 
 		for (int i = 0; i < numTable; ++i)
 		{
@@ -104,7 +104,7 @@ public class Cluster
 		double distance = 0.0;
 		double[] center = this.LS;
 		double[] point = t.toDoubleArray();
-		int maxIdx = StreamClustering.getTableCount();
+		int maxIdx = Transaction.numTable;
 		for (int i = 0; i < maxIdx * 4; ++i)
 		{
 			double val1 = center[i] / this.N;
@@ -129,7 +129,7 @@ public class Cluster
 		double distance = 0.0;
 		double[] center = this.LS;
 		double[] point = c.LS;
-		int maxIdx = StreamClustering.getTableCount();
+		int maxIdx = Transaction.numTable;
 		for (int i = 0; i < maxIdx * 4; ++i)
 		{
 			double val1 = center[i] / this.N;

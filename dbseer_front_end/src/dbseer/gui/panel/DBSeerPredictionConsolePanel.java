@@ -456,6 +456,8 @@ public class DBSeerPredictionConsolePanel extends JPanel implements ActionListen
 				return;
 			}
 
+			dataset.loadDataset(false);
+
 			if (dataset.getTransactionTypeNames().size() == 0)
 			{
 				JOptionPane.showMessageDialog(null, "The dataset needs to have at least one transaction type enabled.", "Warning",

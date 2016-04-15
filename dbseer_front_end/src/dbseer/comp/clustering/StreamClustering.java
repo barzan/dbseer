@@ -19,11 +19,9 @@ package dbseer.comp.clustering;
 import dbseer.comp.data.Statement;
 import dbseer.comp.data.Transaction;
 import dbseer.gui.DBSeerGUI;
-import dbseer.middleware.IncrementalLogReceiver;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 

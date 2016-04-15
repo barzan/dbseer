@@ -46,9 +46,9 @@ public class SaveSettingsAction extends AbstractAction
 		}
 		catch (FileNotFoundException e)
 		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Error while saving settings.", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, e.getMessage(), "Error while saving settings.", JOptionPane.ERROR_MESSAGE);
 		}
 
-		JOptionPane.showMessageDialog(null, "Setting successfully saved.");
+		JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Setting successfully saved.");
 	}
 }

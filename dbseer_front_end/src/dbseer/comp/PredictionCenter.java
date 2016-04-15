@@ -157,19 +157,19 @@ public class PredictionCenter
 				int exitVal = p.waitFor();
 				runner.eval("read_mat_bottleneck_maxT;");
 			}
-			else if (this.prediction == "BottleneckAnalysisResource")
-			{
-				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
-				cmd = cmd + "include(\"julia_init.jl\");";
-				cmd = cmd + "include(\"load_mat_data.jl\");";
-				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=bottleneckAnalysisResource(pc);";
-				cmd = cmd + "include(\"write_mat_bottleneck_res.jl\");";
-				runner.eval("pc.initialize");
-				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
-				Process p = Runtime.getRuntime().exec(cmd);
-				int exitVal = p.waitFor();
-				runner.eval("read_mat_bottleneck_res;");
-			}
+//			else if (this.prediction == "BottleneckAnalysisResource")
+//			{
+//				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
+//				cmd = cmd + "include(\"julia_init.jl\");";
+//				cmd = cmd + "include(\"load_mat_data.jl\");";
+//				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=bottleneckAnalysisResource(pc);";
+//				cmd = cmd + "include(\"write_mat_bottleneck_res.jl\");";
+//				runner.eval("pc.initialize");
+//				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
+//				Process p = Runtime.getRuntime().exec(cmd);
+//				int exitVal = p.waitFor();
+//				runner.eval("read_mat_bottleneck_res;");
+//			}
 			else
 			{
 				runner.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader extra] = pc.performPrediction;");
@@ -217,7 +217,7 @@ public class PredictionCenter
 				}
 				runner.eval("pc.testConfig = PredictionConfig;");
 				runner.eval("pc.testConfig.transactionType = " + mappedTransactionType + ";");
-				testDataset.loadDataset();
+				testDataset.loadDataset(false);
 				runner.eval("pc.testConfig.addDataset(" + testDataset.getUniqueVariableName() + ");");
 
 				if (groupingType == DBSeerConstants.GROUP_RANGE)
@@ -319,7 +319,7 @@ public class PredictionCenter
 		return true;
 	}
 
-	public String getLastError()
+	public String getLastError() throws Exception
 	{
 		String errorMessage = "";
 		runner.eval("dbseer_lasterror = lasterror;");

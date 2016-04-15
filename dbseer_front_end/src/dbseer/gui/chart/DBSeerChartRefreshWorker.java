@@ -76,44 +76,51 @@ public class DBSeerChartRefreshWorker extends SwingWorker<String, DBSeerChart>
 					return null;
 				}
 				StatisticalPackageRunner runner = DBSeerGUI.runner;
+				boolean isLoadSuccess = false;
 				try
 				{
 					runner.eval("plotter = Plotter;");
-					dataset.loadDataset();
-					runner.eval("[mvGrouped mvUngrouped] = load_mv(" +
-							dataset.getUniqueVariableName() + ".header," +
-							dataset.getUniqueVariableName() + ".monitor," +
-							dataset.getUniqueVariableName() + ".averageLatency," +
-							dataset.getUniqueVariableName() + ".percentileLatency," +
-							dataset.getUniqueVariableName() + ".transactionCount," +
-							dataset.getUniqueVariableName() + ".diffedMonitor," +
-							dataset.getUniqueVariableName() + ".statementStat);");
-					runner.eval("plotter.mv = mvUngrouped;");
+					isLoadSuccess = dataset.loadDataset(true);
+					if (isLoadSuccess)
+					{
+						runner.eval("[mvGrouped mvUngrouped] = load_mv2(" +
+								dataset.getUniqueVariableName() + ".header," +
+								dataset.getUniqueVariableName() + ".monitor," +
+								dataset.getUniqueVariableName() + ".averageLatency," +
+								dataset.getUniqueVariableName() + ".percentileLatency," +
+								dataset.getUniqueVariableName() + ".transactionCount," +
+								dataset.getUniqueVariableName() + ".diffedMonitor," +
+								dataset.getUniqueVariableName() + ".statementStat);");
+						runner.eval("plotter.mv = mvUngrouped;");
+					}
 				}
 				catch (Exception e)
 				{
 					JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
 
-				for (DBSeerChart chart : charts)
+				if (isLoadSuccess)
 				{
-					if (chart.getName().equalsIgnoreCase("TransactionMix"))
+					for (DBSeerChart chart : charts)
 					{
-						DefaultPieDataset newDataset = DBSeerChartFactory.getPieDataset(chart.getName(), dataset);
-						chart.setPieDataset(newDataset);
-						publish(chart);
-					}
-					else if (chart.getName().equalsIgnoreCase("Custom"))
-					{
-						XYSeriesCollection newDataset = DBSeerChartFactory.getCustomXYSeriesCollection(chart.getXAxisName(), chart.getYAxisName());
-						chart.setXYDataset(newDataset);
-						publish(chart);
-					}
-					else
-					{
-						XYSeriesCollection newDataset = DBSeerChartFactory.getXYSeriesCollection(chart.getName(), dataset);
-						chart.setXYDataset(newDataset);
-						publish(chart);
+						if (chart.getName().equalsIgnoreCase("TransactionMix"))
+						{
+							DefaultPieDataset newDataset = DBSeerChartFactory.getPieDataset(chart.getName(), dataset);
+							chart.setPieDataset(newDataset);
+							publish(chart);
+						}
+						else if (chart.getName().equalsIgnoreCase("Custom"))
+						{
+							XYSeriesCollection newDataset = DBSeerChartFactory.getCustomXYSeriesCollection(chart.getXAxisName(), chart.getYAxisName());
+							chart.setXYDataset(newDataset);
+							publish(chart);
+						}
+						else
+						{
+							XYSeriesCollection newDataset = DBSeerChartFactory.getXYSeriesCollection(chart.getName(), dataset);
+							chart.setXYDataset(newDataset);
+							publish(chart);
+						}
 					}
 				}
 			}

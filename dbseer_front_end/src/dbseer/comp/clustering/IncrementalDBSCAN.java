@@ -19,7 +19,6 @@ package dbseer.comp.clustering;
 import dbseer.comp.data.Transaction;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.user.DBSeerDataSet;
-import dbseer.middleware.IncrementalLogReceiver;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,8 +33,8 @@ public class IncrementalDBSCAN
 	private int initPts;
 	private int minPts;
 	private double epsilon;
-	private boolean initialized;
-	private boolean initializing;
+	private volatile boolean initialized;
+	private volatile boolean initializing;
 
 	private Collection<Cluster> allClusters = new ArrayList<Cluster>();
 	private Collection<Cluster> clusters = new ArrayList<Cluster>();
@@ -138,6 +137,10 @@ public class IncrementalDBSCAN
 	public synchronized String[] getTransactionSamples(int index)
 	{
 		ArrayList<Cluster> clusters = (ArrayList<Cluster>)allClusters;
+		if (clusters.size() <= index)
+		{
+			return null;
+		}
 		return clusters.get(index).getTransactionSamples();
 	}
 

@@ -38,6 +38,9 @@ public class Transaction
 	private int classification;
 	private Cluster cluster;
 
+	private String serverName;
+	private String hostName;
+
 	private long startTime;
 	private long endTime;
 	private long latency; // in milliseconds
@@ -68,6 +71,8 @@ public class Transaction
 
 	boolean visited; // used in DBSCAN
 	boolean assignedToCluster;
+
+	public static volatile int numTable;
 
 	public Transaction()
 	{
@@ -330,7 +335,7 @@ public class Transaction
 
 	public double[] toDoubleArray()
 	{
-		int numTable = StreamClustering.getTableCount();
+		int numTable = Transaction.numTable;
 		double[] val = new double[4 * numTable];
 
 		for (int i = 0; i < numTable; ++i)
@@ -542,6 +547,26 @@ public class Transaction
 	public long getLastStatementId()
 	{
 		return lastStatementId;
+	}
+
+	public String getServerName()
+	{
+		return serverName;
+	}
+
+	public void setServerName(String serverName)
+	{
+		this.serverName = serverName;
+	}
+
+	public String getHostName()
+	{
+		return hostName;
+	}
+
+	public void setHostName(String hostName)
+	{
+		this.hostName = hostName;
 	}
 
 	public void setLastStatementId(long lastStatementId)

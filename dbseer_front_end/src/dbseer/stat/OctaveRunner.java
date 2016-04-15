@@ -107,18 +107,20 @@ public class OctaveRunner extends StatisticalPackageRunner
 	}
 
 	@Override
-	public boolean eval(String str)
+	public boolean eval(String str) throws Exception
 	{
-		try
-		{
-			engine.eval(str);
-		}
-		catch (OctaveEvalException e)
-		{
-			DBSeerExceptionHandler.handleException(e);
-			return false;
-		}
+		engine.eval(str);
 		return true;
+//		try
+//		{
+//			engine.eval(str);
+//		}
+//		catch (OctaveEvalException e)
+//		{
+//			DBSeerExceptionHandler.handleException(e);
+//			return false;
+//		}
+//		return true;
 	}
 
 	@Override

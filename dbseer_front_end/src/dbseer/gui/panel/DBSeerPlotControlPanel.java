@@ -199,6 +199,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 
 			SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
 			{
+				protected boolean isLoadSuccess = true;
 				@Override
 				protected Void doInBackground() throws Exception
 				{
@@ -221,22 +222,30 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 						runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
 						runner.eval("plotter = Plotter;");
-						profile.loadDataset();
-						runner.eval("[mvGrouped mvUngrouped] = load_mv(" +
-								profile.getUniqueVariableName() + ".header," +
-								profile.getUniqueVariableName() + ".monitor," +
-								profile.getUniqueVariableName() + ".averageLatency," +
-								profile.getUniqueVariableName() + ".percentileLatency," +
-								profile.getUniqueVariableName() + ".transactionCount," +
-								profile.getUniqueVariableName() + ".diffedMonitor," +
-								profile.getUniqueVariableName() + ".statementStat," +
-								profile.getUniqueVariableName() + ".tranTypes);");
-						runner.eval("plotter.mv = mvUngrouped;");
-
+						if (!profile.loadDataset(profile.isCurrent()))
+						{
+							isLoadSuccess = false;
+							JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Dataset has some data missing or is not ready yet.", "Message", JOptionPane.INFORMATION_MESSAGE);
+						}
+						if (isLoadSuccess)
+						{
+							runner.eval("[mvGrouped mvUngrouped] = load_mv2(" +
+									profile.getUniqueVariableName() + ".header," +
+									profile.getUniqueVariableName() + ".monitor," +
+									profile.getUniqueVariableName() + ".averageLatency," +
+									profile.getUniqueVariableName() + ".percentileLatency," +
+									profile.getUniqueVariableName() + ".transactionCount," +
+									profile.getUniqueVariableName() + ".diffedMonitor," +
+									profile.getUniqueVariableName() + ".statementStat," +
+									profile.getUniqueVariableName() + ".tranTypes);");
+							runner.eval("plotter.mv = mvUngrouped;");
+						}
 					}
 					catch (Exception e)
 					{
-						JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						isLoadSuccess = false;
+						e.printStackTrace();
 					}
 					return null;
 				}
@@ -249,30 +258,33 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 						@Override
 						public void run()
 						{
-							// if preset.
-							if (plotTabbedPane.getSelectedIndex() == 0)
+							if (isLoadSuccess)
 							{
-								DBSeerPlotPresetFrame plotFrame = new DBSeerPlotPresetFrame(charts, profile);
-								plotFrame.pack();
-								plotFrame.setVisible(true);
-								plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-								plotButton.setEnabled(true);
-								plotButton.requestFocus();
-								DBSeerGUI.status.setText("");
+								// if preset.
+								if (plotTabbedPane.getSelectedIndex() == 0)
+								{
+									DBSeerPlotPresetFrame plotFrame = new DBSeerPlotPresetFrame(charts, profile);
+									if (plotFrame.isInitSuccess())
+									{
+										plotFrame.pack();
+										plotFrame.setVisible(true);
+										plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+									}
+								}
+								// if custom.
+								if (plotTabbedPane.getSelectedIndex() == 1)
+								{
+									DBSeerPlotCustomFrame plotFrame = new DBSeerPlotCustomFrame(plotCustomPanel.getXAxis(),
+											plotCustomPanel.getYAxis(), profile);
+									plotFrame.setPreferredSize(new Dimension(1024, 768));
+									plotFrame.pack();
+									plotFrame.setVisible(true);
+									plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+								}
 							}
-							// if custom.
-							if (plotTabbedPane.getSelectedIndex() == 1)
-							{
-								DBSeerPlotCustomFrame plotFrame = new DBSeerPlotCustomFrame(plotCustomPanel.getXAxis(),
-										plotCustomPanel.getYAxis(), profile);
-								plotFrame.setPreferredSize(new Dimension(1024, 768));
-								plotFrame.pack();
-								plotFrame.setVisible(true);
-								plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-								plotButton.setEnabled(true);
-								plotButton.requestFocus();
-								DBSeerGUI.status.setText("");
-							}
+							plotButton.setEnabled(true);
+							plotButton.requestFocus();
+							DBSeerGUI.status.setText("");
 						}
 					});
 				}

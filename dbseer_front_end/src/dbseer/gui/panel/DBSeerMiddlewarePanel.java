@@ -17,11 +17,20 @@
 package dbseer.gui.panel;
 
 import dbseer.comp.DataCenter;
+import dbseer.comp.process.transaction.TransactionLogProcessor;
+import dbseer.comp.process.transaction.mysql.MySQLTransactionLogProcessor;
+import dbseer.comp.process.live.LiveLogProcessor;
+import dbseer.comp.process.system.SystemLogProcessor;
+import dbseer.comp.process.system.dstat.DstatSystemLogProcessor;
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
+import dbseer.gui.actions.OpenDirectoryAction;
+import dbseer.gui.actions.SaveSettingsAction;
+import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.xml.XStreamHelper;
-import dbseer.middleware.MiddlewareSocket;
+import dbseer.middleware.MiddlewareClientRunner;
+import dbseer.middleware.event.MiddlewareClientEvent;
 import net.miginfocom.swing.MigLayout;
 import org.apache.commons.io.FileUtils;
 
@@ -32,14 +41,21 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Created by dyoon on 2014. 6. 3..
  */
-public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
+public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Observer
 {
+	private String id;
+	private String password;
+	private String ip;
+	private int port;
 	private JTextField ipField;
 	private JFormattedTextField portField;
 	private JTextField idField;
@@ -51,6 +67,16 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 	private JButton applyRefreshRateButton;
 	public JButton startMonitoringButton;
 	public JButton stopMonitoringButton;
+
+//	private String liveDatasetPath;
+	private String currentDatasetPath;
+	private MiddlewareClientRunner runner;
+	private LiveLogProcessor liveLogProcessor;
+//	private TransactionLogProcessor transactionLogProcessor;
+//	private SystemLogProcessor systemLogProcessor;
+
+	private ArrayList<DBSeerDataSet> currentDatasets = new ArrayList<DBSeerDataSet>();
+
 
 	private boolean isLoggedIn = false;
 
@@ -80,7 +106,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 
 		portField = new JFormattedTextField(portFormatter);
 		portField.setColumns(6);
-		portField.setText("3334"); // default port.
+		portField.setText("3555"); // default port.
 		idField = new JTextField(20);
 		passwordField = new JPasswordField(20);
 
@@ -91,7 +117,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 		stopMonitoringButton = new JButton("Stop Monitoring");
 		stopMonitoringButton.addActionListener(this);
 
-		startMonitoringButton.setEnabled(false);
+		startMonitoringButton.setEnabled(true);
 		stopMonitoringButton.setEnabled(false);
 
 		ipField.setText(DBSeerGUI.userSettings.getLastMiddlewareIP());
@@ -115,17 +141,17 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 		this.add(ipField);
 		this.add(portLabel);
 		this.add(portField);
-		this.add(idLabel, "cell 0 1");
-		this.add(idField, "cell 1 1");
-		this.add(passwordLabel, "cell 0 2");
-		this.add(passwordField, "cell 1 2");
-		this.add(refreshRateLabel, "cell 0 3");
-		this.add(refreshRateField, "cell 1 3, growx, split 3");
+		this.add(idLabel, "cell 0 2");
+		this.add(idField, "cell 1 2");
+		this.add(passwordLabel, "cell 0 3");
+		this.add(passwordField, "cell 1 3");
+		this.add(refreshRateLabel, "cell 0 4");
+		this.add(refreshRateField, "cell 1 4, growx, split 3");
 		this.add(refreshRateRangeLabel);
-		this.add(applyRefreshRateButton, "growx");
-		this.add(logInOutButton, "cell 0 4 2 1, growx, split 3");
-		this.add(startMonitoringButton, "growx");
-		this.add(stopMonitoringButton, "growx");
+		this.add(applyRefreshRateButton, "growx, wrap");
+//		this.add(logInOutButton, "cell 0 2 2 1, growx, split 3");
+		this.add(startMonitoringButton);
+		this.add(stopMonitoringButton);
 	}
 
 	public void setLogin()
@@ -151,6 +177,214 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 	@Override
 	public void actionPerformed(ActionEvent actionEvent)
 	{
+		try
+		{
+			if (actionEvent.getSource() == startMonitoringButton)
+			{
+				id = idField.getText();
+				password = String.valueOf(passwordField.getPassword());
+				ip = ipField.getText();
+				port = Integer.parseInt(portField.getText());
+//				liveDatasetPath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator +
+//						DBSeerConstants.LIVE_DATASET_PATH;
+				String date = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+				currentDatasetPath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator +
+					DBSeerConstants.ROOT_DATASET_PATH + File.separator + date;
+
+				final File newDatasetDirectory = new File(currentDatasetPath);
+
+				// create new dataset directory
+				FileUtils.forceMkdir(newDatasetDirectory);
+
+				if (newDatasetDirectory == null || !newDatasetDirectory.isDirectory())
+				{
+					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
+							String.format("We could not create the dataset directory: %s", currentDatasetPath),
+							"Message", JOptionPane.PLAIN_MESSAGE);
+					return;
+				}
+
+				if (runner != null)
+				{
+					runner.stop();
+				}
+
+				DBSeerGUI.liveMonitorPanel.reset();
+				DBSeerGUI.liveMonitorInfo.reset();
+
+				DBSeerGUI.middlewareStatus.setText("Middleware: Connecting...");
+				startMonitoringButton.setEnabled(false);
+				stopMonitoringButton.setEnabled(false);
+
+				runner = new MiddlewareClientRunner(id, password, ip, port, currentDatasetPath, this);
+				runner.run();
+
+				int sleepCount = 0;
+				while (liveLogProcessor == null)
+				{
+					Thread.sleep(250);
+					sleepCount += 250;
+					if (sleepCount > 5000)
+					{
+						JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
+								String.format("Failed to receive live logs."),
+								"Message", JOptionPane.PLAIN_MESSAGE);
+						runner.stop();
+						return;
+					}
+				}
+
+				currentDatasets.clear();
+
+				String[] servers = liveLogProcessor.getServers();
+				for (String s : servers)
+				{
+					DBSeerDataSet newDataset = new DBSeerDataSet();
+					newDataset.setName(date + "_" + s);
+					OpenDirectoryAction openDir = new OpenDirectoryAction(newDataset);
+					openDir.openWithoutDialog(new File(newDatasetDirectory + File.separator + s));
+					DBSeerGUI.datasets.addElement(newDataset);
+					newDataset.setCurrent(true);
+					currentDatasets.add(newDataset);
+				}
+				if (servers.length > 1)
+				{
+					DBSeerDataSet newDataset = new DBSeerDataSet();
+					newDataset.setName(date + "_all");
+					OpenDirectoryAction openDir = new OpenDirectoryAction(newDataset);
+					openDir.openWithoutDialog(newDatasetDirectory);
+					DBSeerGUI.datasets.addElement(newDataset);
+					newDataset.setCurrent(true);
+					currentDatasets.add(newDataset);
+				}
+
+				// save last middleware connection
+				DBSeerGUI.userSettings.setLastMiddlewareIP(ip);
+				DBSeerGUI.userSettings.setLastMiddlewarePort(port);
+
+				XStreamHelper xmlHelper = new XStreamHelper();
+				xmlHelper.toXML(DBSeerGUI.userSettings, DBSeerGUI.settingsPath);
+			}
+			else if (actionEvent.getSource() == stopMonitoringButton)
+			{
+				int stopMonitoring = JOptionPane.showConfirmDialog(DBSeerGUI.mainFrame, "Do you really want to stop monitoring?",
+						"Stop Monitoring", JOptionPane.YES_NO_OPTION);
+
+				if (stopMonitoring == JOptionPane.YES_OPTION)
+				{
+					if (runner != null)
+					{
+						runner.stop();
+					}
+					if (liveLogProcessor != null)
+					{
+						liveLogProcessor.stop();
+					}
+
+					for (DBSeerDataSet dataset : currentDatasets)
+					{
+						dataset.setCurrent(false);
+					}
+					currentDatasets.clear();
+
+					DBSeerGUI.liveMonitorPanel.reset();
+					if (liveLogProcessor != null)
+					{
+						liveLogProcessor.reset();
+					}
+
+					startMonitoringButton.setEnabled(true);
+					stopMonitoringButton.setEnabled(false);
+					DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
+				}
+//				if (DBSeerGUI.dbscan == null ||
+//						(DBSeerGUI.dbscan != null && !DBSeerGUI.dbscan.isInitialized()))
+//				{
+//					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
+//							String.format("Not enough transactions for clustering. You need at least %d transactions. Dataset is not saved.", DBSeerGUI.settings.dbscanInitPts),
+//							"Message", JOptionPane.PLAIN_MESSAGE);
+//
+//					DBSeerGUI.liveMonitorPanel.reset();
+//					DBSeerGUI.liveMonitorInfo.reset();
+//
+//					startMonitoringButton.setEnabled(true);
+//					stopMonitoringButton.setEnabled(false);
+//					DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
+//
+//					return;
+//				}
+//				if (!liveLogProcessor.isTxWritingStarted())
+//				{
+//					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
+//							String.format("Live monitoring has not written any transactions yet. Dataset is not saved."),
+//							"Message", JOptionPane.PLAIN_MESSAGE);
+//
+//					DBSeerGUI.liveMonitorPanel.reset();
+//					DBSeerGUI.liveMonitorInfo.reset();
+//
+//					startMonitoringButton.setEnabled(true);
+//					stopMonitoringButton.setEnabled(false);
+//					DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
+//
+//					return;
+//				}
+//
+//				int saveResult = JOptionPane.showConfirmDialog(DBSeerGUI.mainFrame, "Do you want to save the monitored data?",
+//						"Save monitored data as a dataset", JOptionPane.YES_NO_OPTION);
+//
+//				if (saveResult == JOptionPane.YES_OPTION)
+//				{
+//					String date = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+//					String newDatasetPath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator +
+//							DBSeerConstants.ROOT_DATASET_PATH + File.separator + date;
+//					File liveDatasetDirectory = new File(liveDatasetPath);
+//					final File newDatasetDirectory = new File(newDatasetPath);
+//
+//					// create new dataset directory
+//					FileUtils.forceMkdir(newDatasetDirectory);
+//
+//					// copy dataset
+//					FileUtils.copyDirectory(liveDatasetDirectory, newDatasetDirectory, false);
+//
+//					// show message dialog.
+//					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
+//							String.format("Dataset has been successfully saved under '%s'", newDatasetDirectory.getCanonicalPath()),
+//							"Message", JOptionPane.PLAIN_MESSAGE);
+//
+//					String[] servers = liveLogProcessor.getServers();
+//					for (String s : servers)
+//					{
+//						DBSeerDataSet newDataset = new DBSeerDataSet();
+//						newDataset.setName(date + "_" + s);
+//						OpenDirectoryAction openDir = new OpenDirectoryAction(newDataset);
+//						openDir.openWithoutDialog(new File(newDatasetDirectory + File.separator + s));
+//						DBSeerGUI.datasets.addElement(newDataset);
+//					}
+//					if (servers.length > 1)
+//					{
+//						DBSeerDataSet newDataset = new DBSeerDataSet();
+//						newDataset.setName(date + "_all");
+//						OpenDirectoryAction openDir = new OpenDirectoryAction(newDataset);
+//						openDir.openWithoutDialog(newDatasetDirectory);
+//						DBSeerGUI.datasets.addElement(newDataset);
+//					}
+//					SaveSettingsAction saveSettings = new SaveSettingsAction();
+//					saveSettings.actionPerformed(new ActionEvent(this, 0, ""));
+//				}
+
+			}
+			else if (actionEvent.getSource() == applyRefreshRateButton)
+			{
+				int rate = Integer.parseInt(refreshRateField.getText());
+				DBSeerGUI.liveMonitorRefreshRate = rate;
+			}
+		}
+		catch (Exception e)
+		{
+			DBSeerExceptionHandler.handleException(e);
+		}
+		// old implementation
+		/*
 		final MiddlewareSocket socket = DBSeerGUI.middlewareSocket;
 		if (actionEvent.getSource() == logInOutButton)
 		{
@@ -411,6 +645,91 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener
 		{
 			int rate = Integer.parseInt(refreshRateField.getText());
 			DBSeerGUI.liveMonitorRefreshRate = rate;
+		}
+		*/
+	}
+
+	@Override
+	public void update(Observable o, Object arg)
+	{
+		MiddlewareClientEvent event = (MiddlewareClientEvent) arg;
+		if (event.event == MiddlewareClientEvent.IS_MONITORING)
+		{
+			startMonitoringButton.setEnabled(false);
+			stopMonitoringButton.setEnabled(true);
+			DBSeerGUI.middlewareStatus.setText("Middleware: Monitoring @ " + ip + ":" + port);
+
+			liveLogProcessor = new LiveLogProcessor(currentDatasetPath, event.serverStr);
+			try
+			{
+				liveLogProcessor.start();
+			}
+			catch (Exception e)
+			{
+				DBSeerExceptionHandler.handleException(e);
+				try
+				{
+					liveLogProcessor.stop();
+					liveLogProcessor.reset();
+				}
+				catch (Exception e1)
+				{
+					DBSeerExceptionHandler.handleException(e1);
+				}
+			}
+		}
+		else if (event.event == MiddlewareClientEvent.IS_NOT_MONITORING)
+		{
+			startMonitoringButton.setEnabled(true);
+			stopMonitoringButton.setEnabled(false);
+			DBSeerGUI.liveMonitorPanel.reset();
+			DBSeerGUI.liveMonitorInfo.reset();
+			DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
+			try
+			{
+				if (liveLogProcessor != null)
+				{
+					liveLogProcessor.stop();
+					liveLogProcessor.reset();
+				}
+			}
+			catch (Exception e)
+			{
+				DBSeerExceptionHandler.handleException(e);
+			}
+
+			if (!event.serverStr.isEmpty())
+			{
+				DBSeerExceptionHandler.showDialog(event.serverStr);
+			}
+		}
+		else if (event.event == MiddlewareClientEvent.ERROR)
+		{
+			if (event.e != null)
+			{
+				DBSeerExceptionHandler.handleException(event.e);
+			}
+			else
+			{
+				DBSeerExceptionHandler.showDialog("Something went wrong with the middleware. :(");
+			}
+			startMonitoringButton.setEnabled(true);
+			stopMonitoringButton.setEnabled(false);
+			DBSeerGUI.liveMonitorPanel.reset();
+			DBSeerGUI.liveMonitorInfo.reset();
+			DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
+			try
+			{
+				if (liveLogProcessor != null)
+				{
+					liveLogProcessor.stop();
+					liveLogProcessor.reset();
+				}
+			}
+			catch (Exception e)
+			{
+				DBSeerExceptionHandler.handleException(e);
+			}
 		}
 	}
 }

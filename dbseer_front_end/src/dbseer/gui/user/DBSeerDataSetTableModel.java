@@ -56,12 +56,14 @@ public class DBSeerDataSetTableModel extends DefaultTableModel
 					return false;
 				}
 			}
-			if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
-					row == DBSeerDataSet.TYPE_HEADER ||
-					row == DBSeerDataSet.TYPE_MONITORING_DATA ||
-					row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
-					row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
-					row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE)
+//			if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
+//					row == DBSeerDataSet.TYPE_HEADER ||
+//					row == DBSeerDataSet.TYPE_MONITORING_DATA ||
+//					row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
+//					row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
+//					row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE)
+			if (row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
+					row == DBSeerDataSet.TYPE_PATH)
 			{
 				return false;
 			}

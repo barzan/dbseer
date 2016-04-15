@@ -61,7 +61,7 @@ public class DBSeerExplainControlPanel extends JPanel implements MouseListener
 
 	public void initialize()
 	{
-		this.setLayout(new MigLayout("fill, ins 1"));
+		this.setLayout(new MigLayout("ins 1", "", "[][grow, fill][][grow, fill][][][]"));
 
 		predicateList = new JList();
 		explanationList = new JList();
@@ -99,16 +99,16 @@ public class DBSeerExplainControlPanel extends JPanel implements MouseListener
 		statusPanel.setLayout(new MigLayout("fill, ins 0"));
 		statusPanel.add(DBSeerGUI.explainStatus, "grow");
 
-		this.add(confidenceThresholdLabel);
-		this.add(confidenceThresholdTextField, "split 2,pushx");
+		this.add(confidenceThresholdLabel, "split 3");
+		this.add(confidenceThresholdTextField);
 		this.add(updateExplanationButton, "wrap");
-		this.add(explanationScrollPane, "growx, spanx, wrap");
-		this.add(togglePredicateButton, "spanx, align right, wrap");
-		this.add(predicateScrollPane, "growx, spanx, wrap");
-		this.add(explainButton, "growx");
-		this.add(savePredicateButton, "growx, wrap");
+		this.add(explanationScrollPane, "grow, spanx, wrap");
+		this.add(togglePredicateButton, "align right, wrap");
+		this.add(predicateScrollPane, "grow, spanx, wrap");
+		this.add(explainButton, "growx, wrap, hmax pref");
+		this.add(savePredicateButton, "growx, wrap, hmax pref");
 		DBSeerGUI.explainStatus.setMinimumSize(new Dimension(30,20));
-		this.add(DBSeerGUI.explainStatus, "spanx, grow");
+		this.add(DBSeerGUI.explainStatus, "growx, spanx");
 //		this.add(statusPanel, "spanx, grow");
 	}
 

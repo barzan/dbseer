@@ -36,16 +36,30 @@ public class DBSeerPredictionFrame extends JFrame
 	public DBSeerPredictionFrame(PredictionCenter center)
 	{
 		this.center = center;
-		initializeGUI();
+		try
+		{
+			initializeGUI();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public DBSeerPredictionFrame(PredictionCenter center, int chartType)
 	{
 		this.center = center;
-		initializeGUI(chartType);
+		try
+		{
+			initializeGUI(chartType);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
-	private void initializeGUI()
+	private void initializeGUI() throws Exception
 	{
 		this.setLayout(new MigLayout("fill"));
 		this.setPreferredSize(new Dimension(1024, 768));
@@ -106,7 +120,7 @@ public class DBSeerPredictionFrame extends JFrame
 		}
 	}
 
-	private void initializeGUI(int chartType)
+	private void initializeGUI(int chartType) throws Exception
 	{
 		this.setLayout(new MigLayout("fill"));
 		this.setPreferredSize(new Dimension(1024, 768));

@@ -17,10 +17,9 @@
 package dbseer.gui.frame;
 
 import dbseer.comp.TransactionReader;
-import dbseer.comp.data.Transaction;
+import dbseer.comp.TransactionReaderOne;
+import dbseer.comp.TransactionReaderTwo;
 import dbseer.gui.user.DBSeerDataSet;
-import dbseer.gui.user.DBSeerTransactionSample;
-import dbseer.gui.user.DBSeerTransactionSampleList;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -47,6 +46,7 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 	private int currentCategory = 0;
 	private String statementOffsetFile;
 	private TransactionReader reader = null;
+	private int readerType = 0;
 
 	public DBSeerShowQueryFrame(DBSeerDataSet dataset, int series, int category, double[] timestamp, boolean showAll)
 	{
@@ -84,7 +84,6 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 		this.add(closeButton);
 
 		List<String> statementOffsetFileList = dataset.getStatementOffsetFileList();
-
 		statementOffsetFile = statementOffsetFileList.get(series);
 
 		// for pie chart (e.g. transaction mix)
@@ -93,28 +92,42 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 			while (currentCategory < timestamp.length)
 			{
 				int time = (int) timestamp[currentCategory];
-				reader = new TransactionReader(dataset.getTransactionFilePath(),
+				reader = new TransactionReaderOne(dataset.getTransactionFilePath(),
 						dataset.getQueryFilePath(), dataset.getStatementFilePath(),
 						statementOffsetFile, time);
-				if (!reader.initialize())
+
+				isQueryAvailable = false;
+				if (statementOffsetFile != null && reader.initialize())
 				{
-					isQueryAvailable = false;
-					break;
+					readerType = 1;
+					isQueryAvailable = true;
 				}
 				else
 				{
-					String tx = reader.getNextTransaction();
-					if (tx == "")
+					reader = new TransactionReaderTwo(dataset, series);
+					if (reader.initialize())
 					{
-						++currentCategory;
-					}
-					else
-					{
-						String output = getTransactionInformation() + tx;
-						textArea.setText(output);
+						readerType = 2;
 						isQueryAvailable = true;
-						break;
 					}
+				}
+
+				if (!isQueryAvailable)
+				{
+					break;
+				}
+
+				String tx = reader.getNextTransaction();
+				if (tx == "")
+				{
+					++currentCategory;
+				}
+				else
+				{
+					String output = getTransactionInformation() + tx;
+					textArea.setText(output);
+					isQueryAvailable = true;
+					break;
 				}
 			}
 		}
@@ -125,11 +138,17 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 				String output = "";
 				nextButton.setEnabled(false);
 
+				if (statementOffsetFile == null)
+				{
+					isQueryAvailable = false;
+					return;
+				}
+
 				for (int i = 0; i < statementOffsetFileList.size(); ++i)
 				{
 					String offsetFile = statementOffsetFileList.get(i);
 					int time = (int) timestamp[category];
-					reader = new TransactionReader(dataset.getTransactionFilePath(), dataset.getQueryFilePath(),
+					reader = new TransactionReaderOne(dataset.getTransactionFilePath(), dataset.getQueryFilePath(),
 							dataset.getStatementFilePath(),
 							offsetFile, time);
 
@@ -151,26 +170,37 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 			else
 			{
 				int time = (int) timestamp[category];
-				reader = new TransactionReader(dataset.getTransactionFilePath(), dataset.getQueryFilePath(),
-						dataset.getStatementFilePath(),
-						statementOffsetFile, time);
-				if (!reader.initialize())
+				isQueryAvailable = false;
+				if (reader.initialize())
+				{
+					readerType = 1;
+					isQueryAvailable = true;
+				}
+				else
+				{
+					reader = new TransactionReaderTwo(dataset, series);
+					if (reader.initialize())
+					{
+						readerType = 2;
+						isQueryAvailable = true;
+					}
+				}
+
+				if (!isQueryAvailable)
+				{
+					return;
+				}
+
+				String tx = reader.getNextTransaction();
+				if (tx.isEmpty())
 				{
 					isQueryAvailable = false;
 				}
 				else
 				{
-					String tx = reader.getNextTransaction();
-					if (tx.isEmpty())
-					{
-						isQueryAvailable = false;
-					}
-					else
-					{
-						String output = getTransactionInformation() + tx;
-						textArea.setText(output);
-						isQueryAvailable = true;
-					}
+					String output = getTransactionInformation() + tx;
+					textArea.setText(output);
+					isQueryAvailable = true;
 				}
 			}
 		}
@@ -228,8 +258,9 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 
 	private String getTransactionInformation()
 	{
-		return String.format("- Tx ID: %d, Username: %s, Latency: %d ms\n", reader.getCurrentId(),
-				reader.getCurrentUser(), reader.getCurrentLatency());
+		return "";
+//		return String.format("- Tx ID: %d, Username: %s, Latency: %d ms\n", reader.getCurrentId(),
+//				reader.getCurrentUser(), reader.getCurrentLatency());
 	}
 
 	public boolean isQueryAvailable()
@@ -259,11 +290,11 @@ public class DBSeerShowQueryFrame extends JFrame implements ActionListener
 				if (reader != null)
 				{
 					String output = reader.getNextTransaction();
-					while (output == "" && currentCategory < timestamp.length - 1)
+					while (output == "" && readerType == 1 && currentCategory < timestamp.length - 1)
 					{
 						++currentCategory;
 						int time = (int)timestamp[currentCategory];
-						reader = new TransactionReader(dataset.getTransactionFilePath(),
+						reader = new TransactionReaderOne(dataset.getTransactionFilePath(),
 								dataset.getQueryFilePath(), dataset.getStatementFilePath(),
 								statementOffsetFile, time);
 						reader.initialize();

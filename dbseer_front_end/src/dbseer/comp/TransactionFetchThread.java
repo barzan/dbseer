@@ -21,9 +21,9 @@ package dbseer.comp;
  */
 public class TransactionFetchThread extends Thread
 {
-	TransactionReader reader;
+	TransactionReaderOne reader;
 
-	public TransactionFetchThread(TransactionReader reader)
+	public TransactionFetchThread(TransactionReaderOne reader)
 	{
 		this.reader = reader;
 	}

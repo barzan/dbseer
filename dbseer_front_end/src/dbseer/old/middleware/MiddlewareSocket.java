@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package dbseer.middleware;
+package dbseer.old.middleware;
 
 import dbseer.comp.data.TransactionMap;
-import dbseer.comp.live.LiveMonitoringThread;
+import dbseer.comp.process.live.LiveMonitorInfo;
+import dbseer.comp.process.live.LiveMonitor;
 import dbseer.comp.clustering.ClusterRunnable;
 import dbseer.comp.clustering.IncrementalDBSCAN;
 import dbseer.comp.clustering.StreamClustering;
-import dbseer.comp.data.LiveMonitor;
 import dbseer.comp.data.Transaction;
 import dbseer.comp.live.LiveSystemLogTailerListener;
 import dbseer.comp.live.LiveTransactionProcessor;
@@ -35,9 +35,6 @@ import org.apache.commons.io.input.TailerListener;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -96,7 +93,7 @@ public class MiddlewareSocket
 	private ClusterRunnable clusterRunnable = null;
 	private Tailer sysLogTailer = null;
 
-	private LiveMonitoringThread liveMonitoringThread = null;
+	private LiveMonitor liveMonitor = null;
 	private Thread liveTransactionProcessorThread = null;
 	private Thread clusteringThread = null;
 	private Thread incrementalLogThread = null;
@@ -349,10 +346,10 @@ public class MiddlewareSocket
 
 			if (packetId == PACKET_IS_MONITORING)
 			{
-//				if (!DBSeerGUI.liveMonitoringThread.isAlive())
+//				if (!DBSeerGUI.liveMonitor.isAlive())
 //				{
-//					DBSeerGUI.liveMonitoringThread = new LiveMonitoringThread();
-//					DBSeerGUI.liveMonitoringThread.start();
+//					DBSeerGUI.liveMonitor = new LiveMonitor();
+//					DBSeerGUI.liveMonitor.start();
 //				}
 				if (reconnect)
 				{
@@ -372,7 +369,7 @@ public class MiddlewareSocket
 		}
 	}
 
-	public synchronized boolean updateLiveMonitor(LiveMonitor monitor) throws IOException
+	public synchronized boolean updateLiveMonitor(LiveMonitorInfo monitor) throws IOException
 	{
 		if (output == null)
 		{
@@ -467,7 +464,7 @@ public class MiddlewareSocket
 			if (response == PACKET_REMOVE_TRANSACTION_SUCCESS)
 			{
 				int newSize = input.readInt();
-				DBSeerGUI.liveMonitor.setNumTransactionTypes(newSize);
+				DBSeerGUI.liveMonitorInfo.setNumTransactionTypes(newSize);
 				return true;
 			}
 			else if (response == PACKET_REMOVE_TRANSACTION_FAILURE)
@@ -486,7 +483,7 @@ public class MiddlewareSocket
 	{
 		if (newStart)
 		{
-			DBSeerGUI.liveMonitor.reset();
+			DBSeerGUI.liveMonitorInfo.reset();
 		}
 		StreamClustering.LOCK = new ReentrantLock();
 		logReceiver = new IncrementalLogReceiver(this.ip, DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator + DBSeerConstants.LIVE_DATASET_PATH);
@@ -533,8 +530,8 @@ public class MiddlewareSocket
 		sysLogTailerThread = new Thread(sysLogTailer);
 		sysLogTailerThread.start();
 
-		liveMonitoringThread = new LiveMonitoringThread();
-		liveMonitoringThread.start();
+		liveMonitor = new LiveMonitor();
+//		liveMonitor.start();
 
 		if (newStart)
 		{
@@ -578,11 +575,11 @@ public class MiddlewareSocket
 				clusteringThread.interrupt();
 				clusteringThread.join();
 			}
-			if (liveMonitoringThread != null)
+			if (liveMonitor != null)
 			{
-				liveMonitoringThread.stopMonitoring();
-				liveMonitoringThread.interrupt();
-				liveMonitoringThread.join();
+				liveMonitor.stopMonitoring();
+//				liveMonitor.interrupt();
+//				liveMonitor.join();
 			}
 		}
 		catch (InterruptedException e)

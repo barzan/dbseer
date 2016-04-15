@@ -27,6 +27,7 @@ import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 
 import javax.swing.*;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.StringTokenizer;
 
 /**
@@ -36,70 +37,96 @@ import java.util.StringTokenizer;
  */
 public class DBSeerExceptionHandler
 {
+	public static void showDialog(String msg)
+	{
+		JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, msg, "Message",
+				JOptionPane.INFORMATION_MESSAGE);
+	}
+
 	public static void handleException(Exception e)
 	{
-		if (e instanceof MatlabInvocationException)
+		try
 		{
-			if (!DBSeerGUI.isProxyRenewing)
+			if (e instanceof MatlabInvocationException)
 			{
-				String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastMatLabError(), 120);
+				if (!DBSeerGUI.isProxyRenewing)
+				{
+					String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastMatLabError(), 120);
 
-				JOptionPane.showMessageDialog(null, errorMsg, "MATLAB Error",
-						JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, errorMsg, "MATLAB Error",
+							JOptionPane.ERROR_MESSAGE);
+				}
 			}
-		}
-		else if (e instanceof OctaveEvalException)
-		{
-			String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastOctaveError(), 120);
-
-			JOptionPane.showMessageDialog(null, errorMsg, "Octave Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
-		else
-		{
-			if (e instanceof NullPointerException)
+			else if (e instanceof OctaveEvalException)
 			{
-				JOptionPane.showMessageDialog(null, "NullPointerException: consult the stack trace for debugging.",
-						"Error",
+				String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastOctaveError(), 120);
+
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, errorMsg, "Octave Error",
 						JOptionPane.ERROR_MESSAGE);
-				e.printStackTrace();
 			}
 			else
 			{
-				JOptionPane.showMessageDialog(null, e.getMessage(), "Error",
-						JOptionPane.ERROR_MESSAGE);
+				if (e instanceof NullPointerException)
+				{
+					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "NullPointerException: consult the stack trace for debugging.",
+							"Error",
+							JOptionPane.ERROR_MESSAGE);
+					e.printStackTrace();
+				}
+				else if (e instanceof UnresolvedAddressException)
+				{
+					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "IP Address cannot be resolved.",
+							"Error",
+							JOptionPane.ERROR_MESSAGE);
+				}
+				else
+				{
+					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, e.getMessage(), "Error",
+							JOptionPane.ERROR_MESSAGE);
+				}
 			}
+		}
+		catch (Exception e1)
+		{
+			e1.printStackTrace();
 		}
 	}
 
 	public static void handleException(Exception e, String title)
 	{
-		if (e instanceof MatlabInvocationException)
+		try
 		{
-			if (!DBSeerGUI.isProxyRenewing)
+			if (e instanceof MatlabInvocationException)
 			{
-				String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastMatLabError(), 120);
+				if (!DBSeerGUI.isProxyRenewing)
+				{
+					String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastMatLabError(), 120);
 
-				JOptionPane.showMessageDialog(null, errorMsg, "MATLAB Error",
+					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, errorMsg, "MATLAB Error",
+							JOptionPane.ERROR_MESSAGE);
+				}
+			}
+			else if (e instanceof OctaveEvalException)
+			{
+				String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastOctaveError(), 120);
+
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, errorMsg, "Octave Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
+			else
+			{
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, e.getMessage(), title,
+						JOptionPane.ERROR_MESSAGE);
+				e.printStackTrace();
+			}
 		}
-		else if (e instanceof OctaveEvalException)
+		catch (Exception e1)
 		{
-			String errorMsg = addLineBreaksToMessage(e.getMessage() + ":\n" + getLastOctaveError(), 120);
-
-			JOptionPane.showMessageDialog(null, errorMsg, "Octave Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
-		else
-		{
-			JOptionPane.showMessageDialog(null, e.getMessage(), title,
-					JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
+			e1.printStackTrace();
 		}
 	}
 
-	public static String getLastMatLabError()
+	public static String getLastMatLabError() throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 
@@ -109,7 +136,7 @@ public class DBSeerExceptionHandler
 		return errorMessage;
 	}
 
-	public static String getLastOctaveError()
+	public static String getLastOctaveError() throws Exception
 	{
 		StatisticalPackageRunner runner = DBSeerGUI.runner;
 		OctaveEngine engine = OctaveRunner.getInstance().getEngine();

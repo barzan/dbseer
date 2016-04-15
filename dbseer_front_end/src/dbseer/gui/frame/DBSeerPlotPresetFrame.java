@@ -42,19 +42,29 @@ public class DBSeerPlotPresetFrame extends JFrame
 	private String[] chartNames;
 	private int numCharts;
 	private int numChartInRow;
+	private boolean isInitSuccess;
 
 	public DBSeerPlotPresetFrame(String[] chartNames, DBSeerDataSet dataset)
 	{
 		this.setTitle("DBSeer Visualization");
 		this.chartNames = chartNames;
 		this.dataset = dataset;
+		this.isInitSuccess = true;
 		numCharts = chartNames.length;
 		numChartInRow = (int)Math.ceil(Math.sqrt(numCharts));
 
-		initializeGUI();
+		try
+		{
+			initializeGUI();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			this.isInitSuccess = false;
+		}
 	}
 
-	private void initializeGUI()
+	private void initializeGUI() throws Exception
 	{
 		chartPanels.clear();
 		this.setLayout(new MigLayout("fill"));
@@ -93,7 +103,7 @@ public class DBSeerPlotPresetFrame extends JFrame
 		}
 
 		// if live dataset, launch the chart refresher.
-		if (dataset.getLive())
+		if (dataset.isCurrent())
 		{
 			final DBSeerChartRefreshWorker refresher = new DBSeerChartRefreshWorker(charts, dataset);
 			this.addWindowListener(new WindowAdapter()
@@ -111,4 +121,8 @@ public class DBSeerPlotPresetFrame extends JFrame
 		}
 	}
 
+	public boolean isInitSuccess()
+	{
+		return isInitSuccess;
+	}
 }

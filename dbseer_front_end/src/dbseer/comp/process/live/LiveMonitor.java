@@ -14,37 +14,28 @@
  * limitations under the License.
  */
 
-package dbseer.comp.live;
+package dbseer.comp.process.live;
 
-import dbseer.comp.clustering.*;
-import dbseer.comp.data.LiveMonitor;
-import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.panel.DBSeerLiveMonitorPanel;
-import dbseer.middleware.MiddlewareSocket;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Collection;
+import dbseer.old.middleware.MiddlewareSocket;
 
 /**
  * Created by dyoon on 5/17/15.
  */
-public class LiveMonitoringThread extends Thread
+public class LiveMonitor implements Runnable
 {
 	private boolean run = true;
 	private int numTransactionType = 0;
-	private LiveMonitor monitor;
+	private LiveMonitorInfo monitor;
 	private MiddlewareSocket socket;
 	private DBSeerLiveMonitorPanel monitorPanel;
 
 
-	public LiveMonitoringThread()
+	public LiveMonitor()
 	{
 //		DBSeerGUI.mainFrame.resetLiveMonitoring();
-		monitor = DBSeerGUI.liveMonitor;
+		monitor = DBSeerGUI.liveMonitorInfo;
 		socket = DBSeerGUI.middlewareSocket;
 		monitorPanel = DBSeerGUI.liveMonitorPanel;
 	}
@@ -68,16 +59,9 @@ public class LiveMonitoringThread extends Thread
 				}
 				catch (InterruptedException e)
 				{
-					if (this.run)
-					{
-						e.printStackTrace();
-					}
-				}
-				sleepTime += 250;
-				if (this.isInterrupted())
-				{
 					return;
 				}
+				sleepTime += 250;
 			}
 
 			if (!this.run)
@@ -85,9 +69,9 @@ public class LiveMonitoringThread extends Thread
 				break;
 			}
 
-			synchronized (LiveMonitor.LOCK)
+//			synchronized (LiveMonitorInfo.LOCK)
 			{
-				if (DBSeerGUI.isLiveMonitoring)
+//				if (DBSeerGUI.isLiveMonitoring)
 				{
 					// obsolete?
 //					try
@@ -133,8 +117,8 @@ public class LiveMonitoringThread extends Thread
 //						}
 //						return;
 //					}
-					if (!StreamClustering.getDBSCAN().isInitializing())
-					{
+//					if (!StreamClustering.getDBSCAN().isInitializing())
+//					{
 						monitorPanel.setTotalNumberOfTransactions(monitor.getGlobalTransactionCount());
 						monitorPanel.setCurrentTPS(monitor.getCurrentTPS());
 						numTransactionType = monitor.getNumTransactionTypes();
@@ -143,11 +127,11 @@ public class LiveMonitoringThread extends Thread
 							monitorPanel.setCurrentTPS(monitor.getCurrentTimestamp(), i, monitor.getCurrentTPS(i));
 							monitorPanel.setCurrentAverageLatency(monitor.getCurrentTimestamp(), i, monitor.getCurrentAverageLatency(i));
 						}
-						if (StreamClustering.getDBSCAN().isInitialized())
+//						if (StreamClustering.getDBSCAN().isInitialized())
 						{
 							monitorPanel.updateTransactionNames();
 						}
-					}
+//					}
 				}
 			}
 		}

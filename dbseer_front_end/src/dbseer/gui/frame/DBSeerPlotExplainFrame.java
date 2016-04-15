@@ -50,7 +50,7 @@ public class DBSeerPlotExplainFrame extends JFrame implements ActionListener
 
 	private void initializeGUI()
 	{
-		this.setLayout(new MigLayout("fill, ins 5"));
+		this.setLayout(new MigLayout("fill, ins 5", "[60sp][30sp]"));
 		controlPanel = new DBSeerExplainControlPanel();
 		chartPanel = new DBSeerExplainChartPanel(chart, testLog, controlPanel);
 //		chartPanel.setPreferredSize(new Dimension(640, 480));

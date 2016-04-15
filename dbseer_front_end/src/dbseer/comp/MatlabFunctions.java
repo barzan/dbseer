@@ -56,8 +56,9 @@ public class MatlabFunctions
 		try
 		{
 			String mv = dataset.getUniqueModelVariableName();
-			runner.eval(String.format("dbseer_tx_mix = sum(%s.clientIndividualSubmittedTrans, 1) ./ " +
-					"sum(%s.clientTotalSubmittedTrans);", mv, mv));
+//			runner.eval(String.format("dbseer_tx_mix = sum(%s.clientIndividualSubmittedTrans, 1) ./ " +
+//					"sum(%s.clientTotalSubmittedTrans);", mv, mv));
+			runner.eval(String.format("dbseer_tx_mix = getMixture(%s);", mv));
 			mix = runner.getVariableDouble("dbseer_tx_mix");
 		}
 		catch(Exception e)

@@ -214,7 +214,7 @@ public class DBSeerConfiguration
 		return this;
 	}
 
-	public boolean initialize()
+	public boolean initialize() throws Exception
 	{
 		if (uniqueVariableName == "")
 		{
@@ -254,7 +254,10 @@ public class DBSeerConfiguration
 			for (int i = 0; i < datasetList.getSize(); ++i)
 			{
 				DBSeerDataSet profile = (DBSeerDataSet) datasetList.getElementAt(i);
-				profile.loadModelVariable();
+				if (!profile.loadModelVariable())
+				{
+					return false;
+				}
 				runner.eval(this.uniqueVariableName + ".addDataset(" + profile.getUniqueVariableName() + ");");
 			}
 

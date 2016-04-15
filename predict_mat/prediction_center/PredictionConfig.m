@@ -32,13 +32,16 @@ classdef PredictionConfig < handle
         configSummary
         
         transactionCount % C
+        totalTransactionCount
         averageCpuUsage % P
         diskWrite % IO
+        totalTransactionLatency
         transactionLatency % L
 		transactionLatencyPercentile
         lockWaitTime % W, NumOfWaitDueToLocks
         currentLockWait % LocksBeingWaitedFor
         TPS % TPS
+        TPSRatio % TPS
         rowsChanged % RowsChanged
         pagesFlushed % PagesFlushed
         transactionMixture % Mixture
@@ -50,6 +53,7 @@ classdef PredictionConfig < handle
         logWriteMB % LogIOw
         
         transactionCountUngrouped % C
+        totalTransactionCountUngrouped
         averageCpuUsageUngrouped % P
         diskWriteUngrouped % IO
         transactionLatencyUngrouped % L
@@ -57,6 +61,7 @@ classdef PredictionConfig < handle
         lockWaitTimeUngrouped % W, NumOfWaitDueToLocks
         currentLockWaitUngrouped % LocksBeingWaitedFor
         TPSUngrouped % TPS
+        TPSRatioUngrouped
         rowsChangedUngrouped % RowsChanged
         pagesFlushedUngrouped % PagesFlushed
         transactionMixtureUngrouped % Mixture
@@ -109,9 +114,9 @@ classdef PredictionConfig < handle
                 this.datasetList{i}.loadStatistics;
                 conf = this.datasetList{i}.getStruct;
                 if ~isempty(this.groupingStrategy)
-                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, this.groupingStrategy, conf.tranTypes);
+                    [mv_i mv_ungrouped_i] = load_mv2(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, this.groupingStrategy, conf.tranTypes);
                 else
-                    [mv_i mv_ungrouped_i] = load_mv(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, [], conf.tranTypes);
+                    [mv_i mv_ungrouped_i] = load_mv2(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, [], conf.tranTypes);
                 end
     
                 if i==1
@@ -140,11 +145,32 @@ classdef PredictionConfig < handle
         function initialize(this)
             this.mergeDataset;
             mv = this.mv;
-            this.transactionType = [1:size(mv.clientIndividualSubmittedTrans,2)];
-            
+            %this.transactionType = [1:size(mv.clientIndividualSubmittedTrans,2)];
+            this.transactionType = [1:mv.numOfTransType(1)];
+            numRow = size(mv.clientIndividualSubmittedTrans, 1);
+            this.totalTransactionCount = zeros(numRow, mv.numOfTransType(1));
+            this.totalTransactionLatency = zeros(numRow, mv.numOfTransType(1));
+
             % this.transactionCount = mv.clientIndividualSubmittedTrans(:,this.transactionType);
-            this.transactionCount = mv.clientIndividualSubmittedTrans;
-            this.averageCpuUsage = mean(mv.cpu_usr, 2);
+            this.transactionCount = {};
+            this.TPS = [];
+            this.TPSRatio = {};
+            SumTPS = 0;
+            start_col = 1;
+            for i=1:size(mv.numOfTransType, 2)
+                end_col = start_col + mv.numOfTransType(i) - 1;
+                this.transactionCount{i} = mv.clientIndividualSubmittedTrans(:,start_col:end_col);
+                this.totalTransactionCount = this.totalTransactionCount + this.transactionCount{i};
+                this.TPS = horzcat(this.TPS, sum(this.transactionCount{i},2));
+                SumTPS = SumTPS + sum(this.TPS(:,i), 1);
+                start_col = end_col + 1;
+            end
+            for i=1:size(mv.numOfTransType, 2)
+                this.TPSRatio{i} = sum(this.TPS(:,i), 1) / SumTPS;
+            end
+            %this.transactionCount = mv.clientIndividualSubmittedTrans;
+            %this.averageCpuUsage = mean(mv.cpu_usr, 2);
+            this.averageCpuUsage = mv.AvgCpuUser;
             this.diskWrite = mv.osNumberOfSectorWrites;
             if isfield(mv, 'dbmsLockWaitTime')
                 this.lockWaitTime = mv.dbmsLockWaitTime;
@@ -154,18 +180,47 @@ classdef PredictionConfig < handle
                 this.currentLockWait = [];
             end
             % this.transactionLatency = mv.clientTransLatency(:,this.transactionType);
-            this.transactionLatency = mv.clientTransLatency;
-			this.transactionLatencyPercentile = mv.prclat;
-            this.TPS = sum(this.transactionCount,2);
+            %this.transactionLatency = mv.clientTransLatency;
+            this.transactionLatency = {};
+            start_col = 1;
+            for i=1:size(mv.numOfTransType, 2)
+                end_col = start_col + mv.numOfTransType(i) - 1;
+                this.transactionLatency{i} = mv.clientTransLatency(:,start_col:end_col);
+                this.totalTransactionLatency = this.totalTransactionLatency + this.transactionLatency{i};
+                start_col = end_col + 1;
+            end
+            this.totalTransactionLatency = this.totalTransactionLatency ./ size(mv.numOfTransType, 2);
+            this.transactionLatencyPercentile = mv.prclat;
+            %this.TPS = sum(this.transactionCount,2);
+            %this.TPS = sum(this.transactionCount,2);
             if isfield(mv, 'dbmsChangedRows')
                 this.rowsChanged = mv.dbmsChangedRows;
             else
                 this.rowsChanged = [];
             end
             this.pagesFlushed = mv.dbmsFlushedPages;
-            idx = find(this.TPS>0);
-            ratios = this.transactionCount(idx,:) ./ repmat(this.TPS(idx),1,size(this.transactionCount,2));
+            totalTPS = sum(this.TPS, 2);
+            idx = find(totalTPS>0);
+            %idx = find(this.TPS>0);
+            %ratios = this.transactionCount(idx,:) ./ repmat(this.TPS(idx),1,size(this.transactionCount,2));
+            ratios = this.totalTransactionCount(idx,:) ./ repmat(totalTPS(idx),1,size(this.totalTransactionCount,2));
             this.transactionMixture = mean(ratios);
+
+            %tempMixture = mean(ratios);
+            %start_col = 1;
+            %for i=1:size(mv.numOfTransType, 2)
+                %end_col = start_col + mv.numOfTransType(i) - 1;
+                %for j=start_col:end_col
+                    %if i==1 || size(this.transactionMixture, 2) < (j-start_col+1)
+                        %this.transactionMixture(j-start_col+1) = tempMixture(j);
+                    %else
+                        %this.transactionMixture(j - start_col + 1) = this.transactionMixture(j - start_col + 1) + tempMixture(j);
+                    %end
+                %end
+                %start_col = end_col + 1;
+            %end
+            %this.transactionMixture = this.transactionMixture ./ size(mv.numOfTransType, 2);
+
             this.logicalReads = mv.dbmsReadRequests;
             this.physicalReads = mv.dbmsReads;
             if isfield(mv, 'dbmsNumberOfDataReads')
@@ -180,8 +235,27 @@ classdef PredictionConfig < handle
             %% Do it again for ungrouped.
             mvUngrouped = this.mvUngrouped;
             
+            this.transactionCountUngrouped = {};
+            this.TPSUngrouped = [];
+            this.TPSRatioUngrouped = {};
+            SumTPS = 0;
+            start_col = 1;
+            for i=1:size(mvUngrouped.numOfTransType, 2)
+                end_col = start_col + mvUngrouped.numOfTransType(i) - 1;
+                this.transactionCountUngrouped{i} = mvUngrouped.clientIndividualSubmittedTrans(:,start_col:end_col);
+                this.TPSUngrouped = horzcat(this.TPSUngrouped, sum(this.transactionCountUngrouped{i},2));
+                SumTPS = SumTPS + sum(this.TPSUngrouped(:,i), 1);
+                start_col = end_col + 1;
+            end
+            for i=1:size(mvUngrouped.numOfTransType, 2)
+                this.TPSRatioUngrouped{i} = sum(this.TPSUngrouped(:,i),1) / SumTPS;
+            end
+            %this.transactionCount = mv.clientIndividualSubmittedTrans;
+            %this.averageCpuUsage = mean(mv.cpu_usr, 2);
+            this.averageCpuUsageUngrouped = mvUngrouped.AvgCpuUser;
             % this.transactionCountUngrouped = mvUngrouped.clientIndividualSubmittedTrans(:,this.transactionType);
             this.transactionCountUngrouped = mvUngrouped.clientIndividualSubmittedTrans;
+            %this.averageCpuUsageUngrouped = mean(mvUngrouped.cpu_usr, 2);
             this.averageCpuUsageUngrouped = mean(mvUngrouped.cpu_usr, 2);
             this.diskWriteUngrouped = mvUngrouped.osNumberOfSectorWrites;
             if isfield(mvUngrouped, 'dbmsLockWaitTime')
@@ -193,17 +267,20 @@ classdef PredictionConfig < handle
             end
             % this.transactionLatencyUngrouped = mvUngrouped.clientTransLatency(:,this.transactionType);
             this.transactionLatencyUngrouped = mvUngrouped.clientTransLatency;
-			this.transactionLatencyPercentileUngrouped = mvUngrouped.prclat;
-            this.TPSUngrouped = sum(this.transactionCount,2);
+            this.transactionLatencyPercentileUngrouped = mvUngrouped.prclat;
+            %this.TPSUngrouped = sum(this.transactionCount,2);
             if isfield(mvUngrouped, 'dbmsChangedRows')
                 this.rowsChangedUngrouped = mvUngrouped.dbmsChangedRows;
             else
                 this.rowsChangedUngrouped = [];
             end
             this.pagesFlushedUngrouped = mvUngrouped.dbmsFlushedPages;
-            idx = find(this.TPS>0);
-            ratios = this.transactionCountUngrouped(idx,:) ./ repmat(this.TPSUngrouped(idx),1,size(this.transactionCount,2));
-            this.transactionMixtureUngrouped = mean(ratios);
+
+            %idx = find(this.TPS>0);
+            %ratios = this.transactionCountUngrouped(idx,:) ./ repmat(this.TPSUngrouped(idx),1,size(this.transactionCount,2));
+            %this.transactionMixtureUngrouped = mean(ratios);
+            this.transactionMixtureUngrouped = this.transactionMixture;
+
             this.logicalReadsUngrouped = mvUngrouped.dbmsReadRequests;
             this.physicalReadsUngrouped = mvUngrouped.dbmsReads;
             if isfield(mvUngrouped, 'dbmsNumberOfDataReads')

@@ -171,10 +171,10 @@ public class DataCenter
 
 		for (Transaction transaction : transactions)
 		{
-			if (!transaction.isNoRowsReadWritten())
-			{
+//			if (!transaction.isNoRowsReadWritten())
+//			{
 				actualTransactions.add(transaction);
-			}
+//			}
 		}
 
 		for (Transaction transaction : actualTransactions)
@@ -1060,12 +1060,23 @@ public class DataCenter
 					line = file.readLine();
 					continue;
 				}
-				int id = Integer.parseInt(line.substring(0,commaIndex));
-				String statement = line.substring(commaIndex+1);
-				statement = statement.replaceAll("\0", "\n");
-				Statement stmt = statementMap.get(id);
+				Statement stmt;
+				String statement = "";
+				try
+				{
+					int id = Integer.parseInt(line.substring(0, commaIndex));
+					statement = line.substring(commaIndex + 1);
+					statement = statement.replaceAll("\0", "\n");
+					stmt = statementMap.get(id);
 
-				if (stmt == null)
+					if (stmt == null)
+					{
+						offset = file.getFilePointer();
+						line = file.readLine();
+						continue;
+					}
+				}
+				catch (NumberFormatException e)
 				{
 					offset = file.getFilePointer();
 					line = file.readLine();

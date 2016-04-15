@@ -23,6 +23,12 @@ import java.io.File;
  */
 public class DBSeerConstants
 {
+	// DB types
+	public static final int DB_MYSQL = 0;
+
+	// OS types
+	public static final int OS_LINUX = 0;
+
 	// statistical packages
 	public static final int STAT_MATLAB = 0;
 	public static final int STAT_OCTAVE = 1;

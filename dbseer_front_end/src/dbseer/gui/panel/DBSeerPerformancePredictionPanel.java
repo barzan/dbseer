@@ -121,28 +121,28 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 		{
 			if (trainConfigComboBox.getSelectedItem() == null)
 			{
-				JOptionPane.showMessageDialog(null, "Please select a config first.", "Warning",
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Please select a config first.", "Warning",
 						JOptionPane.WARNING_MESSAGE);
 				return;
 			}
 			final DBSeerConfiguration trainConfig = (DBSeerConfiguration) trainConfigComboBox.getSelectedItem();
 			if (trainConfig.getDatasetCount() == 0)
 			{
-				JOptionPane.showMessageDialog(null, "The selected train config does not include a dataset.", "Warning",
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "The selected train config does not include a dataset.", "Warning",
 						JOptionPane.WARNING_MESSAGE);
 				return;
 			}
 
 			if (trainConfig.isLive() && !DBSeerGUI.isLiveDataReady)
 			{
-				JOptionPane.showMessageDialog(null, "It should be monitoring to perform predictions with live config.", "Warning",
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "It should be monitoring to perform predictions with live config.", "Warning",
 						JOptionPane.WARNING_MESSAGE);
 				return;
 			}
 
 			if (trainConfig.getDataset(0).getTransactionTypeNames().size() == 0)
 			{
-				JOptionPane.showMessageDialog(null, "The dataset needs to have at least one transaction type enabled.", "Warning",
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "The dataset needs to have at least one transaction type enabled.", "Warning",
 						JOptionPane.WARNING_MESSAGE);
 				return;
 			}
@@ -150,7 +150,7 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 			{
 				if (throttlingAnalysisPanel.getTargetLatency() == 0)
 				{
-					JOptionPane.showMessageDialog(null, "Latency must be greater than zero.", "Warning",
+					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Latency must be greater than zero.", "Warning",
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
@@ -199,10 +199,14 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 					@Override
 					protected void done()
 					{
-						if (!worker.isCancelled())
+						if (!worker.isCancelled() && isAnalysisDone)
 						{
 							printWhatIfAnalysisResult(center, trainConfig, targetIndex);
 							DBSeerGUI.status.setText("What-if Analysis Completed.");
+						}
+						else
+						{
+							DBSeerGUI.status.setText("What-if Analysis Failed.");
 						}
 						cancelAnalysisButton.setEnabled(false);
 					}
@@ -239,10 +243,14 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 					@Override
 					protected void done()
 					{
-						if (!worker.isCancelled())
+						if (!worker.isCancelled() && isAnalysisDone)
 						{
 							printBottleneckAnalysisResult(center, trainConfig, selectedIndex);
 							DBSeerGUI.status.setText("Bottleneck Analysis Completed.");
+						}
+						else
+						{
+							DBSeerGUI.status.setText("Bottleneck Analysis Failed.");
 						}
 						cancelAnalysisButton.setEnabled(false);
 					}
@@ -273,10 +281,14 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 					@Override
 					protected void done()
 					{
-						if (!worker.isCancelled())
+						if (!worker.isCancelled() && isAnalysisDone)
 						{
 							printBlameAnalysisResult(center, trainConfig, selectedIndex);
 							DBSeerGUI.status.setText("Blame Analysis Completed.");
+						}
+						else
+						{
+							DBSeerGUI.status.setText("Blame Analysis Failed.");
 						}
 						cancelAnalysisButton.setEnabled(false);
 					}
@@ -318,10 +330,14 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 					@Override
 					protected void done()
 					{
-						if (!worker.isCancelled())
+						if (!worker.isCancelled() && isAnalysisDone)
 						{
 							printThrottlingAnalysisResult(center, trainConfig, throttleType);
 							DBSeerGUI.status.setText("Throttle Analysis Completed.");
+						}
+						else
+						{
+							DBSeerGUI.status.setText("Throttle Analysis Failed.");
 						}
 						cancelAnalysisButton.setEnabled(false);
 					}
@@ -505,7 +521,10 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 			@Override
 			protected Void doInBackground() throws Exception
 			{
-				trainConfig.initialize();
+				if (!trainConfig.initialize())
+				{
+					return null;
+				}
 				pc.setTestMode(DBSeerConstants.TEST_MODE_MIXTURE_TPS);
 				pc.setTrainConfig((DBSeerConfiguration) trainConfigComboBox.getSelectedItem());
 
@@ -583,8 +602,8 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 					predictionCenter = pc;
 					lastChartType = cType;
 					viewAnalysisChartButton.setEnabled(true);
+					isAnalysisDone = true;
 				}
-				isAnalysisDone = true;
 				performAnalysisButton.setEnabled(true);
 				trainConfigComboBox.setEnabled(true);
 			}

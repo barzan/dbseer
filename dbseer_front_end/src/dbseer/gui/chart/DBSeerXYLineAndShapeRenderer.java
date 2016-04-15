@@ -16,9 +16,7 @@
 
 package dbseer.gui.chart;
 
-import dbseer.comp.TransactionReader;
 import dbseer.gui.user.DBSeerDataSet;
-import dbseer.gui.user.DBSeerTransactionSample;
 import dbseer.gui.user.DBSeerTransactionSampleList;
 import org.jfree.chart.entity.XYItemEntity;
 import org.jfree.chart.labels.XYToolTipGenerator;
@@ -26,7 +24,6 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYDataset;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 

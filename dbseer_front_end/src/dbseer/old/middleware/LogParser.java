@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package dbseer.middleware;
+package dbseer.old.middleware;
 
 import dbseer.comp.SQLStatementParser;
 import dbseer.comp.clustering.StreamClustering;

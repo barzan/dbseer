@@ -21,7 +21,7 @@ package dbseer.stat;
  */
 public abstract class StatisticalPackageRunner
 {
-	public abstract boolean eval(String str);
+	public abstract boolean eval(String str) throws Exception;
 	public abstract double[] getVariableDouble(String var);
 	public abstract Object getVariableCell(String var);
 	public abstract String getVariableString(String var);

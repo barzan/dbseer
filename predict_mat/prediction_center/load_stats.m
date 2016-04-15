@@ -16,13 +16,20 @@ function [Header Monitor LatencyAvg LatencyPercentile Counts DiffedMonitor] = ..
   load_stats(header_path, monitor_path, trans_count_path, avg_latency_path, percentile_latency_path, statement_stat_path, skipFromBegining, skipFromEnd, flag, tranTypes)
 
 Monitor = csvread(monitor_path,2,0); % dyoon: 0 added as third argument for col.
+LatencyAvg = dlmread(avg_latency_path);
 
 startIdx = 1 + skipFromBegining;
 if flag == true
     endIdx = size(Monitor, 1) - skipFromEnd;
+    if endIdx > size(LatencyAvg, 1)
+        endIdx = size(LatencyAvg, 1);
+    end
 else
 	if skipFromEnd > size(Monitor, 1) || skipFromEnd == 0
 		endIdx = size(Monitor, 1);
+        if endIdx > size(LatencyAvg, 1)
+            endIdx = size(LatencyAvg, 1);
+        end
 	else
 		endIdx = skipFromEnd;
 	end
@@ -52,7 +59,7 @@ Header = header;
 
 DiffedMonitor = diff(Monitor(startIdx:endIdx,:));
 % LatencyAvg = load(avg_latency_path);
-LatencyAvg = dlmread(avg_latency_path);
+
 %prclat = load(horzcat(inputDir,'/trans-',signature,'_prctile_latencies.mat'));
 % Counts = load(trans_count_path);
 Counts = dlmread(trans_count_path);

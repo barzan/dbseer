@@ -1,3 +1,7 @@
+2016-04-15
+- Middleware has been updated. It works with our custom plugin 'dbseerroute' of MariaDB MaxScale.
+- Major changes in protocol between GUI and middleware + how live monitoring works.
+
 2015-10-16
 - Added support for Julia.
 - Added support for incremental logging and live clustering.

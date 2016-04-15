@@ -16,22 +16,13 @@
 
 package dbseer.gui.frame;
 
-import com.orsonpdf.Stream;
-import dbseer.comp.TransactionReader;
-import dbseer.comp.clustering.Cluster;
-import dbseer.comp.clustering.StreamClustering;
-import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
-import dbseer.gui.user.DBSeerDataSet;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by dyoon on 14. 11. 26..
@@ -76,7 +67,7 @@ public class DBSeerShowTransactionExampleFrame extends JFrame implements ActionL
 		closeButton.addActionListener(this);
 		this.add(closeButton);
 
-		samples = StreamClustering.getDBSCAN().getTransactionSamples(type);
+		samples = DBSeerGUI.dbscan.getTransactionSamples(type);
 //		try
 //		{
 //			String firstSample = DBSeerGUI.middlewareSocket.requestTransactionSample(type, nextIndex);

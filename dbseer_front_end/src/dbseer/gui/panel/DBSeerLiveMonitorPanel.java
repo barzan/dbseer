@@ -16,7 +16,7 @@
 
 package dbseer.gui.panel;
 
-import dbseer.comp.data.LiveMonitor;
+import dbseer.comp.process.live.LiveMonitorInfo;
 import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.frame.DBSeerShowTransactionExampleFrame;
@@ -145,7 +145,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 
 	public void reset()
 	{
-		synchronized (LiveMonitor.LOCK)
+		synchronized (LiveMonitorInfo.LOCK)
 		{
 			DefaultTableModel model = (DefaultTableModel) monitorTable.getModel();
 			int rowCount = model.getRowCount();
@@ -181,6 +181,8 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 			setTotalNumberOfTransactions(0.0);
 			setCurrentTPS(0.0);
 		}
+		this.invalidate();
+		this.repaint();
 	}
 
 	public void setTotalNumberOfTransactions(double total)
@@ -197,7 +199,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 
 	public synchronized void setCurrentTPS(long time, int index, double tps)
 	{
-		synchronized (LiveMonitor.LOCK)
+		synchronized (LiveMonitorInfo.LOCK)
 		{
 			DefaultTableModel model = (DefaultTableModel) monitorTable.getModel();
 			if (model.getRowCount() <= 2 + (index * ROW_PER_TX_TYPE))
@@ -263,7 +265,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 
 	public synchronized void setCurrentAverageLatency(long time, int index, double latency)
 	{
-		synchronized (LiveMonitor.LOCK)
+		synchronized (LiveMonitorInfo.LOCK)
 		{
 			DefaultTableModel model = (DefaultTableModel) monitorTable.getModel();
 			if (model.getRowCount() <= 2 + (index * ROW_PER_TX_TYPE + 1))
@@ -324,6 +326,11 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 
 	public synchronized void updateTransactionNames()
 	{
+		if (DBSeerGUI.liveDataset.getAllTransactionTypeNames().size() == 0)
+		{
+			return;
+		}
+
 		for (int i = 0; i < transactionRenameButtons.size(); ++i)
 		{
 			String newName = DBSeerGUI.liveDataset.getAllTransactionTypeNames().get(i);
@@ -441,7 +448,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 		{
 			if (event.getSource() == transactionDeleteButtons.get(i))
 			{
-				synchronized (LiveMonitor.LOCK)
+				synchronized (LiveMonitorInfo.LOCK)
 				{
 					try
 					{

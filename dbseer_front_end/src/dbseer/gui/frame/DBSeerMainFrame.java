@@ -16,7 +16,7 @@
 
 package dbseer.gui.frame;
 
-import dbseer.comp.data.LiveMonitor;
+import dbseer.comp.process.live.LiveMonitorInfo;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.panel.*;
 import dbseer.gui.actions.*;
@@ -179,7 +179,7 @@ public class DBSeerMainFrame extends JFrame
 
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new MigLayout("fill"));
-		mainPanel.add(pathChoosePanel, "grow, wrap");
+		mainPanel.add(pathChoosePanel, "dock north, wrap");
 		mainPanel.add(mainTabbedPane, "grow");
 //		JScrollPane mainScrollPane = new JScrollPane();
 //		mainScrollPane.setViewportView(mainPanel);
@@ -187,9 +187,9 @@ public class DBSeerMainFrame extends JFrame
 //		mainScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
 		this.add(mainPanel, "grow, wrap");
-		this.add(statusPanel, "dock south, grow, push");
+		this.add(statusPanel, "dock south, push");
 		this.setResizable(true);
-
+		this.setMinimumSize(new Dimension(1200, 800));
 	}
 
 	public JTabbedPane getMainTabbedPane()
@@ -200,7 +200,7 @@ public class DBSeerMainFrame extends JFrame
 	public void resetLiveMonitoring()
 	{
 		final DBSeerMainFrame frame = this;
-		DBSeerGUI.liveMonitor = new LiveMonitor();
+		DBSeerGUI.liveMonitorInfo = new LiveMonitorInfo();
 		DBSeerGUI.liveMonitorPanel = new DBSeerLiveMonitorPanel();
 		SwingUtilities.invokeLater(new Runnable()
 		{

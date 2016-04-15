@@ -55,90 +55,57 @@ public class OpenDirectoryAction extends AbstractAction
 
 		if (loadDialog.getFile() != null)
 		{
-			profile.clearTransactionTypes();
-			String[] files = loadDialog.getFile().list();
-			String directory = loadDialog.getFile().getAbsolutePath();
-			if (files != null)
-			{
-				for (String file : files)
-				{
-					String fileLower = file.toLowerCase();
+			profile.setPath(loadDialog.getFile().getAbsolutePath());
+			profile.loadDataset(true);
+		}
 
-					file = directory + "/" + file;
-					if (fileLower.contains("mon"))
-					{
-						profile.setMonitoringDataPath(file);
-					}
-					else if (fileLower.contains("alllogs-t"))
-					{
-						profile.setTransactionFilePath(file);
-					}
-					else if (fileLower.contains("alllogs-q"))
-					{
-						profile.setQueryFilePath(file);
-					}
-					else if (fileLower.contains("alllogs-s"))
-					{
-						profile.setStatementFilePath(file);
-					}
-					else if (fileLower.contains("header"))
-					{
-						profile.setHeaderPath(file);
-					}
-					else if (fileLower.contains("avg") || fileLower.contains("average"))
-					{
-						profile.setAverageLatencyPath(file);
-						File avgLatencyFile = new File(file);
-						try
-						{
-							BufferedReader reader = new BufferedReader(new FileReader(avgLatencyFile));
-							String line = reader.readLine(); // read first line.
-							String[] tokens = line.trim().split("\\s+");
-							int numTransactionType = tokens.length - 1;
-							for (int i = 0; i < numTransactionType; ++i)
-							{
-								profile.addTransactionType("Type " + (i+1));
-							}
-						}
-						catch (FileNotFoundException e)
-						{
-							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-						}
-						catch (IOException e)
-						{
-							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-						}
-					}
-					else if (fileLower.contains("trans_count"))
-					{
-						profile.setTransCountPath(file);
-					}
-					else if (fileLower.contains("prctile_latencies.mat"))
-					{
-						profile.setPercentileLatencyPath(file);
-					}
-					else if (fileLower.contains("stmt_count"))
-					{
-						profile.setStatementStatPath(file);
-					}
-					else if (fileLower.contains("page"))
-					{
-						profile.setPageInfoPath(file);
-					}
-//					else if( fileLower.contains("trans_types"))
+		// old implementation
+//		if (loadDialog.getFile() != null)
+//		{
+//			profile.clearTransactionTypes();
+//			String[] files = loadDialog.getFile().list();
+//			String directory = loadDialog.getFile().getAbsolutePath();
+//			if (files != null)
+//			{
+//				for (String file : files)
+//				{
+//					String fileLower = file.toLowerCase();
+//
+//					file = directory + "/" + file;
+//					if (fileLower.contains("mon"))
 //					{
-//						File typeFile = new File(file);
+//						profile.setMonitoringDataPath(file);
+//					}
+//					else if (fileLower.contains("alllogs-t"))
+//					{
+//						profile.setTransactionFilePath(file);
+//					}
+//					else if (fileLower.contains("alllogs-q"))
+//					{
+//						profile.setQueryFilePath(file);
+//					}
+//					else if (fileLower.contains("alllogs-s"))
+//					{
+//						profile.setStatementFilePath(file);
+//					}
+//					else if (fileLower.contains("header"))
+//					{
+//						profile.setHeaderPath(file);
+//					}
+//					else if (fileLower.contains("avg") || fileLower.contains("average"))
+//					{
+//						profile.setAverageLatencyPath(file);
+//						File avgLatencyFile = new File(file);
 //						try
 //						{
-//							BufferedReader reader = new BufferedReader(new FileReader(typeFile));
+//							BufferedReader reader = new BufferedReader(new FileReader(avgLatencyFile));
 //							String line = reader.readLine(); // read first line.
-//							String[] tokens = line.trim().split(",");
-//							for (String type : tokens)
+//							String[] tokens = line.trim().split("\\s+");
+//							int numTransactionType = tokens.length - 1;
+//							for (int i = 0; i < numTransactionType; ++i)
 //							{
-//
+//								profile.addTransactionType("Type " + (i+1));
 //							}
-//							int numTransactionType = tokens.length;
-//							profile.setNumTransactionTypes(numTransactionType);
 //						}
 //						catch (FileNotFoundException e)
 //						{
@@ -149,20 +116,154 @@ public class OpenDirectoryAction extends AbstractAction
 //							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 //						}
 //					}
-				}
-			}
+//					else if (fileLower.contains("trans_count"))
+//					{
+//						profile.setTransCountPath(file);
+//					}
+//					else if (fileLower.contains("prctile_latencies.mat"))
+//					{
+//						profile.setPercentileLatencyPath(file);
+//					}
+//					else if (fileLower.contains("stmt_count"))
+//					{
+//						profile.setStatementStatPath(file);
+//					}
+//					else if (fileLower.contains("page"))
+//					{
+//						profile.setPageInfoPath(file);
+//					}
+////					else if( fileLower.contains("trans_types"))
+////					{
+////						File typeFile = new File(file);
+////						try
+////						{
+////							BufferedReader reader = new BufferedReader(new FileReader(typeFile));
+////							String line = reader.readLine(); // read first line.
+////							String[] tokens = line.trim().split(",");
+////							for (String type : tokens)
+////							{
+////
+////							}
+////							int numTransactionType = tokens.length;
+////							profile.setNumTransactionTypes(numTransactionType);
+////						}
+////						catch (FileNotFoundException e)
+////						{
+////							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+////						}
+////						catch (IOException e)
+////						{
+////							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+////						}
+////					}
+//				}
+//			}
+//
+//			File dir = loadDialog.getFile();
+//			FileFilter filter = new WildcardFileFilter("prctile_latency_*");
+//			File[] latencies = dir.listFiles(filter);
+//			if (latencies.length > profile.getNumTransactionTypes())
+//			{
+//				for (int i = profile.getNumTransactionTypes(); i < latencies.length; ++i)
+//				{
+//					profile.addTransactionType("Type " + (i+1));
+//				}
+//			}
+//			profile.addTransactionRows();
+//		}
+	}
 
-			File dir = loadDialog.getFile();
-			FileFilter filter = new WildcardFileFilter("prctile_latency_*");
-			File[] latencies = dir.listFiles(filter);
-			if (latencies.length > profile.getNumTransactionTypes())
-			{
-				for (int i = profile.getNumTransactionTypes(); i < latencies.length; ++i)
-				{
-					profile.addTransactionType("Type " + (i+1));
-				}
-			}
-			profile.addTransactionRows();
-		}
+	public void openWithoutDialog(File directory)
+	{
+		profile.setPath(directory.getAbsolutePath());
+		profile.loadDataset(true);
+
+		// old implementation
+//		if (directory != null)
+//		{
+//			profile.clearTransactionTypes();
+//			String[] files = directory.list();
+//
+//			if (files != null)
+//			{
+//				for (String file : files)
+//				{
+//					String fileLower = file.toLowerCase();
+//
+//					file = directory + "/" + file;
+//					if (fileLower.contains("mon"))
+//					{
+//						profile.setMonitoringDataPath(file);
+//					}
+//					else if (fileLower.contains("alllogs-t"))
+//					{
+//						profile.setTransactionFilePath(file);
+//					}
+//					else if (fileLower.contains("alllogs-q"))
+//					{
+//						profile.setQueryFilePath(file);
+//					}
+//					else if (fileLower.contains("alllogs-s"))
+//					{
+//						profile.setStatementFilePath(file);
+//					}
+//					else if (fileLower.contains("header"))
+//					{
+//						profile.setHeaderPath(file);
+//					}
+//					else if (fileLower.contains("avg") || fileLower.contains("average"))
+//					{
+//						profile.setAverageLatencyPath(file);
+//						File avgLatencyFile = new File(file);
+//						try
+//						{
+//							BufferedReader reader = new BufferedReader(new FileReader(avgLatencyFile));
+//							String line = reader.readLine(); // read first line.
+//							String[] tokens = line.trim().split("\\s+");
+//							int numTransactionType = tokens.length - 1;
+//							for (int i = 0; i < numTransactionType; ++i)
+//							{
+//								profile.addTransactionType("Type " + (i+1));
+//							}
+//						}
+//						catch (FileNotFoundException e)
+//						{
+//							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+//						}
+//						catch (IOException e)
+//						{
+//							JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+//						}
+//					}
+//					else if (fileLower.contains("trans_count"))
+//					{
+//						profile.setTransCountPath(file);
+//					}
+//					else if (fileLower.contains("prctile_latencies.mat"))
+//					{
+//						profile.setPercentileLatencyPath(file);
+//					}
+//					else if (fileLower.contains("stmt_count"))
+//					{
+//						profile.setStatementStatPath(file);
+//					}
+//					else if (fileLower.contains("page"))
+//					{
+//						profile.setPageInfoPath(file);
+//					}
+//				}
+//			}
+//
+//			FileFilter filter = new WildcardFileFilter("prctile_latency_*");
+//			File[] latencies = directory.listFiles(filter);
+//			if (latencies.length > profile.getNumTransactionTypes())
+//			{
+//				for (int i = profile.getNumTransactionTypes(); i < latencies.length; ++i)
+//				{
+//					profile.addTransactionType("Type " + (i+1));
+//				}
+//			}
+//			profile.addTransactionRows();
+//		}
 	}
 }

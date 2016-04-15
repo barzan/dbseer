@@ -43,26 +43,27 @@ import java.util.List;
 @XStreamAlias("dataset")
 public class DBSeerDataSet implements TableModelListener
 {
-	public static final String[] tableHeaders = {"Name of Dataset", "Transaction File", "Statement File", "Query File", "Monitoring Data File", "Transaction Count File",
-			"Average Latency File", "Percentile Latency File", "Header File",// "Statement Stat", // "Number of transaction types",
+	public static final String[] tableHeaders = {"Name of Dataset", "Path",// "Statement File", "Query File", "Monitoring Data File", "Transaction Count File",
+			//"Average Latency File", "Percentile Latency File", "Header File",// "Statement Stat", // "Number of transaction types",
 			"Use Entire Dataset", "Use Partial Dataset: Start Index", "Use Partial Dataset: End Index", "Number of Transaction Types"}; //, "Max Throughput Index"}; //"I/O Configuration", "Lock Configuration"
 		//};
 
 	public static final int TYPE_NAME = 0;
-	public static final int TYPE_TRANSACTION_FILE = 1;
-	public static final int TYPE_STATEMENT_FILE = 2;
-	public static final int TYPE_QUERY_FILE = 3;
-	public static final int TYPE_MONITORING_DATA = 4;
-	public static final int TYPE_TRANSACTION_COUNT = 5;
-	public static final int TYPE_AVERAGE_LATENCY = 6;
-	public static final int TYPE_PERCENTILE_LATENCY = 7;
-	public static final int TYPE_HEADER = 8;
+	public static final int TYPE_PATH = 1;
+//	public static final int TYPE_TRANSACTION_FILE = 1;
+//	public static final int TYPE_STATEMENT_FILE = 2;
+//	public static final int TYPE_QUERY_FILE = 3;
+//	public static final int TYPE_MONITORING_DATA = 4;
+//	public static final int TYPE_TRANSACTION_COUNT = 5;
+//	public static final int TYPE_AVERAGE_LATENCY = 6;
+//	public static final int TYPE_PERCENTILE_LATENCY = 7;
+//	public static final int TYPE_HEADER = 8;
 //	public static final int TYPE_NUM_TRANSACTION_TYPE = 6;
 //	public static final int TYPE_STATEMENT_STAT = 6;
-	public static final int TYPE_USE_ENTIRE_DATASET = 9;
-	public static final int TYPE_START_INDEX = 10;
-	public static final int TYPE_END_INDEX = 11;
-	public static final int TYPE_NUM_TRANSACTION_TYPE = 12;
+	public static final int TYPE_USE_ENTIRE_DATASET = 2;
+	public static final int TYPE_START_INDEX = 3;
+	public static final int TYPE_END_INDEX = 4;
+	public static final int TYPE_NUM_TRANSACTION_TYPE = 5;
 //	public static final int TYPE_MAX_THROUGHPUT_INDEX = 9;
 //	public static final int TYPE_IO_CONFIG = 10;
 //	public static final int TYPE_LOCK_CONFIG =11;
@@ -79,32 +80,39 @@ public class DBSeerDataSet implements TableModelListener
 	protected String uniqueModelVariableName = "";
 
 	protected String name = "";
+	protected String path = "";
 
 	protected String transactionFilePath = "";
 	protected String statementFilePath = "";
 	protected String queryFilePath = "";
-	protected String monitoringDataPath = "";
-	protected String transCountPath = "";
-	protected String averageLatencyPath = "";
-	protected String percentileLatencyPath = "";
-	protected String headerPath = "";
-	protected String pageInfoPath = "";
-	protected String statementStatPath = "";
+//	protected String monitoringDataPath = "";
+//	protected String transCountPath = "";
+//	protected String averageLatencyPath = "";
+//	protected String percentileLatencyPath = "";
+//	protected String headerPath = "";
+//	protected String pageInfoPath = "";
+//	protected String statementStatPath = "";
 
 	protected Boolean useEntireDataSet = true;
 	@XStreamOmitField
 	protected Boolean live;
+	@XStreamOmitField
+	protected boolean isCurrent;
 
 	protected int startIndex = 0;
 	protected int endIndex = 0;
 
 	protected int numTransactionTypes = 0;
 
-	@XStreamImplicit
+	@XStreamOmitField
+	protected ArrayList<DBSeerDataSetPath> datasetPathList = new ArrayList<DBSeerDataSetPath>();
+
 	protected java.util.List<String> transactionTypeNames = new ArrayList<String>();
 	@XStreamImplicit
 	protected java.util.Set<Integer> validTransactions = new HashSet<Integer>();
 
+	@XStreamOmitField
+	protected String pathBackup = "";
 	@XStreamOmitField
 	protected String transactionFilePathBackup = "";
 	@XStreamOmitField
@@ -195,15 +203,16 @@ public class DBSeerDataSet implements TableModelListener
 						cell.setForeground(Color.BLACK);
 					}
 				}
-				else if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
-						row == DBSeerDataSet.TYPE_HEADER ||
-						row == DBSeerDataSet.TYPE_MONITORING_DATA ||
-						row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
-						row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
-						row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
-						row == DBSeerDataSet.TYPE_STATEMENT_FILE ||
-						row == DBSeerDataSet.TYPE_QUERY_FILE ||
-						row == DBSeerDataSet.TYPE_TRANSACTION_FILE)
+//				else if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
+//						row == DBSeerDataSet.TYPE_HEADER ||
+//						row == DBSeerDataSet.TYPE_MONITORING_DATA ||
+//						row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
+//						row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
+//						row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
+//						row == DBSeerDataSet.TYPE_STATEMENT_FILE ||
+//						row == DBSeerDataSet.TYPE_QUERY_FILE ||
+//						row == DBSeerDataSet.TYPE_TRANSACTION_FILE)
+				else if (row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE)
 				{
 					cell.setForeground(Color.LIGHT_GRAY);
 				}
@@ -235,6 +244,7 @@ public class DBSeerDataSet implements TableModelListener
 		{
 			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), "Type " + (i+1)});
 			validTransactions.add(i+1);
+			transactionTypeNames.add("Type " + (i+1));
 		}
 
 		for (int i = 0; i < numTransactionTypes; ++i)
@@ -251,6 +261,7 @@ public class DBSeerDataSet implements TableModelListener
 
 		this.updateTable();
 		dataSetLoaded = false;
+		isCurrent = false;
 
 		tableModel.setUseEntireDataSet(this.useEntireDataSet.booleanValue());
 	}
@@ -296,15 +307,16 @@ public class DBSeerDataSet implements TableModelListener
 						cell.setForeground(Color.BLACK);
 					}
 				}
-				else if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
-						row == DBSeerDataSet.TYPE_HEADER ||
-						row == DBSeerDataSet.TYPE_MONITORING_DATA ||
-						row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
-						row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
-						row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
-						row == DBSeerDataSet.TYPE_STATEMENT_FILE ||
-						row == DBSeerDataSet.TYPE_QUERY_FILE ||
-						row == DBSeerDataSet.TYPE_TRANSACTION_FILE)
+//				else if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
+//						row == DBSeerDataSet.TYPE_HEADER ||
+//						row == DBSeerDataSet.TYPE_MONITORING_DATA ||
+//						row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
+//						row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
+//						row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
+//						row == DBSeerDataSet.TYPE_STATEMENT_FILE ||
+//						row == DBSeerDataSet.TYPE_QUERY_FILE ||
+//						row == DBSeerDataSet.TYPE_TRANSACTION_FILE)
+				else if (row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE)
 				{
 					cell.setForeground(Color.LIGHT_GRAY);
 				}
@@ -338,6 +350,7 @@ public class DBSeerDataSet implements TableModelListener
 		{
 			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), "Type " + (i+1)});
 			validTransactions.add(i+1);
+			transactionTypeNames.add("Type " + (i+1));
 		}
 
 		for (int i = 0; i < numTransactionTypes; ++i)
@@ -361,99 +374,100 @@ public class DBSeerDataSet implements TableModelListener
 	public void updateLiveDataSet()
 	{
 		// only do this if the dataset is live dataset.
-		if (live)
-		{
-			String livePath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator + DBSeerConstants.LIVE_DATASET_PATH;
-			this.averageLatencyPath = livePath + File.separator + "avg_latency";
-			this.transCountPath = livePath + File.separator + "trans_count";
-			this.transactionFilePath = livePath + File.separator + "allLogs-t.txt";
-			this.statementFilePath = livePath + File.separator + "allLogs-s.txt";
-			this.queryFilePath = livePath + File.separator + "allLogs-q.txt";
-			this.headerPath = livePath + File.separator + "dataset_header.m";
-			this.monitoringDataPath = livePath + File.separator + "monitor";
-
-			// check valid transactions.
-			validTransactions.clear();
-			File transTypeFile = new File(livePath + File.separator + "trans_type");
-
-			// use trans_type if exists
-			int numTrans = 0;
-			if (transTypeFile.exists())
-			{
-				try
-				{
-					BufferedReader br = new BufferedReader(new FileReader(transTypeFile));
-					String line;
-					while ((line = br.readLine()) != null)
-					{
-						if (line.isEmpty())
-						{
-							continue;
-						}
-						else
-						{
-							String[] inds = line.split(",");
-							for (String ind : inds)
-							{
-								int indexNum = Integer.parseInt(ind);
-								validTransactions.add(indexNum);
-								if (indexNum > numTrans)
-								{
-									numTrans = indexNum;
-								}
-							}
-							break;
-						}
-					}
-					this.numTransactionTypes = numTrans;
-				}
-				catch (FileNotFoundException e)
-				{
-					e.printStackTrace();
-				}
-				catch (IOException e)
-				{
-					e.printStackTrace();
-				}
-			}
-			// otherwise, count prctile_latency_* files
-			else
-			{
-				File liveDir = new File(livePath);
-				FileFilter filter = new WildcardFileFilter("prctile_latency_*");
-				File[] files = liveDir.listFiles(filter);
-				if (files != null)
-				{
-					this.numTransactionTypes = files.length;
-					for (int i = 0; i < numTransactionTypes; ++i)
-					{
-						validTransactions.add(i);
-					}
-				}
-			}
-
-			if (this.numTransactionTypes == 0)
-			{
-//				DBSeerExceptionHandler.handleException(new Exception("Unable to figure out the number of transactions for the live dataset."));
-			}
-
-			this.updateTable();
-		}
+//		if (live)
+//		{
+//			String livePath = DBSeerGUI.userSettings.getDBSeerRootPath() + File.separator + DBSeerConstants.LIVE_DATASET_PATH;
+//			this.averageLatencyPath = livePath + File.separator + "avg_latency";
+//			this.transCountPath = livePath + File.separator + "trans_count";
+//			this.transactionFilePath = livePath + File.separator + "allLogs-t.txt";
+//			this.statementFilePath = livePath + File.separator + "allLogs-s.txt";
+//			this.queryFilePath = livePath + File.separator + "allLogs-q.txt";
+//			this.headerPath = livePath + File.separator + "dataset_header.m";
+//			this.monitoringDataPath = livePath + File.separator + "monitor";
+//
+//			// check valid transactions.
+//			validTransactions.clear();
+//			File transTypeFile = new File(livePath + File.separator + "trans_type");
+//
+//			// use trans_type if exists
+//			int numTrans = 0;
+//			if (transTypeFile.exists())
+//			{
+//				try
+//				{
+//					BufferedReader br = new BufferedReader(new FileReader(transTypeFile));
+//					String line;
+//					while ((line = br.readLine()) != null)
+//					{
+//						if (line.isEmpty())
+//						{
+//							continue;
+//						}
+//						else
+//						{
+//							String[] inds = line.split(",");
+//							for (String ind : inds)
+//							{
+//								int indexNum = Integer.parseInt(ind);
+//								validTransactions.add(indexNum);
+//								if (indexNum > numTrans)
+//								{
+//									numTrans = indexNum;
+//								}
+//							}
+//							break;
+//						}
+//					}
+//					this.numTransactionTypes = numTrans;
+//				}
+//				catch (FileNotFoundException e)
+//				{
+//					e.printStackTrace();
+//				}
+//				catch (IOException e)
+//				{
+//					e.printStackTrace();
+//				}
+//			}
+//			// otherwise, count prctile_latency_* files
+//			else
+//			{
+//				File liveDir = new File(livePath);
+//				FileFilter filter = new WildcardFileFilter("prctile_latency_*");
+//				File[] files = liveDir.listFiles(filter);
+//				if (files != null)
+//				{
+//					this.numTransactionTypes = files.length;
+//					for (int i = 0; i < numTransactionTypes; ++i)
+//					{
+//						validTransactions.add(i);
+//					}
+//				}
+//			}
+//
+//			if (this.numTransactionTypes == 0)
+//			{
+////				DBSeerExceptionHandler.handleException(new Exception("Unable to figure out the number of transactions for the live dataset."));
+//			}
+//
+//			this.updateTable();
+//		}
 	}
 
 	public void backup()
 	{
 		this.nameBackup = name;
-		this.transactionFilePathBackup = transactionFilePath;
-		this.statementFilePathBackup = statementFilePath;
-		this.queryFilePathBackup = queryFilePath;
-		this.monitoringDataPathBackup = monitoringDataPath;
-		this.transCountPathBackup = transCountPath;
-		this.averageLatencyPathBackup = averageLatencyPath;
-		this.percentileLatencyPathBackup = percentileLatencyPath;
-		this.headerPathBackup = headerPath;
-		this.pageInfoPathBackup = pageInfoPath;
-		this.statementStatPathBackup = statementStatPath;
+		this.pathBackup = path;
+//		this.transactionFilePathBackup = transactionFilePath;
+//		this.statementFilePathBackup = statementFilePath;
+//		this.queryFilePathBackup = queryFilePath;
+//		this.monitoringDataPathBackup = monitoringDataPath;
+//		this.transCountPathBackup = transCountPath;
+//		this.averageLatencyPathBackup = averageLatencyPath;
+//		this.percentileLatencyPathBackup = percentileLatencyPath;
+//		this.headerPathBackup = headerPath;
+//		this.pageInfoPathBackup = pageInfoPath;
+//		this.statementStatPathBackup = statementStatPath;
 
 		this.useEntireDataSetBackup = useEntireDataSet;
 		this.startIndexBackup = startIndex;
@@ -476,16 +490,17 @@ public class DBSeerDataSet implements TableModelListener
 	public void restore()
 	{
 		this.name = nameBackup;
-		this.transactionFilePath = transactionFilePathBackup;
-		this.statementFilePath = statementFilePathBackup;
-		this.queryFilePath = queryFilePathBackup;
-		this.monitoringDataPath = monitoringDataPathBackup;
-		this.transCountPath = transCountPathBackup;
-		this.averageLatencyPath = averageLatencyPathBackup;
-		this.percentileLatencyPath = percentileLatencyPathBackup;
-		this.headerPath = headerPathBackup;
-		this.pageInfoPath = pageInfoPathBackup;
-		this.statementStatPath = statementStatPathBackup;
+		this.path = pathBackup;
+//		this.transactionFilePath = transactionFilePathBackup;
+//		this.statementFilePath = statementFilePathBackup;
+//		this.queryFilePath = queryFilePathBackup;
+//		this.monitoringDataPath = monitoringDataPathBackup;
+//		this.transCountPath = transCountPathBackup;
+//		this.averageLatencyPath = averageLatencyPathBackup;
+//		this.percentileLatencyPath = percentileLatencyPathBackup;
+//		this.headerPath = headerPathBackup;
+//		this.pageInfoPath = pageInfoPathBackup;
+//		this.statementStatPath = statementStatPathBackup;
 
 		this.useEntireDataSet = useEntireDataSetBackup;
 		this.startIndex = startIndexBackup;
@@ -508,16 +523,17 @@ public class DBSeerDataSet implements TableModelListener
 	protected void useDefaultIfNull()
 	{
 		if (this.name == null) this.name = "";
-		if (this.transactionFilePath == null) this.transactionFilePath = "";
-		if (this.statementFilePath == null) this.statementFilePath = "";
-		if (this.queryFilePath == null) this.queryFilePath = "";
-		if (this.monitoringDataPath == null) this.monitoringDataPath = "";
-		if (this.transCountPath == null) this.transCountPath = "";
-		if (this.averageLatencyPath == null) this.averageLatencyPath = "";
-		if (this.percentileLatencyPath == null) this.percentileLatencyPath = "";
-		if (this.headerPath == null) this.headerPath = "";
-		if (this.pageInfoPath == null) this.pageInfoPath = "";
-		if (this.statementStatPath == null) this.statementStatPath = "";
+		if (this.path == null) this.path = "";
+//		if (this.transactionFilePath == null) this.transactionFilePath = "";
+//		if (this.statementFilePath == null) this.statementFilePath = "";
+//		if (this.queryFilePath == null) this.queryFilePath = "";
+//		if (this.monitoringDataPath == null) this.monitoringDataPath = "";
+//		if (this.transCountPath == null) this.transCountPath = "";
+//		if (this.averageLatencyPath == null) this.averageLatencyPath = "";
+//		if (this.percentileLatencyPath == null) this.percentileLatencyPath = "";
+//		if (this.headerPath == null) this.headerPath = "";
+//		if (this.pageInfoPath == null) this.pageInfoPath = "";
+//		if (this.statementStatPath == null) this.statementStatPath = "";
 
 		if (this.live == null) this.live = new Boolean(false);
 		if (this.useEntireDataSet == null) this.useEntireDataSet = true;
@@ -534,6 +550,7 @@ public class DBSeerDataSet implements TableModelListener
 		if (this.validTransactionsBackup == null) this.validTransactionsBackup = new HashSet<Integer>();
 		if (this.transactionSampleLists == null) this.transactionSampleLists = new ArrayList<DBSeerTransactionSampleList>();
 		if (this.statementsOffsetFiles == null) this.statementsOffsetFiles = new ArrayList<String>();
+		if (this.datasetPathList == null) this.datasetPathList = new ArrayList<DBSeerDataSetPath>();
 	}
 
 	protected Object readResolve()
@@ -572,15 +589,16 @@ public class DBSeerDataSet implements TableModelListener
 						cell.setForeground(Color.BLACK);
 					}
 				}
-				else if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
-						row == DBSeerDataSet.TYPE_HEADER ||
-						row == DBSeerDataSet.TYPE_MONITORING_DATA ||
-						row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
-						row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
-						row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
-						row == DBSeerDataSet.TYPE_QUERY_FILE ||
-						row == DBSeerDataSet.TYPE_STATEMENT_FILE ||
-						row == DBSeerDataSet.TYPE_TRANSACTION_FILE)
+//				else if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
+//						row == DBSeerDataSet.TYPE_HEADER ||
+//						row == DBSeerDataSet.TYPE_MONITORING_DATA ||
+//						row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
+//						row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
+//						row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
+//						row == DBSeerDataSet.TYPE_QUERY_FILE ||
+//						row == DBSeerDataSet.TYPE_STATEMENT_FILE ||
+//						row == DBSeerDataSet.TYPE_TRANSACTION_FILE)
+				else if (row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE)
 				{
 					cell.setForeground(Color.LIGHT_GRAY);
 				}
@@ -607,10 +625,13 @@ public class DBSeerDataSet implements TableModelListener
 			else
 				tableModel.addRow(new Object[]{header, ""});
 		}
+
 		for (int i = 0; i < numTransactionTypes; ++i)
 		{
 			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), "Type " + (i+1)});
+//			validTransactions.add((i+1));
 		}
+
 		if (live)
 		{
 			updateLiveDataSet();
@@ -643,12 +664,134 @@ public class DBSeerDataSet implements TableModelListener
 		return table;
 	}
 
-	public void loadDataset()
+	public boolean loadDatasetPath()
 	{
+		datasetPathList.clear();
+
+		// read current directory first.
+		DBSeerDataSetPath newPath = getDBSeerDatasetPath(this.path);
+		if (!newPath.hasEmptyPath())
+		{
+			datasetPathList.add(newPath);
+		}
+
+		// read sub-directories
+		File topDirectory = new File(this.path);
+		final String[] subDirectories = topDirectory.list(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File file, String s)
+			{
+				return new File(file, s).isDirectory();
+			}
+		});
+
+		for (String subDir : subDirectories)
+		{
+			newPath = getDBSeerDatasetPath(this.path + File.separator + subDir);
+			if (!newPath.hasEmptyPath())
+			{
+				datasetPathList.add(newPath);
+			}
+		}
+
+		if (datasetPathList.size() == 0)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	private DBSeerDataSetPath getDBSeerDatasetPath(String dir)
+	{
+		File datasetDir = new File(dir);
+		File[] files = datasetDir.listFiles();
+
+		DBSeerDataSetPath newPath = new DBSeerDataSetPath();
+		newPath.setRoot(dir);
+		newPath.setName(datasetDir.getName());
+
+		boolean allFlag = false;
+
+		for (File file : files)
+		{
+			if (file.isDirectory())
+			{
+				continue;
+			}
+
+			String fileLower = file.getName().toLowerCase();
+
+			if (fileLower.contains("monitor"))
+			{
+				newPath.setMonitor(file.getAbsolutePath());
+			}
+			else if (fileLower.contains("header"))
+			{
+				newPath.setHeader(file.getAbsolutePath());
+			}
+			else if (fileLower.contains("avg_latency"))
+			{
+				newPath.setAvgLatency(file.getAbsolutePath());
+			}
+			else if (fileLower.contains("trans_count"))
+			{
+				newPath.setTxCount(file.getAbsolutePath());
+			}
+			else if (fileLower.contains("prctile_latencies.mat"))
+			{
+				newPath.setPrcLatency(file.getAbsolutePath());
+			}
+			else if (fileLower.contains("tx.log") || fileLower.contains("sys.log"))
+			{
+				allFlag = true;
+			}
+		}
+
+		// assign default names.
+		if (!allFlag)
+		{
+			if (newPath.getMonitor().isEmpty())
+			{
+				newPath.setMonitor(dir + File.separator + "monitor");
+			}
+			if (newPath.getHeader().isEmpty())
+			{
+				newPath.setHeader(dir + File.separator + "dataset_header.m");
+			}
+			if (newPath.getAvgLatency().isEmpty())
+			{
+				newPath.setAvgLatency(dir + File.separator + "avg_latency");
+			}
+			if (newPath.getTxCount().isEmpty())
+			{
+				newPath.setTxCount(dir + File.separator + "trans_count");
+			}
+		}
+
+		return newPath;
+	}
+
+	public boolean loadDataset(boolean isFirstTime)
+	{
+//		if (dataSetLoaded == false || this.numTransactionTypes == 0)
+		{
+			if (!loadDatasetPath())
+			{
+				return false;
+			}
+			this.numTransactionTypes = this.datasetPathList.get(0).getNumTransactionType();
+			if (this.numTransactionTypes == 0)
+			{
+				return false;
+			}
+		}
+
 		if (uniqueVariableName == "")
 		{
 			uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
 		}
+
 
 		XStreamHelper xmlHelper = new XStreamHelper();
 		statementsOffsetFiles.clear();
@@ -656,15 +799,16 @@ public class DBSeerDataSet implements TableModelListener
 
 		for (int i = 0; i < this.numTransactionTypes; ++i)
 		{
-			String datasetPath = new File(this.averageLatencyPath).getParent();
-			String samplePath = datasetPath + File.separator + "transaction_" + (i+1) + ".xml";
+			String datasetPath = this.datasetPathList.get(0).getRoot();
+			String samplePath = datasetPath + File.separator + "tx_sample_" + (i+1);
 			String offsetPath = datasetPath + File.separator + "transaction_" + (i+1) + ".stmt";
 
 			statementsOffsetFiles.add(offsetPath);
 
 			if (new File(samplePath).exists())
 			{
-				DBSeerTransactionSampleList sampleList = (DBSeerTransactionSampleList) xmlHelper.fromXML(samplePath);
+				DBSeerTransactionSampleList sampleList = new DBSeerTransactionSampleList(samplePath);
+				sampleList.readSamples();
 				transactionSampleLists.add(sampleList);
 			}
 			else
@@ -674,7 +818,7 @@ public class DBSeerDataSet implements TableModelListener
 			}
 		}
 
-		if (dataSetLoaded == false || live)
+//		if (dataSetLoaded == false || live)
 		{
 			StatisticalPackageRunner runner = DBSeerGUI.runner;
 			String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
@@ -694,13 +838,31 @@ public class DBSeerDataSet implements TableModelListener
 				runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
 				runner.eval(this.uniqueVariableName + " = DataSet;");
-				runner.eval(this.uniqueVariableName + ".header_path = '" + this.headerPath + "';");
-				runner.eval(this.uniqueVariableName + ".monitor_path = '" + this.monitoringDataPath + "';");
-				runner.eval(this.uniqueVariableName + ".avg_latency_path = '" + this.averageLatencyPath + "';");
-				runner.eval(this.uniqueVariableName + ".percentile_latency_path = '" +
-						this.percentileLatencyPath + "';");
-				runner.eval(this.uniqueVariableName + ".trans_count_path = '" + this.transCountPath + "';");
-				runner.eval(this.uniqueVariableName + ".statement_stat_path = '" + this.statementStatPath + "';");
+				runner.eval(this.uniqueVariableName + ".datasets = {};");
+
+				int datasetCount = 1;
+				for (DBSeerDataSetPath datasetPath : datasetPathList)
+				{
+					String datasetPathName = "dataset_" + (datasetCount++);
+					runner.eval(datasetPathName + " = DataSetPath;");
+					runner.eval(datasetPathName + ".name = '" + datasetPath.getName() + "';");
+					runner.eval(datasetPathName + ".header_path = '" + datasetPath.getHeader() + "';");
+					runner.eval(datasetPathName + ".avg_latency_path = '" + datasetPath.getAvgLatency() + "';");
+					runner.eval(datasetPathName + ".monitor_path = '" + datasetPath.getMonitor() + "';");
+					runner.eval(datasetPathName + ".trans_count_path = '" + datasetPath.getTxCount() + "';");
+					runner.eval(datasetPathName + ".percentile_latency_path = '" + datasetPath.getPrcLatency() + "';");
+
+					runner.eval(this.uniqueVariableName + ".datasets{end+1} = " + datasetPathName + ";");
+				}
+
+				// old implementation
+//				runner.eval(this.uniqueVariableName + ".header_path = '" + this.headerPath + "';");
+//				runner.eval(this.uniqueVariableName + ".monitor_path = '" + this.monitoringDataPath + "';");
+//				runner.eval(this.uniqueVariableName + ".avg_latency_path = '" + this.averageLatencyPath + "';");
+//				runner.eval(this.uniqueVariableName + ".percentile_latency_path = '" +
+//						this.percentileLatencyPath + "';");
+//				runner.eval(this.uniqueVariableName + ".trans_count_path = '" + this.transCountPath + "';");
+//				runner.eval(this.uniqueVariableName + ".statement_stat_path = '" + this.statementStatPath + "';");
 				//runner.eval(this.uniqueVariableName + ".page_info_path = '" + this.pageInfoPath + "';");
 				runner.eval(this.uniqueVariableName + ".startIdx = " + this.startIndex + ";");
 				runner.eval(this.uniqueVariableName + ".endIdx = " + this.endIndex + ";");
@@ -713,11 +875,24 @@ public class DBSeerDataSet implements TableModelListener
 					runner.eval(this.uniqueVariableName + ".use_entire = false;");
 				}
 				String tranType = "[";
-				for (int i = 0; i < transactionTypeNames.size(); ++i)
+
+				if (isFirstTime)
 				{
-					if (validTransactions.contains(i+1))
+					this.transactionTypeNames.clear();
+					this.validTransactions.clear();
+					for (int i = 0; i < this.numTransactionTypes; ++i)
 					{
-						tranType += (i+1) + " ";
+						this.transactionTypeNames.add("Type " + (i + 1));
+						this.validTransactions.add((i + 1));
+					}
+					this.addTransactionRows();
+					updateTable();
+				}
+				for (int i = 0; i < this.numTransactionTypes; ++i)
+				{
+					if (validTransactions.contains(i + 1))
+					{
+						tranType += (i + 1) + " ";
 					}
 				}
 				tranType += "]";
@@ -726,14 +901,16 @@ public class DBSeerDataSet implements TableModelListener
 			}
 			catch (Exception e)
 			{
-				e.printStackTrace();
+				DBSeerExceptionHandler.handleException(e);
+				return false;
 			}
 
 			dataSetLoaded = true;
 		}
+		return true;
 	}
 
-	public void loadModelVariable()
+	public boolean loadModelVariable()
 	{
 		// set the unique name for mv first.
 		if (uniqueModelVariableName == "")
@@ -741,11 +918,19 @@ public class DBSeerDataSet implements TableModelListener
 			uniqueModelVariableName = "mv_" + UUID.randomUUID().toString().replace('-', '_');
 		}
 
-		// load dataset if it already has not been done.
-		if (!dataSetLoaded || live)
+
+		if (!loadDataset(false))
 		{
-			loadDataset();
+			return false;
 		}
+		// load dataset if it already has not been done.
+//		if (!dataSetLoaded || live)
+//		{
+//			if (!loadDataset(false))
+//			{
+//				return false;
+//			}
+//		}
 
 		if (!modelVariableLoaded)
 		{
@@ -766,7 +951,7 @@ public class DBSeerDataSet implements TableModelListener
 				runner.eval("addpath " + dbseerPath + "/predict_data;");
 				runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
-				runner.eval("[mvGrouped " + uniqueModelVariableName + "] = load_mv(" +
+				runner.eval("[mvGrouped " + uniqueModelVariableName + "] = load_mv2(" +
 						uniqueVariableName + ".header," +
 						uniqueVariableName + ".monitor," +
 						uniqueVariableName + ".averageLatency," +
@@ -779,8 +964,10 @@ public class DBSeerDataSet implements TableModelListener
 			catch (Exception e)
 			{
 				DBSeerExceptionHandler.handleException(e);
+				return false;
 			}
 		}
+		return true;
 	}
 
 	public String getUniqueModelVariableName()
@@ -880,25 +1067,28 @@ public class DBSeerDataSet implements TableModelListener
 						case TYPE_NAME:
 							this.name = (String)tableModel.getValueAt(i, 1);
 							break;
-						case TYPE_TRANSACTION_FILE:
-							this.transactionFilePath = (String)tableModel.getValueAt(i, 1);
+						case TYPE_PATH:
+							this.path = (String)tableModel.getValueAt(i, 1);
 							break;
-						case TYPE_STATEMENT_FILE:
-							this.statementFilePath = (String)tableModel.getValueAt(i, 1);
-							break;
-						case TYPE_QUERY_FILE:
-							this.queryFilePath = (String)tableModel.getValueAt(i, 1);
-							break;
-						case TYPE_AVERAGE_LATENCY:
-							this.averageLatencyPath = (String)tableModel.getValueAt(i, 1);
-							break;
+//						case TYPE_TRANSACTION_FILE:
+//							this.transactionFilePath = (String)tableModel.getValueAt(i, 1);
+//							break;
+//						case TYPE_STATEMENT_FILE:
+//							this.statementFilePath = (String)tableModel.getValueAt(i, 1);
+//							break;
+//						case TYPE_QUERY_FILE:
+//							this.queryFilePath = (String)tableModel.getValueAt(i, 1);
+//							break;
+//						case TYPE_AVERAGE_LATENCY:
+//							this.averageLatencyPath = (String)tableModel.getValueAt(i, 1);
+//							break;
 						case TYPE_END_INDEX:
 							if (UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
 								this.endIndex = Integer.parseInt((String)tableModel.getValueAt(i, 1));
 							break;
-						case TYPE_HEADER:
-							this.headerPath = (String)tableModel.getValueAt(i, 1);
-							break;
+//						case TYPE_HEADER:
+//							this.headerPath = (String)tableModel.getValueAt(i, 1);
+//							break;
 //						case TYPE_IO_CONFIG:
 //							this.IOConfiguration = (String)tableModel.getValueAt(i, 1);
 //							break;
@@ -908,15 +1098,15 @@ public class DBSeerDataSet implements TableModelListener
 //						case TYPE_MAX_THROUGHPUT_INDEX:
 //							this.maxThroughputIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
 //							break;
-						case TYPE_MONITORING_DATA:
-							this.monitoringDataPath = (String)tableModel.getValueAt(i, 1);
-							break;
+//						case TYPE_MONITORING_DATA:
+//							this.monitoringDataPath = (String)tableModel.getValueAt(i, 1);
+//							break;
 //						case TYPE_NUM_TRANSACTION_TYPE:
 //							this.numTransactionTypes = Integer.parseInt((String)tableModel.getValueAt(i, 1));
 //							break;
-						case TYPE_PERCENTILE_LATENCY:
-							this.percentileLatencyPath = (String)tableModel.getValueAt(i, 1);
-							break;
+//						case TYPE_PERCENTILE_LATENCY:
+//							this.percentileLatencyPath = (String)tableModel.getValueAt(i, 1);
+//							break;
 //						case TYPE_STATEMENT_STAT:
 //							this.statementStatPath = (String)tableModel.getValueAt(i, 1);
 //							break;
@@ -927,9 +1117,9 @@ public class DBSeerDataSet implements TableModelListener
 							if (UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
 								this.startIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
 							break;
-						case TYPE_TRANSACTION_COUNT:
-							this.transCountPath = (String)tableModel.getValueAt(i, 1);
-							break;
+//						case TYPE_TRANSACTION_COUNT:
+//							this.transCountPath = (String)tableModel.getValueAt(i, 1);
+//							break;
 						case TYPE_NUM_TRANSACTION_TYPE:
 							if (UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
 								this.numTransactionTypes = Integer.parseInt((String) tableModel.getValueAt(i, 1));
@@ -979,24 +1169,27 @@ public class DBSeerDataSet implements TableModelListener
 						case TYPE_NAME:
 							tableModel.setValueAt(this.name, i, 1);
 							break;
-						case TYPE_TRANSACTION_FILE:
-							tableModel.setValueAt(this.transactionFilePath, i, 1);
+						case TYPE_PATH:
+							tableModel.setValueAt(this.path, i, 1);
 							break;
-						case TYPE_STATEMENT_FILE:
-							tableModel.setValueAt(this.statementFilePath, i, 1);
-							break;
-						case TYPE_QUERY_FILE:
-							tableModel.setValueAt(this.queryFilePath, i, 1);
-							break;
-						case TYPE_AVERAGE_LATENCY:
-							tableModel.setValueAt(this.averageLatencyPath, i, 1);
-							break;
+//						case TYPE_TRANSACTION_FILE:
+//							tableModel.setValueAt(this.transactionFilePath, i, 1);
+//							break;
+//						case TYPE_STATEMENT_FILE:
+//							tableModel.setValueAt(this.statementFilePath, i, 1);
+//							break;
+//						case TYPE_QUERY_FILE:
+//							tableModel.setValueAt(this.queryFilePath, i, 1);
+//							break;
+//						case TYPE_AVERAGE_LATENCY:
+//							tableModel.setValueAt(this.averageLatencyPath, i, 1);
+//							break;
 						case TYPE_END_INDEX:
 							tableModel.setValueAt(String.valueOf(this.endIndex), i, 1);
 							break;
-						case TYPE_HEADER:
-							tableModel.setValueAt(this.headerPath, i, 1);
-							break;
+//						case TYPE_HEADER:
+//							tableModel.setValueAt(this.headerPath, i, 1);
+//							break;
 //						case TYPE_IO_CONFIG:
 //							tableModel.setValueAt(this.IOConfiguration, i, 1);
 //							break;
@@ -1006,15 +1199,15 @@ public class DBSeerDataSet implements TableModelListener
 //						case TYPE_MAX_THROUGHPUT_INDEX:
 //							tableModel.setValueAt(String.valueOf(this.maxThroughputIndex), i, 1);
 //							break;
-						case TYPE_MONITORING_DATA:
-							tableModel.setValueAt(this.monitoringDataPath, i, 1);
-							break;
+//						case TYPE_MONITORING_DATA:
+//							tableModel.setValueAt(this.monitoringDataPath, i, 1);
+//							break;
 //						case TYPE_NUM_TRANSACTION_TYPE:
 //							tableModel.setValueAt(String.valueOf(this.numTransactionTypes), i, 1);
 //							break;
-						case TYPE_PERCENTILE_LATENCY:
-							tableModel.setValueAt(this.percentileLatencyPath, i, 1);
-							break;
+//						case TYPE_PERCENTILE_LATENCY:
+//							tableModel.setValueAt(this.percentileLatencyPath, i, 1);
+//							break;
 //						case TYPE_STATEMENT_STAT:
 //							tableModel.setValueAt(this.statementStatPath, i, 1);
 //							break;
@@ -1024,9 +1217,9 @@ public class DBSeerDataSet implements TableModelListener
 						case TYPE_START_INDEX:
 							tableModel.setValueAt(String.valueOf(this.startIndex), i, 1);
 							break;
-						case TYPE_TRANSACTION_COUNT:
-							tableModel.setValueAt(this.transCountPath, i, 1);
-							break;
+//						case TYPE_TRANSACTION_COUNT:
+//							tableModel.setValueAt(this.transCountPath, i, 1);
+//							break;
 						case TYPE_NUM_TRANSACTION_TYPE:
 							tableModel.setValueAt(String.valueOf(this.numTransactionTypes), i, 1);
 							break;
@@ -1076,14 +1269,32 @@ public class DBSeerDataSet implements TableModelListener
 		this.dataSetLoaded = false;
 	}
 
+	public String getPath()
+	{
+		return path;
+	}
+
+	public void setPath(String path)
+	{
+		this.path = path;
+		updateTable();
+		tableModel.fireTableDataChanged();
+		this.dataSetLoaded = false;
+	}
 	public synchronized String getTransactionFilePath()
 	{
-		return transactionFilePath;
+		if (transactionFilePath.isEmpty())
+		{
+			return this.path + File.separator + "allLogs-t.txt";
+		}
+		else
+		{
+			return transactionFilePath;
+		}
 	}
 
 	public synchronized void setTransactionFilePath(String transactionFilePath)
 	{
-//		setFromTable();
 		this.transactionFilePath = transactionFilePath;
 		updateTable();
 		tableModel.fireTableDataChanged();
@@ -1092,12 +1303,18 @@ public class DBSeerDataSet implements TableModelListener
 
 	public synchronized String getStatementFilePath()
 	{
-		return statementFilePath;
+		if (statementFilePath.isEmpty())
+		{
+			return this.path + File.separator + "allLogs-s.txt";
+		}
+		else
+		{
+			return statementFilePath;
+		}
 	}
 
 	public synchronized void setStatementFilePath(String statementFilePath)
 	{
-//		setFromTable();
 		this.statementFilePath = statementFilePath;
 		updateTable();
 		tableModel.fireTableDataChanged();
@@ -1106,12 +1323,18 @@ public class DBSeerDataSet implements TableModelListener
 
 	public synchronized String getQueryFilePath()
 	{
-		return queryFilePath;
+		if (queryFilePath.isEmpty())
+		{
+			return this.path + File.separator + "allLogs-q.txt";
+		}
+		else
+		{
+			return queryFilePath;
+		}
 	}
 
 	public synchronized void setQueryFilePath(String queryFilePath)
 	{
-//		setFromTable();
 		this.queryFilePath = queryFilePath;
 		updateTable();
 		tableModel.fireTableDataChanged();
@@ -1198,75 +1421,75 @@ public class DBSeerDataSet implements TableModelListener
 //		this.dataSetLoaded = false;
 //	}
 	
-	public synchronized String getMonitoringDataPath()
-	{
-		return monitoringDataPath;
-	}
-
-	public synchronized void setMonitoringDataPath(String monitoringDataPath)
-	{
-//		setFromTable();
-		this.monitoringDataPath = monitoringDataPath;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
-
-	public synchronized String getTransCountPath()
-	{
-		return transCountPath;
-	}
-
-	public synchronized void setTransCountPath(String transCountPath)
-	{
-//		setFromTable();
-		this.transCountPath = transCountPath;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
-
-	public synchronized String getAverageLatencyPath()
-	{
-		return averageLatencyPath;
-	}
-
-	public synchronized void setAverageLatencyPath(String averageLatencyPath)
-	{
-//		setFromTable();
-		this.averageLatencyPath = averageLatencyPath;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
-
-	public synchronized String getPercentileLatencyPath()
-	{
-		return percentileLatencyPath;
-	}
-
-	public synchronized void setPercentileLatencyPath(String percentileLatencyPath)
-	{
-//		setFromTable();
-		this.percentileLatencyPath = percentileLatencyPath;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
-
-	public synchronized String getHeaderPath()
-	{
-		return headerPath;
-	}
-
-	public synchronized void setHeaderPath(String headerPath)
-	{
-//		setFromTable();
-		this.headerPath = headerPath;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
+//	public synchronized String getMonitoringDataPath()
+//	{
+//		return monitoringDataPath;
+//	}
+//
+//	public synchronized void setMonitoringDataPath(String monitoringDataPath)
+//	{
+////		setFromTable();
+//		this.monitoringDataPath = monitoringDataPath;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
+//
+//	public synchronized String getTransCountPath()
+//	{
+//		return transCountPath;
+//	}
+//
+//	public synchronized void setTransCountPath(String transCountPath)
+//	{
+////		setFromTable();
+//		this.transCountPath = transCountPath;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
+//
+//	public synchronized String getAverageLatencyPath()
+//	{
+//		return averageLatencyPath;
+//	}
+//
+//	public synchronized void setAverageLatencyPath(String averageLatencyPath)
+//	{
+////		setFromTable();
+//		this.averageLatencyPath = averageLatencyPath;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
+//
+//	public synchronized String getPercentileLatencyPath()
+//	{
+//		return percentileLatencyPath;
+//	}
+//
+//	public synchronized void setPercentileLatencyPath(String percentileLatencyPath)
+//	{
+////		setFromTable();
+//		this.percentileLatencyPath = percentileLatencyPath;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
+//
+//	public synchronized String getHeaderPath()
+//	{
+//		return headerPath;
+//	}
+//
+//	public synchronized void setHeaderPath(String headerPath)
+//	{
+////		setFromTable();
+//		this.headerPath = headerPath;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
 
 	public synchronized boolean isDataSetLoaded()
 	{
@@ -1283,33 +1506,33 @@ public class DBSeerDataSet implements TableModelListener
 		return uniqueVariableName;
 	}
 
-	public synchronized String getPageInfoPath()
-	{
-		return pageInfoPath;
-	}
-
-	public synchronized void setPageInfoPath(String pageInfoPath)
-	{
-//		setFromTable();
-		this.pageInfoPath = pageInfoPath;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
-
-	public synchronized String getStatementStatPath()
-	{
-		return statementStatPath;
-	}
-
-	public synchronized void setStatementStatPath(String statementStatPath)
-	{
-//		setFromTable();
-		this.statementStatPath = statementStatPath;
-		updateTable();
-		tableModel.fireTableDataChanged();
-		this.dataSetLoaded = false;
-	}
+//	public synchronized String getPageInfoPath()
+//	{
+//		return pageInfoPath;
+//	}
+//
+//	public synchronized void setPageInfoPath(String pageInfoPath)
+//	{
+////		setFromTable();
+//		this.pageInfoPath = pageInfoPath;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
+//
+//	public synchronized String getStatementStatPath()
+//	{
+//		return statementStatPath;
+//	}
+//
+//	public synchronized void setStatementStatPath(String statementStatPath)
+//	{
+////		setFromTable();
+//		this.statementStatPath = statementStatPath;
+//		updateTable();
+//		tableModel.fireTableDataChanged();
+//		this.dataSetLoaded = false;
+//	}
 
 	public synchronized Boolean getUseEntireDataSet()
 	{
@@ -1464,6 +1687,16 @@ public class DBSeerDataSet implements TableModelListener
 	public void disableTransaction(int i)
 	{
 		validTransactions.remove(i+1);
+	}
+
+	public boolean isCurrent()
+	{
+		return isCurrent;
+	}
+
+	public void setCurrent(boolean current)
+	{
+		isCurrent = current;
 	}
 
 	public boolean isTransactionEnabled(int i)

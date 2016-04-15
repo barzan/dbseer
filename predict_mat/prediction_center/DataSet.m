@@ -15,14 +15,9 @@
 classdef DataSet < handle
 
     properties
-        header_path
-        monitor_path
-        trans_count_path
-        avg_latency_path
-        percentile_latency_path
-        statement_stat_path
+        datasets
         tranTypes
-		use_entire = true;
+        use_entire = true;
         startIdx
         endIdx
         %maxThroughputIdx
@@ -45,45 +40,15 @@ classdef DataSet < handle
     methods
 
         % property accessors set statReady to false
-        function set.header_path(this, value)
-            this.header_path = value;
+        function set.datasets(this, value)
+            this.datasets = value;
             this.statReady = false;
         end
 
-        function set.monitor_path(this, value)
-            this.monitor_path = value;
+        function set.use_entire(this, value)
+            this.use_entire = value;
             this.statReady = false;
         end
-
-        function set.trans_count_path(this, value)
-            this.trans_count_path = value;
-            this.statReady = false;
-        end
-
-        function set.avg_latency_path(this, value)
-            this.avg_latency_path = value;
-            this.statReady = false;
-        end
-
-        function set.percentile_latency_path(this, value)
-            this.percentile_latency_path = value;
-            this.statReady = false;
-        end
-
-        % function set.tranTypes(obj, this)
-        %     this.tranTypes = obj;
-        %     statReady = false;
-        % end
-
-        function set.statement_stat_path(this, value)
-            this.statement_stat_path = value;
-            this.statReady = false;
-        end
-
-		function set.use_entire(this, value)
-			this.use_entire = value;
-			this.statReady = false;
-		end
 
         function set.startIdx(this, value)
             this.startIdx = value;
@@ -95,21 +60,6 @@ classdef DataSet < handle
             this.statReady = false;
         end
 
-        % function set.maxThroughputIdx(obj, this)
-        %     this.maxThroughputIdx = obj;
-        %     statReady = false;
-        % end
-
-        % function set.io_conf(obj, this)
-        %     this.io_conf = obj;
-        %     statReady = false;
-        % end
-
-        % function set.lock_conf(obj, this)
-        %     this.lock_conf = obj;
-        %     statReady = false;
-        % end
-
         function value = get.header(this)
             if this.statReady
                 value = this.header;
@@ -118,53 +68,53 @@ classdef DataSet < handle
             end
         end
 
-        function value = get.monitor(this)
-            if this.statReady
-                value = this.monitor;
-            else
-                value = [];
-            end
-        end
+        %function value = get.monitor(this)
+            %if this.statReady
+                %value = this.monitor;
+            %else
+                %value = [];
+            %end
+        %end
 
-        function value = get.averageLatency(this)
-            if this.statReady
-                value = this.averageLatency;
-            else
-                value = [];
-            end
-        end
+        %function value = get.averageLatency(this)
+            %if this.statReady
+                %value = this.averageLatency;
+            %else
+                %value = [];
+            %end
+        %end
 
-        function value = get.percentileLatency(this)
-            if this.statReady
-                value = this.percentileLatency;
-            else
-                value = [];
-            end
-        end
+        %function value = get.percentileLatency(this)
+            %if this.statReady
+                %value = this.percentileLatency;
+            %else
+                %value = [];
+            %end
+        %end
 
-        function value = get.transactionCount(this)
-            if this.statReady
-                value = this.transactionCount;
-            else
-                value = [];
-            end
-        end
+        %function value = get.transactionCount(this)
+            %if this.statReady
+                %value = this.transactionCount;
+            %else
+                %value = [];
+            %end
+        %end
 
-        function value = get.statementStat(this)
-            if this.statReady
-                value = this.statementStat;
-            else
-                value = [];
-            end
-        end
+        %function value = get.statementStat(this)
+            %if this.statReady
+                %value = this.statementStat;
+            %else
+                %value = [];
+            %end
+        %end
 
-        function value = get.diffedMonitor(this)
-            if this.statReady
-                value = this.diffedMonitor;
-            else
-                value = [];
-            end
-        end
+        %function value = get.diffedMonitor(this)
+            %if this.statReady
+                %value = this.diffedMonitor;
+            %else
+                %value = [];
+            %end
+        %end
 
         function this = setStruct(this, paramStruct)
             % propertyList = properties(this);
@@ -196,12 +146,10 @@ classdef DataSet < handle
         function loadStatistics(this)
 			if this.use_entire
 				[this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
-					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ...
-					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, 0, 0, true, this.tranTypes);
+					load_stats2(this.datasets, 0, 0, true, this.tranTypes);
 			else
 				[this.header this.monitor this.averageLatency this.percentileLatency this.transactionCount this.diffedMonitor] = ...
-					load_stats(this.header_path, this.monitor_path, this.trans_count_path, ...
-					this.avg_latency_path, this.percentile_latency_path, this.statement_stat_path, this.startIdx, this.endIdx, false, this.tranTypes);
+					load_stats2(this.datasets, this.startIdx, this.endIdx, false, this.tranTypes);
 			end
             this.statReady = true;
         end

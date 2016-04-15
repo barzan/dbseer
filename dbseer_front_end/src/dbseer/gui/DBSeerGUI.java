@@ -18,8 +18,8 @@ package dbseer.gui;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.io.StreamException;
-import dbseer.comp.live.LiveMonitoringThread;
-import dbseer.comp.data.LiveMonitor;
+import dbseer.comp.clustering.IncrementalDBSCAN;
+import dbseer.comp.process.live.LiveMonitorInfo;
 import dbseer.gui.frame.DBSeerMainFrame;
 import dbseer.gui.panel.DBSeerLiveMonitorPanel;
 import dbseer.gui.panel.DBSeerMiddlewarePanel;
@@ -27,7 +27,7 @@ import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.user.DBSeerUserSettings;
 import dbseer.gui.xml.XStreamHelper;
-import dbseer.middleware.MiddlewareSocket;
+import dbseer.old.middleware.MiddlewareSocket;
 import dbseer.stat.MatlabRunner;
 import dbseer.stat.OctaveRunner;
 import dbseer.stat.StatisticalPackageRunner;
@@ -38,7 +38,6 @@ import org.ini4j.Ini;
 import javax.swing.*;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -82,11 +81,9 @@ public class DBSeerGUI
 
 	public static DBSeerMiddlewarePanel middlewarePanel = null;
 
-	public static LiveMonitor liveMonitor = new LiveMonitor();
+	public static LiveMonitorInfo liveMonitorInfo = new LiveMonitorInfo();
 
 	public static DBSeerLiveMonitorPanel liveMonitorPanel = new DBSeerLiveMonitorPanel();
-
-	public static LiveMonitoringThread liveMonitoringThread = new LiveMonitoringThread();
 
 	public static DBSeerDataSet liveDataset = null;
 
@@ -101,6 +98,14 @@ public class DBSeerGUI
 	public static int liveMonitorRefreshRate = 1;
 
 	public static int whichStatisticalPackageToUse = DBSeerConstants.STAT_MATLAB;
+
+	public static int databaseType = DBSeerConstants.DB_MYSQL;
+
+	public static int osType = DBSeerConstants.OS_LINUX;
+
+	public static DBSeerSettings settings = new DBSeerSettings();
+
+	public static IncrementalDBSCAN dbscan = null;
 
 	public static BlockingQueue<String> queryLogQueue = new LinkedBlockingQueue<String>();
 	public static BlockingQueue<String> stmtLogQueue = new LinkedBlockingQueue<String>();
@@ -343,7 +348,7 @@ public class DBSeerGUI
 
 		try
 		{
-			checkStatPackage(iniPath);
+			checkIni(iniPath);
 		}
 		catch (IOException e)
 		{
@@ -384,7 +389,14 @@ public class DBSeerGUI
 					case DBSeerConstants.STAT_MATLAB:
 					{
 						runner = MatlabRunner.getInstance();
-						runner.eval("mat_version = version;");
+						try
+						{
+							runner.eval("mat_version = version;");
+						}
+						catch (Exception e)
+						{
+							e.printStackTrace();
+						}
 						String version = runner.getVariableString("mat_version");
 						String[] versionDigits = version.split("\\.");
 						int firstDigit = Integer.parseInt(versionDigits[0]);
@@ -489,7 +501,9 @@ public class DBSeerGUI
 				}
 
 				DBSeerGUI.liveDataset = new DBSeerDataSet(true); // live dataset
-				DBSeerGUI.datasets.add(0, DBSeerGUI.liveDataset);
+
+				// let's not use live dataset for now.
+//				DBSeerGUI.datasets.add(0, DBSeerGUI.liveDataset);
 
 				splash.dispose();
 				mainFrame = new DBSeerMainFrame(title);
@@ -500,7 +514,7 @@ public class DBSeerGUI
 		});
 	}
 
-	private static void checkStatPackage(String path) throws IOException
+	private static void checkIni(String path) throws IOException
 	{
 		Ini ini = new Ini();
 		File iniFile = new File(path);
@@ -512,6 +526,9 @@ public class DBSeerGUI
 		ini.load(new FileReader(iniFile));
 		Ini.Section dbseerSection = ini.get("dbseer");
 		String statPackage = dbseerSection.get("stat_package");
+		String db = dbseerSection.get("database");
+		String os = dbseerSection.get("os");
+		String dbscanInitPtsStr = dbseerSection.get("dbscan_init_pts");
 
 		if (statPackage.equalsIgnoreCase("matlab"))
 		{
@@ -525,6 +542,54 @@ public class DBSeerGUI
 		{
 			// default package is MATLAB.
 			whichStatisticalPackageToUse = DBSeerConstants.STAT_MATLAB;
+		}
+
+		if (db == null)
+		{
+			databaseType = DBSeerConstants.DB_MYSQL;
+		}
+		else if (db.equalsIgnoreCase("mysql"))
+		{
+			databaseType = DBSeerConstants.DB_MYSQL;
+			Ini.Section mysqlSection = ini.get("mysql");
+			if (mysqlSection != null)
+			{
+				String delimiter = mysqlSection.get("log_delimiter");
+				String queryDelimiter = mysqlSection.get("query_delimiter");
+				if (delimiter != null)
+				{
+					settings.mysqlLogDelimiter = delimiter;
+				}
+				if (queryDelimiter != null)
+				{
+					settings.mysqlQueryDelimiter = queryDelimiter;
+				}
+			}
+		}
+
+		if (os == null)
+		{
+			osType = DBSeerConstants.OS_LINUX;
+		}
+		else if (os.equalsIgnoreCase("linux"))
+		{
+			osType = DBSeerConstants.OS_LINUX;
+		}
+
+		if (dbscanInitPtsStr != null)
+		{
+			int dbscanInitPts = -1;
+			try
+			{
+				dbscanInitPts = Integer.parseInt(dbscanInitPtsStr);
+			}
+			catch (NumberFormatException e)
+			{
+			}
+			if (dbscanInitPts > 0)
+			{
+				DBSeerGUI.settings.dbscanInitPts = dbscanInitPts;
+			}
 		}
 	}
 

@@ -122,7 +122,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener, Mo
 				return;
 			}
 
-			int confirm = JOptionPane.showConfirmDialog(null,
+			int confirm = JOptionPane.showConfirmDialog(DBSeerGUI.mainFrame,
 					"This will also remove configurations that contain datasets being removed! " +
 							"Do you want to proceed?",
 					"Warning",
@@ -136,7 +136,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener, Mo
 
 					if (profile.getLive())
 					{
-						JOptionPane.showMessageDialog(null, "You cannot remove the live dataset.", "Warning",
+						JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "You cannot remove the live dataset.", "Warning",
 								JOptionPane.WARNING_MESSAGE);
 						continue;
 					}

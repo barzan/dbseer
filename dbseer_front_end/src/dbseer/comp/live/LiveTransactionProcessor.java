@@ -16,23 +16,18 @@
 
 package dbseer.comp.live;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.primitives.Doubles;
-import com.orsonpdf.Stream;
 import dbseer.comp.clustering.Cluster;
 import dbseer.comp.clustering.StreamClustering;
-import dbseer.comp.data.LiveMonitor;
+import dbseer.comp.process.live.LiveMonitorInfo;
 import dbseer.comp.data.Transaction;
 import dbseer.comp.data.TransactionMap;
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.DBSeerGUI;
-import dbseer.gui.panel.DBSeerLiveMonitorPanel;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
-import org.jfree.data.time.Millisecond;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -53,7 +48,7 @@ public class LiveTransactionProcessor implements Runnable
 	private HashMap<Integer, PrintWriter> percentileLatencyWriter;
 	private HashMap<Integer, ArrayList<Double>> latencyMap;
 	private static final double[] percentiles = {10.0, 25, 50, 75, 90, 95, 99, 99.9};
-	private LiveMonitor monitor;
+	private LiveMonitorInfo monitor;
 
 	private boolean terminate;
 
@@ -68,7 +63,7 @@ public class LiveTransactionProcessor implements Runnable
 		this.monitorWriter = monitorWriter;
 		this.percentileLatencyWriter = new HashMap<Integer, PrintWriter>();
 		this.latencyMap = new HashMap<Integer, ArrayList<Double>>();
-		this.monitor = DBSeerGUI.liveMonitor;
+		this.monitor = DBSeerGUI.liveMonitorInfo;
 		this.terminate = false;
 	}
 
@@ -249,7 +244,7 @@ public class LiveTransactionProcessor implements Runnable
 					// update live monitor
 //					int numTrans = maxClusterId + 1;
 					int numTrans = StreamClustering.getDBSCAN().getAllClusters().size();
-					synchronized (LiveMonitor.LOCK)
+					synchronized (LiveMonitorInfo.LOCK)
 					{
 						monitor.setCurrentTimestamp(time);
 						monitor.setNumTransactionTypes(numTrans);

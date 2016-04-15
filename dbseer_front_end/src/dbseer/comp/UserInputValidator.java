@@ -59,7 +59,7 @@ public class UserInputValidator
 		return false;
 	}
 
-	public static boolean validateMatlabMatrix(String input, String fieldName, boolean isEnabled)
+	public static boolean validateMatlabMatrix(String input, String fieldName, boolean isEnabled) throws Exception
 	{
 		if (!isEnabled) return true;
 
