@@ -876,7 +876,7 @@ public class DBSeerDataSet implements TableModelListener
 				}
 				String tranType = "[";
 
-				if (isFirstTime)
+				if (isFirstTime || this.transactionTypeNames.isEmpty())
 				{
 					this.transactionTypeNames.clear();
 					this.validTransactions.clear();

@@ -53,6 +53,8 @@ public class LiveLogProcessor
 	private volatile long sysStartTime;
 	private volatile long txStartTime;
 
+	private boolean isStarted;
+
 //	private Tailer sysLogTailer;
 //	private Tailer dbLogTailer;
 //
@@ -63,6 +65,7 @@ public class LiveLogProcessor
 	{
 		this.dir = dir;
 		this.serverStr = serverStr;
+		this.isStarted = false;
 	}
 
 	public void start() throws Exception
@@ -125,6 +128,7 @@ public class LiveLogProcessor
 		liveLogExecutor.submit(txLogTailer);
 		liveLogExecutor.submit(liveTransactionLogWriter);
 		liveLogExecutor.submit(liveMonitor);
+		this.isStarted = true;
 	}
 
 	public void stop() throws Exception
@@ -170,5 +174,15 @@ public class LiveLogProcessor
 	public void setTxStartTime(long txStartTime)
 	{
 		this.txStartTime = txStartTime;
+	}
+
+	public boolean isStarted()
+	{
+		return isStarted;
+	}
+
+	public void setStarted(boolean started)
+	{
+		isStarted = started;
 	}
 }

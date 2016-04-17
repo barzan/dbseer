@@ -220,7 +220,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 				runner.run();
 
 				int sleepCount = 0;
-				while (liveLogProcessor == null)
+				while (liveLogProcessor == null || !liveLogProcessor.isStarted())
 				{
 					Thread.sleep(250);
 					sleepCount += 250;
@@ -230,6 +230,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 								String.format("Failed to receive live logs."),
 								"Message", JOptionPane.PLAIN_MESSAGE);
 						runner.stop();
+						liveLogProcessor = null;
 						return;
 					}
 				}
@@ -285,13 +286,43 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 					{
 						dataset.setCurrent(false);
 					}
+					boolean isRemoved = false;
+					if (DBSeerGUI.dbscan == null ||
+							(DBSeerGUI.dbscan != null && !DBSeerGUI.dbscan.isInitialized()))
+					{
+						JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
+								String.format("Not enough transactions for clustering. You need at least %d transactions. Datasets are removed.", DBSeerGUI.settings.dbscanInitPts),
+								"Message", JOptionPane.PLAIN_MESSAGE);
+
+						for (DBSeerDataSet dataset : currentDatasets)
+						{
+							DBSeerGUI.datasets.removeElement(dataset);
+						}
+						isRemoved = true;
+					}
+
+					if (!isRemoved)
+					{
+						if (liveLogProcessor != null && !liveLogProcessor.isTxWritingStarted())
+						{
+							JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
+									String.format("Live monitoring has not written any transactions yet. Datasets are removed."),
+									"Message", JOptionPane.PLAIN_MESSAGE);
+
+							for (DBSeerDataSet dataset : currentDatasets)
+							{
+								DBSeerGUI.datasets.removeElement(dataset);
+							}
+						}
+					}
 					currentDatasets.clear();
 
-					DBSeerGUI.liveMonitorPanel.reset();
 					if (liveLogProcessor != null)
 					{
-						liveLogProcessor.reset();
+						liveLogProcessor = null;
 					}
+
+					DBSeerGUI.liveMonitorPanel.reset();
 
 					startMonitoringButton.setEnabled(true);
 					stopMonitoringButton.setEnabled(false);

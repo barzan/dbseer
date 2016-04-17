@@ -119,6 +119,7 @@ public class TransactionLogWriter
 		this.numServer = servers.length;
 
 		this.isInitialized = true;
+		this.isWritingStarted = false;
 	}
 
 	// write tps, latency, percentile latency logs for DBSeer use.
