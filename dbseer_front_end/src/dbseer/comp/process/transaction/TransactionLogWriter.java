@@ -135,11 +135,11 @@ public class TransactionLogWriter
 		double[][] latencySum = new double[numServer][DBSeerConstants.MAX_NUM_TABLE];
 		String gap = "   ";
 
-		if (!isDBSCANInitialized)
+		if (!dbscan.isInitialized())
 		{
 			initialTransactions.addAll(transactions);
 
-			if (initialTransactions.size() > dbscan.getInitPts())
+			if (initialTransactions.size() > dbscan.getInitPts() && !dbscan.isInitializing())
 			{
 				dbscanInitializer = Executors.newSingleThreadExecutor();
 				dbscanInitializer.submit(new Runnable()
@@ -150,7 +150,6 @@ public class TransactionLogWriter
 						dbscan.initialDBSCAN(initialTransactions);
 					}
 				});
-				isDBSCANInitialized = true;
 			}
 		}
 

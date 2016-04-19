@@ -611,6 +611,7 @@ classdef Plotter < handle
                 if isfield(mv, 'dbmsCurrentLockWaits')
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = normMatrix([mv.dbmsCurrentLockWaits(:,i) mv.dbmsLockWaits(:,i) mv.dbmsLockWaitTime(:,i)]);
+                    %Ydata{end+1} = [mv.dbmsCurrentLockWaits(:,i) mv.dbmsLockWaits(:,i) mv.dbmsLockWaitTime(:,i)];
                     %legends = {'#locks being waited for','#waits, due to locks', 'time spent waiting for locks'};
                     legends{end+1} = horzcat(server_name, ' No. locks being waited for');
                     legends{end+1} = horzcat(server_name, ' No. waits, due to locks');
@@ -619,6 +620,7 @@ classdef Plotter < handle
             end
             Xlabel = this.Xlabel;
             Ylabel = 'Locks (Normalized)';
+            %Ylabel = 'Locks';
             title = 'Lock analysis';
             timestamp = this.Xdata;
         end
@@ -796,6 +798,7 @@ classdef Plotter < handle
                         mv.dbmsNumberOfLogicalReadsFromDisk(:,i) mv.dbmsNumberOfWaitsForFlush(:,i)];
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = normMatrix(temp);
+                    %Ydata{end+1} = temp;
                     legends{end+1} = horzcat(server_name, ' InnodbBufferPoolReadAheadRnd');
                     legends{end+1} = horzcat(server_name, ' InnodbBufferPoolReadAheadSeq');
                     legends{end+1} = horzcat(server_name, ' InnodbBufferPoolReadRequests');
@@ -805,7 +808,8 @@ classdef Plotter < handle
                 end
             end
             Xlabel = this.Xlabel;
-            Ylabel = 'Normalized';
+            %Ylabel = 'Normalized';
+            Ylabel = '# of request/read/waits (normalized)';
             title = 'Working Set Analysis';
             timestamp = this.Xdata;
         end
@@ -821,6 +825,7 @@ classdef Plotter < handle
                 if isfield(mv, 'dbmsNumberOfNextRowReadRequests')
                     temp=[mv.dbmsNumberOfFirstEntryReadRequests(:,i) mv.dbmsNumberOfKeyBasedReadRequests(:,i) mv.dbmsNumberOfNextKeyBasedReadRequests(:,i) mv.dbmsNumberOfPrevKeyBasedReadRequests(:,i) mv.dbmsNumberOfRowReadRequests(:,i) mv.dbmsNumberOfNextRowReadRequests(:,i)];
                     Xdata{end+1} = this.Xdata;
+                    %Ydata{end+1} = temp;
                     Ydata{end+1} = normMatrix(temp);
                     legends{end+1} = horzcat(server_name, 'Handler_read_first');
                     legends{end+1} = horzcat(server_name, 'Handler_read_key');
@@ -832,7 +837,8 @@ classdef Plotter < handle
                 end
             end
             Xlabel = this.Xlabel;
-            Ylabel = 'Normalized';
+            %Ylabel = 'Normalized';
+            Ylabel = '# of handler reads (normalized)';
             title = 'Working Set Analysis';
             timestamp = this.Xdata;
         end

@@ -148,12 +148,14 @@ The default statistical package in DBSeer is Matlab. But if you change the value
 
 You can run the jar file to launch the GUI with the command:
 
-	> java -jar dbseer_front_end.jar
+	> java -Xmx2048M -jar dbseer_front_end.jar
 
 OR you can specify the INI configuration file to use as its argument:
 
-	> java -jar dbseer_front_end.jar ./dbseer.ini
+	> java -Xmx2048M -jar dbseer_front_end.jar ./dbseer.ini
 	
+**NOTE: We recommend the maximum JVM heap size of at least 2 gigabytes for DBSeer.**
+
 If you do not specify the INI configuration file, DBSeer will automatically search for the file in the current working directory and use the default configuration values if it cannot find the INI file. A sample INI file can be found in the package as 'dbseer\_front\_end/dbseer.ini'.
 
 To familiarize yourself with various features in DBSeer's GUI, watch the following video:  http://dbseer.org/video

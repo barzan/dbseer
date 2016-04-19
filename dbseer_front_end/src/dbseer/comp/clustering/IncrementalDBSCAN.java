@@ -81,7 +81,7 @@ public class IncrementalDBSCAN
 				t.setClassification(Transaction.CLASSIFIED);
 				ArrayList<Transaction> neighbors = getNeighbors(actualTransactions, t);
 
-				if (neighbors.size() >= this.minPts)
+				if (neighbors.size() >= this.minPts || neighbors.size() > actualTransactions.size() - 1)
 				{
 					Cluster c = new Cluster(clusterId++);
 					expandCluster(c, actualTransactions, neighbors);
@@ -109,9 +109,11 @@ public class IncrementalDBSCAN
 			dataset.addTransactionType("Type " + (++count));
 		}
 
-		initialized = true;
+		if (clusters.size() > 0)
+		{
+			initialized = true;
+		}
 		this.initializing = false;
-//		System.out.println("Initial DBSCAN Finished");
 	}
 
 	public synchronized Collection<Cluster> getCurrentClusters()
@@ -202,6 +204,7 @@ public class IncrementalDBSCAN
 				// promote the outlier clusters with more than minPts transactions.
 				for (Cluster c : promotionList)
 				{
+					System.out.println("Promotion");
 					c.setId(clusterId++);
 					clusters.add(c);
 					allClusters.add(c);

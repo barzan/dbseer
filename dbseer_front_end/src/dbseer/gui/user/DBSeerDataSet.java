@@ -772,7 +772,7 @@ public class DBSeerDataSet implements TableModelListener
 		return newPath;
 	}
 
-	public boolean loadDataset(boolean isFirstTime)
+	public synchronized boolean loadDataset(boolean isFirstTime)
 	{
 //		if (dataSetLoaded == false || this.numTransactionTypes == 0)
 		{
@@ -910,7 +910,7 @@ public class DBSeerDataSet implements TableModelListener
 		return true;
 	}
 
-	public boolean loadModelVariable()
+	public synchronized boolean loadModelVariable()
 	{
 		// set the unique name for mv first.
 		if (uniqueModelVariableName == "")
