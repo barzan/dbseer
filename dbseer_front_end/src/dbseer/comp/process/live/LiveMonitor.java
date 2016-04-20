@@ -128,9 +128,9 @@ public class LiveMonitor implements Runnable
 							monitorPanel.setCurrentAverageLatency(monitor.getCurrentTimestamp(), i, monitor.getCurrentAverageLatency(i));
 						}
 //						if (StreamClustering.getDBSCAN().isInitialized())
-						{
-							monitorPanel.updateTransactionNames();
-						}
+//						{
+//							monitorPanel.updateTransactionNames();
+//						}
 //					}
 				}
 			}

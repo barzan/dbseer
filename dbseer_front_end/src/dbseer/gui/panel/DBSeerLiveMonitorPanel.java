@@ -382,9 +382,9 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 					throughputCollection.getSeries(i).setKey(newName);
 					latencyCollection.getSeries(i).setKey(newName);
 
-					if (DBSeerGUI.isLiveMonitoring)
+					if (DBSeerGUI.currentDataset != null)
 					{
-						DBSeerGUI.liveDataset.setTransactionTypeName(i, newName);
+						DBSeerGUI.currentDataset.setTransactionTypeName(i, newName);
 					}
 
 					return;
