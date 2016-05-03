@@ -16,6 +16,7 @@
 
 package dbseer.gui;
 
+import com.esotericsoftware.minlog.Log;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.io.StreamException;
 import dbseer.comp.clustering.IncrementalDBSCAN;
@@ -306,7 +307,6 @@ public class DBSeerGUI
 
 	public static void main(String[] args)
 	{
-//		Temp: testing data center;
 		try
 		{
 			SwingUtilities.invokeAndWait(new Runnable()

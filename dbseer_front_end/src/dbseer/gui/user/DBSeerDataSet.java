@@ -19,6 +19,7 @@ package dbseer.gui.user;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import com.thoughtworks.xstream.annotations.XStreamOmitField;
+import com.thoughtworks.xstream.converters.basic.BigDecimalConverter;
 import dbseer.comp.UserInputValidator;
 import dbseer.gui.DBSeerConstants;
 import dbseer.gui.DBSeerExceptionHandler;
@@ -26,6 +27,7 @@ import dbseer.gui.DBSeerGUI;
 import dbseer.gui.xml.XStreamHelper;
 import dbseer.stat.StatisticalPackageRunner;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -34,6 +36,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import java.awt.*;
 import java.io.*;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.List;
 
@@ -910,6 +913,122 @@ public class DBSeerDataSet implements TableModelListener
 		return true;
 	}
 
+	public synchronized boolean loadDataset(boolean isFirstTime, long startIdx, long endIdx)
+	{
+		if (!loadDatasetPath())
+		{
+			return false;
+		}
+		this.numTransactionTypes = this.datasetPathList.get(0).getNumTransactionType();
+		if (this.numTransactionTypes == 0)
+		{
+			return false;
+		}
+
+		if (uniqueVariableName == "")
+		{
+			uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
+		}
+
+
+		XStreamHelper xmlHelper = new XStreamHelper();
+		statementsOffsetFiles.clear();
+		transactionSampleLists.clear();
+
+		for (int i = 0; i < this.numTransactionTypes; ++i)
+		{
+			String datasetPath = this.datasetPathList.get(0).getRoot();
+			String samplePath = datasetPath + File.separator + "tx_sample_" + (i+1);
+			String offsetPath = datasetPath + File.separator + "transaction_" + (i+1) + ".stmt";
+
+			statementsOffsetFiles.add(offsetPath);
+
+			if (new File(samplePath).exists())
+			{
+				DBSeerTransactionSampleList sampleList = new DBSeerTransactionSampleList(samplePath);
+				sampleList.readSamples();
+				transactionSampleLists.add(sampleList);
+			}
+			else
+			{
+				DBSeerTransactionSampleList sampleList = new DBSeerTransactionSampleList();
+				transactionSampleLists.add(sampleList);
+			}
+		}
+
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+		String dbseerPath = DBSeerGUI.userSettings.getDBSeerRootPath();
+
+		try
+		{
+			runner.eval("rmpath " + dbseerPath + ";");
+			runner.eval("rmpath " + dbseerPath + "/common_mat;");
+			runner.eval("rmpath " + dbseerPath + "/predict_mat;");
+			runner.eval("rmpath " + dbseerPath + "/predict_data;");
+			runner.eval("rmpath " + dbseerPath + "/predict_mat/prediction_center;");
+
+			runner.eval("addpath " + dbseerPath + ";");
+			runner.eval("addpath " + dbseerPath + "/common_mat;");
+			runner.eval("addpath " + dbseerPath + "/predict_mat;");
+			runner.eval("addpath " + dbseerPath + "/predict_data;");
+			runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
+
+			runner.eval(this.uniqueVariableName + " = DataSet;");
+			runner.eval(this.uniqueVariableName + ".datasets = {};");
+
+			int datasetCount = 1;
+			for (DBSeerDataSetPath datasetPath : datasetPathList)
+			{
+				String datasetPathName = "dataset_" + (datasetCount++);
+				runner.eval(datasetPathName + " = DataSetPath;");
+				runner.eval(datasetPathName + ".name = '" + datasetPath.getName() + "';");
+				runner.eval(datasetPathName + ".header_path = '" + datasetPath.getHeader() + "';");
+				runner.eval(datasetPathName + ".avg_latency_path = '" + datasetPath.getAvgLatency() + "';");
+				runner.eval(datasetPathName + ".monitor_path = '" + datasetPath.getMonitor() + "';");
+				runner.eval(datasetPathName + ".trans_count_path = '" + datasetPath.getTxCount() + "';");
+				runner.eval(datasetPathName + ".percentile_latency_path = '" + datasetPath.getPrcLatency() + "';");
+
+				runner.eval(this.uniqueVariableName + ".datasets{end+1} = " + datasetPathName + ";");
+			}
+
+			runner.eval(this.uniqueVariableName + ".startIdx = " + startIdx + ";");
+			runner.eval(this.uniqueVariableName + ".endIdx = " + endIdx + ";");
+			runner.eval(this.uniqueVariableName + ".use_entire = false;");
+			String tranType = "[";
+
+			if (isFirstTime || this.transactionTypeNames.isEmpty())
+			{
+				this.transactionTypeNames.clear();
+				this.validTransactions.clear();
+				for (int i = 0; i < this.numTransactionTypes; ++i)
+				{
+					this.transactionTypeNames.add("Type " + (i + 1));
+					this.validTransactions.add((i + 1));
+				}
+				this.addTransactionRows();
+				updateTable();
+			}
+			for (int i = 0; i < this.numTransactionTypes; ++i)
+			{
+				if (validTransactions.contains(i + 1))
+				{
+					tranType += (i + 1) + " ";
+				}
+			}
+			tranType += "]";
+			runner.eval(this.uniqueVariableName + ".tranTypes = " + tranType);
+			runner.eval(this.uniqueVariableName + ".loadStatistics;");
+		}
+		catch (Exception e)
+		{
+			DBSeerExceptionHandler.handleException(e);
+			return false;
+		}
+
+		dataSetLoaded = true;
+		return true;
+	}
+
 	public synchronized boolean loadModelVariable()
 	{
 		// set the unique name for mv first.
@@ -1702,5 +1821,81 @@ public class DBSeerDataSet implements TableModelListener
 	public boolean isTransactionEnabled(int i)
 	{
 		return validTransactions.contains(i+1);
+	}
+
+	public long getStartTime()
+	{
+		if (!loadDatasetPath())
+		{
+			return -1;
+		}
+
+		if (datasetPathList.isEmpty())
+		{
+			return -1;
+		}
+
+		DBSeerDataSetPath path = datasetPathList.get(0);
+
+		String latencyPath = path.getAvgLatency();
+
+		File latencyFile = new File(latencyPath);
+
+		try
+		{
+			BufferedReader firstLineReader = new BufferedReader(new FileReader(latencyFile));
+			String firstLine = firstLineReader.readLine();
+
+			return this.getTimestamp(firstLine);
+		}
+		catch (FileNotFoundException e)
+		{
+			return -1;
+		}
+		catch (IOException e)
+		{
+			return -1;
+		}
+	}
+
+	public long getEndTime()
+	{
+		if (!loadDatasetPath())
+		{
+			return -1;
+		}
+
+		if (datasetPathList.isEmpty())
+		{
+			return -1;
+		}
+
+		DBSeerDataSetPath path = datasetPathList.get(0);
+		String latencyPath = path.getAvgLatency();
+		File latencyFile = new File(latencyPath);
+
+		try
+		{
+			ReversedLinesFileReader lastLineReader = new ReversedLinesFileReader(latencyFile);
+			String lastLine = lastLineReader.readLine();
+
+			return this.getTimestamp(lastLine);
+		}
+		catch (FileNotFoundException e)
+		{
+			return -1;
+		}
+		catch (IOException e)
+		{
+			return -1;
+		}
+
+	}
+
+	public long getTimestamp(String line)
+	{
+		String[] data = line.trim().split("\\s+");
+		BigDecimal bd = new BigDecimal(data[0]);
+		return bd.longValueExact();
 	}
 }

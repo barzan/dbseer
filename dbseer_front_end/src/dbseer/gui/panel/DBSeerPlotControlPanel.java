@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.RunnableFuture;
 
 
 /**
@@ -45,11 +46,15 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 	public static Map<String, String> axisMap = new HashMap<String, String>();
 
 	private JPanel buttonPanel;
+	private DBSeerPlotDatasetInfoPanel datasetInfoPanel;
 	private JButton plotButton;
 	private JComboBox profileComboBox;
 	private JTabbedPane plotTabbedPane;
 	private DBSeerPlotPresetPanel plotPresetPanel;
 	private DBSeerPlotCustomPanel plotCustomPanel;
+
+	private JLabel startTimeLabel;
+	private JLabel endTimeLabel;
 
 	public DBSeerPlotControlPanel()
 	{
@@ -149,6 +154,9 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 		buttonPanel = new JPanel();
 		buttonPanel.setLayout(new MigLayout("ins 0"));
 //		buttonPanel.setPreferredSize(new Dimension(300, 200));
+		datasetInfoPanel = new DBSeerPlotDatasetInfoPanel();
+		datasetInfoPanel.setBorder(BorderFactory.createTitledBorder("Dataset info"));
+		datasetInfoPanel.setPreferredSize(new Dimension(260,300));
 
 		plotButton = new JButton();
 		plotButton.setText("Load & Plot");
@@ -156,10 +164,12 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 
 		profileComboBox = new JComboBox(new SharedComboBoxModel(DBSeerGUI.datasets));
 		profileComboBox.setBorder(BorderFactory.createTitledBorder("Choose a dataset"));
-		profileComboBox.setPreferredSize(new Dimension(250,100));
+		profileComboBox.setPreferredSize(new Dimension(260,100));
+		profileComboBox.addActionListener(this);
 
 		buttonPanel.add(profileComboBox, "dock north");
-		buttonPanel.add(plotButton);
+		buttonPanel.add(plotButton, "wrap");
+		buttonPanel.add(datasetInfoPanel);
 		this.add(buttonPanel, "dock west");
 		this.add(plotTabbedPane, "grow");
 	}
@@ -175,20 +185,26 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 
 			if (profile == null)
 			{
-				JOptionPane.showMessageDialog(null, "Please select a dataset.", "Warning", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Please select a dataset.", "Warning", JOptionPane.WARNING_MESSAGE);
 				return;
 			}
 
 			if (profile.getLive() && !DBSeerGUI.isLiveDataReady)
 			{
-				JOptionPane.showMessageDialog(null, "DBSeer must be monitoring in order to draw plots from its live dataset.",
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "DBSeer must be monitoring in order to draw plots from its live dataset.",
 						"Warning", JOptionPane.WARNING_MESSAGE);
 				return;
 			}
 
 			if (plotTabbedPane.getSelectedIndex() == 0 && charts.length == 0)
 			{
-				JOptionPane.showMessageDialog(null, "Please select one or more default plots to draw.", "Warning", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Please select one or more default plots to draw.", "Warning", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
+			if (datasetInfoPanel.getPlotStartIndex() > datasetInfoPanel.getPlotEndIndex())
+			{
+				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Please set the start/end time of plots correctly.", "Warning", JOptionPane.WARNING_MESSAGE);
 				return;
 			}
 
@@ -222,7 +238,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 						runner.eval("addpath " + dbseerPath + "/predict_mat/prediction_center;");
 
 						runner.eval("plotter = Plotter;");
-						if (!profile.loadDataset(profile.isCurrent()))
+						if (!profile.loadDataset(profile.isCurrent(), datasetInfoPanel.getPlotStartIndex(), datasetInfoPanel.getPlotEndIndex()))
 						{
 							isLoadSuccess = false;
 							JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Dataset has some data missing or is not ready yet.", "Message", JOptionPane.INFORMATION_MESSAGE);
@@ -291,6 +307,15 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 			};
 
 			worker.execute();
+		}
+		else if (actionEvent.getSource() == profileComboBox)
+		{
+			if (datasetInfoPanel != null && profileComboBox != null && profileComboBox.getSelectedIndex() != -1)
+			{
+				DBSeerGUI.status.setText("Reading dataset information...");
+				datasetInfoPanel.setTime(profile.getStartTime(), profile.getEndTime());
+				DBSeerGUI.status.setText("");
+			}
 		}
 	}
 }
