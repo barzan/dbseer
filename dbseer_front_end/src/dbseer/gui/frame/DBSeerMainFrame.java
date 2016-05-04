@@ -166,7 +166,9 @@ public class DBSeerMainFrame extends JFrame
 		mainTabbedPane.addTab("Live Monitoring", null, DBSeerGUI.liveMonitorPanel, "Live monitoring from the middleware.");
 		mainTabbedPane.addTab("DBSherlock (Performance Analysis)", null, plotControlPanel, "Displays plot/graphs from DB statistics");
 		mainTabbedPane.addTab("Performance Prediction", null, performancePredictionPanel, "Perform performance/resource predictions");
-		mainTabbedPane.addTab("Performance Prediction (For Advanced Users)", null, predictionConsolePanel, "Predicts various metrics");
+
+		// disabled for now.
+//		mainTabbedPane.addTab("Performance Prediction (For Advanced Users)", null, predictionConsolePanel, "Predicts various metrics");
 
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

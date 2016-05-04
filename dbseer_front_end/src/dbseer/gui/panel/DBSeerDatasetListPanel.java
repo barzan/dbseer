@@ -93,6 +93,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener, Mo
 					DBSeerDataSetFrame profileFrame = new DBSeerDataSetFrame("Add dataset", newProfile, list, false, currentPanel);
 					profileFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 					profileFrame.pack();
+					profileFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 					profileFrame.setVisible(true);
 				}
 			});
@@ -109,6 +110,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener, Mo
 					{
 						DBSeerDataSetFrame profileFrame = new DBSeerDataSetFrame("Edit dataset", profile, list, true, currentPanel);
 						profileFrame.pack();
+						profileFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						profileFrame.setVisible(true);
 					}
 				}

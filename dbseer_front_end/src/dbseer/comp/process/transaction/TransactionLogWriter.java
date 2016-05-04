@@ -135,7 +135,7 @@ public class TransactionLogWriter
 		double[][] latencySum = new double[numServer][DBSeerConstants.MAX_NUM_TABLE];
 		String gap = "   ";
 
-		if (!dbscan.isInitialized())
+		if (!dbscan.isInitialized() && !dbscan.isInitializing())
 		{
 			initialTransactions.addAll(transactions);
 

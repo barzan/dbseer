@@ -16,6 +16,7 @@
 
 package dbseer.gui;
 
+import com.esotericsoftware.minlog.Log;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.io.StreamException;
 import dbseer.comp.clustering.IncrementalDBSCAN;
@@ -38,6 +39,7 @@ import org.ini4j.Ini;
 import javax.swing.*;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -86,6 +88,8 @@ public class DBSeerGUI
 	public static DBSeerLiveMonitorPanel liveMonitorPanel = new DBSeerLiveMonitorPanel();
 
 	public static DBSeerDataSet liveDataset = null;
+
+	public static ArrayList<DBSeerDataSet> liveDatasets = new ArrayList<>();
 
 	public static DBSeerConfiguration liveConfig = null;
 
@@ -306,7 +310,6 @@ public class DBSeerGUI
 
 	public static void main(String[] args)
 	{
-//		Temp: testing data center;
 		try
 		{
 			SwingUtilities.invokeAndWait(new Runnable()

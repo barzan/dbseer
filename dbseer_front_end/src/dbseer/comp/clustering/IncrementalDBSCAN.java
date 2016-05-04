@@ -16,6 +16,7 @@
 
 package dbseer.comp.clustering;
 
+import com.esotericsoftware.minlog.Log;
 import dbseer.comp.data.Transaction;
 import dbseer.gui.DBSeerGUI;
 import dbseer.gui.user.DBSeerDataSet;
@@ -56,6 +57,8 @@ public class IncrementalDBSCAN
 
 	public synchronized void initialDBSCAN(Collection<Transaction> transactions)
 	{
+//		Log.set(Log.LEVEL_INFO);
+
 		if (initialized)
 		{
 			System.err.println("Incremental DBSCAN has already been initialized.");
@@ -64,7 +67,8 @@ public class IncrementalDBSCAN
 
 		this.initializing = true;
 
-//		System.out.println("Initial DBSCAN Started");
+//		Log.info("Initial DBSCAN Started with # of transactions = " + transactions.size());
+
 		Collection<Transaction> actualTransactions = new ArrayList<Transaction>();
 		for (Transaction t : transactions)
 		{
@@ -112,6 +116,7 @@ public class IncrementalDBSCAN
 		if (clusters.size() > 0)
 		{
 			initialized = true;
+//			Log.info("DBSCAN iniitialized with total cluster size = " + clusters.size());
 		}
 		this.initializing = false;
 	}
