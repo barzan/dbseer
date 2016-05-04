@@ -262,6 +262,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 				// save last middleware connection
 				DBSeerGUI.userSettings.setLastMiddlewareIP(ip);
 				DBSeerGUI.userSettings.setLastMiddlewarePort(port);
+				DBSeerGUI.userSettings.setLastMiddlewareID(id);
 
 				XStreamHelper xmlHelper = new XStreamHelper();
 				xmlHelper.toXML(DBSeerGUI.userSettings, DBSeerGUI.settingsPath);
