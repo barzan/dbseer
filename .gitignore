@@ -1,5 +1,6 @@
 .idea/
 out/
+dataset/
 dbseer_front_end/dbseer_front_end.iml
 dbseer_front_end/settings.xml
 

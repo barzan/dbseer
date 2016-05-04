@@ -39,6 +39,7 @@ import org.ini4j.Ini;
 import javax.swing.*;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -87,6 +88,8 @@ public class DBSeerGUI
 	public static DBSeerLiveMonitorPanel liveMonitorPanel = new DBSeerLiveMonitorPanel();
 
 	public static DBSeerDataSet liveDataset = null;
+
+	public static ArrayList<DBSeerDataSet> liveDatasets = new ArrayList<>();
 
 	public static DBSeerConfiguration liveConfig = null;
 

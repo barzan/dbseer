@@ -53,23 +53,10 @@ public class DBSeerDataSet implements TableModelListener
 
 	public static final int TYPE_NAME = 0;
 	public static final int TYPE_PATH = 1;
-//	public static final int TYPE_TRANSACTION_FILE = 1;
-//	public static final int TYPE_STATEMENT_FILE = 2;
-//	public static final int TYPE_QUERY_FILE = 3;
-//	public static final int TYPE_MONITORING_DATA = 4;
-//	public static final int TYPE_TRANSACTION_COUNT = 5;
-//	public static final int TYPE_AVERAGE_LATENCY = 6;
-//	public static final int TYPE_PERCENTILE_LATENCY = 7;
-//	public static final int TYPE_HEADER = 8;
-//	public static final int TYPE_NUM_TRANSACTION_TYPE = 6;
-//	public static final int TYPE_STATEMENT_STAT = 6;
 	public static final int TYPE_USE_ENTIRE_DATASET = 2;
 	public static final int TYPE_START_INDEX = 3;
 	public static final int TYPE_END_INDEX = 4;
 	public static final int TYPE_NUM_TRANSACTION_TYPE = 5;
-//	public static final int TYPE_MAX_THROUGHPUT_INDEX = 9;
-//	public static final int TYPE_IO_CONFIG = 10;
-//	public static final int TYPE_LOCK_CONFIG =11;
 
 	protected static int idToAssign = 0;
 
@@ -88,13 +75,6 @@ public class DBSeerDataSet implements TableModelListener
 	protected String transactionFilePath = "";
 	protected String statementFilePath = "";
 	protected String queryFilePath = "";
-//	protected String monitoringDataPath = "";
-//	protected String transCountPath = "";
-//	protected String averageLatencyPath = "";
-//	protected String percentileLatencyPath = "";
-//	protected String headerPath = "";
-//	protected String pageInfoPath = "";
-//	protected String statementStatPath = "";
 
 	protected Boolean useEntireDataSet = true;
 	@XStreamOmitField
@@ -110,9 +90,13 @@ public class DBSeerDataSet implements TableModelListener
 	@XStreamOmitField
 	protected ArrayList<DBSeerDataSetPath> datasetPathList = new ArrayList<DBSeerDataSetPath>();
 
-	protected java.util.List<String> transactionTypeNames = new ArrayList<String>();
-	@XStreamImplicit
-	protected java.util.Set<Integer> validTransactions = new HashSet<Integer>();
+	protected java.util.List<DBSeerTransactionType> transactionTypes = new ArrayList<DBSeerTransactionType>();
+
+	@XStreamOmitField
+	protected java.util.List<DBSeerTransactionType> transactionTypesBackup = new ArrayList<DBSeerTransactionType>();
+//	protected java.util.List<String> transactionTypeNames = new ArrayList<String>();
+//	@XStreamImplicit
+//	protected java.util.Set<Integer> validTransactions = new HashSet<Integer>();
 
 	@XStreamOmitField
 	protected String pathBackup = "";
@@ -206,15 +190,6 @@ public class DBSeerDataSet implements TableModelListener
 						cell.setForeground(Color.BLACK);
 					}
 				}
-//				else if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
-//						row == DBSeerDataSet.TYPE_HEADER ||
-//						row == DBSeerDataSet.TYPE_MONITORING_DATA ||
-//						row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
-//						row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
-//						row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
-//						row == DBSeerDataSet.TYPE_STATEMENT_FILE ||
-//						row == DBSeerDataSet.TYPE_QUERY_FILE ||
-//						row == DBSeerDataSet.TYPE_TRANSACTION_FILE)
 				else if (row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE)
 				{
 					cell.setForeground(Color.LIGHT_GRAY);
@@ -235,6 +210,7 @@ public class DBSeerDataSet implements TableModelListener
 		table.getColumnModel().getColumn(1).setPreferredWidth(600);
 		table.setRowHeight(20);
 
+		this.useEntireDataSet = true;
 		for (String header : tableHeaders)
 		{
 			if (header.equalsIgnoreCase("Use Entire DataSet"))
@@ -246,13 +222,14 @@ public class DBSeerDataSet implements TableModelListener
 		for (int i = 0; i < numTransactionTypes; ++i)
 		{
 			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), "Type " + (i+1)});
-			validTransactions.add(i+1);
-			transactionTypeNames.add("Type " + (i+1));
+			DBSeerTransactionType type = new DBSeerTransactionType("Type " + (i+1), true);
+			transactionTypes.add(type);
 		}
 
-		for (int i = 0; i < numTransactionTypes; ++i)
+		for (int i = 0; i < transactionTypes.size(); ++i)
 		{
-			if (validTransactions.contains(i+1))
+			DBSeerTransactionType txType = transactionTypes.get(i);
+			if (txType.isEnabled())
 			{
 				tableModel.addRow(new Object[]{"Use Transaction Type " + (i + 1), Boolean.TRUE});
 			}
@@ -339,6 +316,7 @@ public class DBSeerDataSet implements TableModelListener
 		table.getColumnModel().getColumn(1).setPreferredWidth(600);
 		table.setRowHeight(20);
 
+		this.useEntireDataSet = true;
 		for (String header : tableHeaders)
 		{
 			if (header.equalsIgnoreCase("Use Entire DataSet"))
@@ -352,13 +330,14 @@ public class DBSeerDataSet implements TableModelListener
 		for (int i = 0; i < numTransactionTypes; ++i)
 		{
 			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), "Type " + (i+1)});
-			validTransactions.add(i+1);
-			transactionTypeNames.add("Type " + (i+1));
+			DBSeerTransactionType type = new DBSeerTransactionType("Type " + (i+1), true);
+			transactionTypes.add(type);
 		}
 
-		for (int i = 0; i < numTransactionTypes; ++i)
+		for (int i = 0; i < transactionTypes.size(); ++i)
 		{
-			if (validTransactions.contains(i+1))
+			DBSeerTransactionType txType = transactionTypes.get(i);
+			if (txType.isEnabled())
 			{
 				tableModel.addRow(new Object[]{"Use Transaction Type " + (i + 1), Boolean.TRUE});
 			}
@@ -461,16 +440,6 @@ public class DBSeerDataSet implements TableModelListener
 	{
 		this.nameBackup = name;
 		this.pathBackup = path;
-//		this.transactionFilePathBackup = transactionFilePath;
-//		this.statementFilePathBackup = statementFilePath;
-//		this.queryFilePathBackup = queryFilePath;
-//		this.monitoringDataPathBackup = monitoringDataPath;
-//		this.transCountPathBackup = transCountPath;
-//		this.averageLatencyPathBackup = averageLatencyPath;
-//		this.percentileLatencyPathBackup = percentileLatencyPath;
-//		this.headerPathBackup = headerPath;
-//		this.pageInfoPathBackup = pageInfoPath;
-//		this.statementStatPathBackup = statementStatPath;
 
 		this.useEntireDataSetBackup = useEntireDataSet;
 		this.startIndexBackup = startIndex;
@@ -478,15 +447,9 @@ public class DBSeerDataSet implements TableModelListener
 		this.numTransactionTypesBackup = numTransactionTypes;
 
 		this.transactionTypeNamesBackup.clear();
-		for (String name : this.transactionTypeNames)
+		for (DBSeerTransactionType type : this.transactionTypes)
 		{
-			this.transactionTypeNamesBackup.add(name);
-		}
-
-		this.validTransactionsBackup.clear();
-		for (Integer valid : this.validTransactions)
-		{
-			this.validTransactionsBackup.add(valid);
+			this.transactionTypesBackup.add(type);
 		}
 	}
 
@@ -494,32 +457,16 @@ public class DBSeerDataSet implements TableModelListener
 	{
 		this.name = nameBackup;
 		this.path = pathBackup;
-//		this.transactionFilePath = transactionFilePathBackup;
-//		this.statementFilePath = statementFilePathBackup;
-//		this.queryFilePath = queryFilePathBackup;
-//		this.monitoringDataPath = monitoringDataPathBackup;
-//		this.transCountPath = transCountPathBackup;
-//		this.averageLatencyPath = averageLatencyPathBackup;
-//		this.percentileLatencyPath = percentileLatencyPathBackup;
-//		this.headerPath = headerPathBackup;
-//		this.pageInfoPath = pageInfoPathBackup;
-//		this.statementStatPath = statementStatPathBackup;
 
 		this.useEntireDataSet = useEntireDataSetBackup;
 		this.startIndex = startIndexBackup;
 		this.endIndex = endIndexBackup;
 		this.numTransactionTypes = numTransactionTypesBackup;
 
-		this.transactionTypeNames.clear();
-		for (String name : this.transactionTypeNamesBackup)
+		this.transactionTypes.clear();
+		for (DBSeerTransactionType type : this.transactionTypesBackup)
 		{
-			this.transactionTypeNames.add(name);
-		}
-
-		this.validTransactions.clear();
-		for (Integer valid : this.validTransactionsBackup)
-		{
-			this.validTransactions.add(valid);
+			this.transactionTypes.add(type);
 		}
 	}
 
@@ -527,29 +474,10 @@ public class DBSeerDataSet implements TableModelListener
 	{
 		if (this.name == null) this.name = "";
 		if (this.path == null) this.path = "";
-//		if (this.transactionFilePath == null) this.transactionFilePath = "";
-//		if (this.statementFilePath == null) this.statementFilePath = "";
-//		if (this.queryFilePath == null) this.queryFilePath = "";
-//		if (this.monitoringDataPath == null) this.monitoringDataPath = "";
-//		if (this.transCountPath == null) this.transCountPath = "";
-//		if (this.averageLatencyPath == null) this.averageLatencyPath = "";
-//		if (this.percentileLatencyPath == null) this.percentileLatencyPath = "";
-//		if (this.headerPath == null) this.headerPath = "";
-//		if (this.pageInfoPath == null) this.pageInfoPath = "";
-//		if (this.statementStatPath == null) this.statementStatPath = "";
-
 		if (this.live == null) this.live = new Boolean(false);
 		if (this.useEntireDataSet == null) this.useEntireDataSet = true;
-		if (this.transactionTypeNames == null) this.transactionTypeNames = new ArrayList<String>();
-		if (this.transactionTypeNamesBackup == null) this.transactionTypeNamesBackup = new ArrayList<String>();
-		for (int i = 0; i < this.transactionTypeNames.size(); ++i)
-		{
-			if (this.transactionTypeNames.get(i) == null)
-			{
-				this.transactionTypeNames.set(i, "");
-			}
-		}
-		if (this.validTransactions == null) this.validTransactions = new HashSet<Integer>();
+		if (this.transactionTypes == null) this.transactionTypes = new ArrayList<DBSeerTransactionType>();
+		if (this.transactionTypesBackup == null) this.transactionTypesBackup = new ArrayList<DBSeerTransactionType>();
 		if (this.validTransactionsBackup == null) this.validTransactionsBackup = new HashSet<Integer>();
 		if (this.transactionSampleLists == null) this.transactionSampleLists = new ArrayList<DBSeerTransactionSampleList>();
 		if (this.statementsOffsetFiles == null) this.statementsOffsetFiles = new ArrayList<String>();
@@ -592,15 +520,6 @@ public class DBSeerDataSet implements TableModelListener
 						cell.setForeground(Color.BLACK);
 					}
 				}
-//				else if (row == DBSeerDataSet.TYPE_AVERAGE_LATENCY ||
-//						row == DBSeerDataSet.TYPE_HEADER ||
-//						row == DBSeerDataSet.TYPE_MONITORING_DATA ||
-//						row == DBSeerDataSet.TYPE_PERCENTILE_LATENCY ||
-//						row == DBSeerDataSet.TYPE_TRANSACTION_COUNT ||
-//						row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE ||
-//						row == DBSeerDataSet.TYPE_QUERY_FILE ||
-//						row == DBSeerDataSet.TYPE_STATEMENT_FILE ||
-//						row == DBSeerDataSet.TYPE_TRANSACTION_FILE)
 				else if (row == DBSeerDataSet.TYPE_NUM_TRANSACTION_TYPE)
 				{
 					cell.setForeground(Color.LIGHT_GRAY);
@@ -629,19 +548,20 @@ public class DBSeerDataSet implements TableModelListener
 				tableModel.addRow(new Object[]{header, ""});
 		}
 
-		for (int i = 0; i < numTransactionTypes; ++i)
+		for (int i = 0; i < transactionTypes.size(); ++i)
 		{
-			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), "Type " + (i+1)});
-//			validTransactions.add((i+1));
+			DBSeerTransactionType txType = transactionTypes.get(i);
+			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), txType.getName()});
 		}
 
 		if (live)
 		{
 			updateLiveDataSet();
 		}
-		for (int i = 0; i < numTransactionTypes; ++i)
+		for (int i = 0; i < transactionTypes.size(); ++i)
 		{
-			if (validTransactions.contains(i+1))
+			DBSeerTransactionType txType = transactionTypes.get(i);
+			if (txType.isEnabled())
 			{
 				tableModel.addRow(new Object[]{"Use Transaction Type " + (i + 1), Boolean.TRUE});
 			}
@@ -795,7 +715,6 @@ public class DBSeerDataSet implements TableModelListener
 			uniqueVariableName = "dataset_" + UUID.randomUUID().toString().replace('-', '_');
 		}
 
-
 		XStreamHelper xmlHelper = new XStreamHelper();
 		statementsOffsetFiles.clear();
 		transactionSampleLists.clear();
@@ -858,15 +777,6 @@ public class DBSeerDataSet implements TableModelListener
 					runner.eval(this.uniqueVariableName + ".datasets{end+1} = " + datasetPathName + ";");
 				}
 
-				// old implementation
-//				runner.eval(this.uniqueVariableName + ".header_path = '" + this.headerPath + "';");
-//				runner.eval(this.uniqueVariableName + ".monitor_path = '" + this.monitoringDataPath + "';");
-//				runner.eval(this.uniqueVariableName + ".avg_latency_path = '" + this.averageLatencyPath + "';");
-//				runner.eval(this.uniqueVariableName + ".percentile_latency_path = '" +
-//						this.percentileLatencyPath + "';");
-//				runner.eval(this.uniqueVariableName + ".trans_count_path = '" + this.transCountPath + "';");
-//				runner.eval(this.uniqueVariableName + ".statement_stat_path = '" + this.statementStatPath + "';");
-				//runner.eval(this.uniqueVariableName + ".page_info_path = '" + this.pageInfoPath + "';");
 				runner.eval(this.uniqueVariableName + ".startIdx = " + this.startIndex + ";");
 				runner.eval(this.uniqueVariableName + ".endIdx = " + this.endIndex + ";");
 				if (this.useEntireDataSet.booleanValue())
@@ -879,21 +789,21 @@ public class DBSeerDataSet implements TableModelListener
 				}
 				String tranType = "[";
 
-				if (isFirstTime || this.transactionTypeNames.isEmpty())
+				if (isFirstTime || this.transactionTypes.isEmpty())
 				{
-					this.transactionTypeNames.clear();
-					this.validTransactions.clear();
+					this.transactionTypes.clear();
 					for (int i = 0; i < this.numTransactionTypes; ++i)
 					{
-						this.transactionTypeNames.add("Type " + (i + 1));
-						this.validTransactions.add((i + 1));
+						DBSeerTransactionType txType = new DBSeerTransactionType("Type " + (i+1), true);
+						this.transactionTypes.add(txType);
 					}
-					this.addTransactionRows();
+//					this.addTransactionRows();
 					updateTable();
 				}
-				for (int i = 0; i < this.numTransactionTypes; ++i)
+				for (int i = 0; i < transactionTypes.size(); ++i)
 				{
-					if (validTransactions.contains(i + 1))
+					DBSeerTransactionType txType = transactionTypes.get(i);
+					if (txType.isEnabled())
 					{
 						tranType += (i + 1) + " ";
 					}
@@ -910,6 +820,7 @@ public class DBSeerDataSet implements TableModelListener
 
 			dataSetLoaded = true;
 		}
+		updateTable();
 		return true;
 	}
 
@@ -996,21 +907,21 @@ public class DBSeerDataSet implements TableModelListener
 			runner.eval(this.uniqueVariableName + ".use_entire = false;");
 			String tranType = "[";
 
-			if (isFirstTime || this.transactionTypeNames.isEmpty())
+			if (isFirstTime || this.transactionTypes.isEmpty())
 			{
-				this.transactionTypeNames.clear();
-				this.validTransactions.clear();
+				this.transactionTypes.clear();
 				for (int i = 0; i < this.numTransactionTypes; ++i)
 				{
-					this.transactionTypeNames.add("Type " + (i + 1));
-					this.validTransactions.add((i + 1));
+					DBSeerTransactionType txType = new DBSeerTransactionType("Type " + (i+1), true);
+					this.transactionTypes.add(txType);
 				}
-				this.addTransactionRows();
+//				this.addTransactionRows();
 				updateTable();
 			}
-			for (int i = 0; i < this.numTransactionTypes; ++i)
+			for (int i = 0; i < transactionTypes.size(); ++i)
 			{
-				if (validTransactions.contains(i + 1))
+				DBSeerTransactionType txType = transactionTypes.get(i);
+				if (txType.isEnabled())
 				{
 					tranType += (i + 1) + " ";
 				}
@@ -1172,8 +1083,7 @@ public class DBSeerDataSet implements TableModelListener
 	{
 		TableCellEditor editor = table.getCellEditor();
 		if ( editor != null ) editor.stopCellEditing(); // stop editing
-		transactionTypeNames.clear();
-		validTransactions.clear();
+		transactionTypes.clear();
 
 		for (int i = 0; i < tableModel.getRowCount(); ++i)
 		{
@@ -1189,59 +1099,20 @@ public class DBSeerDataSet implements TableModelListener
 						case TYPE_PATH:
 							this.path = (String)tableModel.getValueAt(i, 1);
 							break;
-//						case TYPE_TRANSACTION_FILE:
-//							this.transactionFilePath = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_STATEMENT_FILE:
-//							this.statementFilePath = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_QUERY_FILE:
-//							this.queryFilePath = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_AVERAGE_LATENCY:
-//							this.averageLatencyPath = (String)tableModel.getValueAt(i, 1);
-//							break;
 						case TYPE_END_INDEX:
-							if (UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
-								this.endIndex = Integer.parseInt((String)tableModel.getValueAt(i, 1));
+							if (UserInputValidator.validateNumber(String.valueOf(tableModel.getValueAt(i, 1))))
+								this.endIndex = (Integer)tableModel.getValueAt(i, 1);
 							break;
-//						case TYPE_HEADER:
-//							this.headerPath = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_IO_CONFIG:
-//							this.IOConfiguration = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_LOCK_CONFIG:
-//							this.IOConfiguration = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_MAX_THROUGHPUT_INDEX:
-//							this.maxThroughputIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
-//							break;
-//						case TYPE_MONITORING_DATA:
-//							this.monitoringDataPath = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_NUM_TRANSACTION_TYPE:
-//							this.numTransactionTypes = Integer.parseInt((String)tableModel.getValueAt(i, 1));
-//							break;
-//						case TYPE_PERCENTILE_LATENCY:
-//							this.percentileLatencyPath = (String)tableModel.getValueAt(i, 1);
-//							break;
-//						case TYPE_STATEMENT_STAT:
-//							this.statementStatPath = (String)tableModel.getValueAt(i, 1);
-//							break;
 						case TYPE_USE_ENTIRE_DATASET:
 							this.useEntireDataSet = (Boolean)tableModel.getValueAt(i, 1);
 							break;
 						case TYPE_START_INDEX:
-							if (UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
-								this.startIndex = Integer.parseInt((String) tableModel.getValueAt(i, 1));
+							if (UserInputValidator.validateNumber(String.valueOf(tableModel.getValueAt(i, 1))));
+								this.startIndex = (Integer)tableModel.getValueAt(i, 1);
 							break;
-//						case TYPE_TRANSACTION_COUNT:
-//							this.transCountPath = (String)tableModel.getValueAt(i, 1);
-//							break;
 						case TYPE_NUM_TRANSACTION_TYPE:
-							if (UserInputValidator.validateNumber((String)tableModel.getValueAt(i, 1)))
-								this.numTransactionTypes = Integer.parseInt((String) tableModel.getValueAt(i, 1));
+							if (UserInputValidator.validateNumber((String.valueOf(tableModel.getValueAt(i, 1)))));
+								this.numTransactionTypes = (Integer)tableModel.getValueAt(i, 1);
 							break;
 						default:
 							break;
@@ -1251,8 +1122,8 @@ public class DBSeerDataSet implements TableModelListener
 			}
 			if (i > TYPE_NUM_TRANSACTION_TYPE && i <= TYPE_NUM_TRANSACTION_TYPE + this.numTransactionTypes)
 			{
-//				transactionTypeNames.add(i-TYPE_NUM_TRANSACTION_TYPE-1, (String)tableModel.getValueAt(i, 1));
-				transactionTypeNames.add((String) tableModel.getValueAt(i, 1));
+				DBSeerTransactionType txType = new DBSeerTransactionType((String) tableModel.getValueAt(i, 1), true);
+				transactionTypes.add(txType);
 			}
 			if (i > TYPE_NUM_TRANSACTION_TYPE + numTransactionTypes)
 			{
@@ -1261,11 +1132,11 @@ public class DBSeerDataSet implements TableModelListener
 				{
 					if ( ((Boolean)tableModel.getValueAt(i, 1)).booleanValue() )
 					{
-						validTransactions.add(idx);
+						transactionTypes.get(idx-1).setEnabled(true);
 					}
 					else
 					{
-						validTransactions.remove(idx);
+						transactionTypes.get(idx-1).setEnabled(false);
 					}
 				}
 			}
@@ -1274,6 +1145,49 @@ public class DBSeerDataSet implements TableModelListener
 	}
 
 	public void updateTable()
+	{
+		// remove all rows.
+		tableModel.setRowCount(0);
+
+		for (int i=0;i<tableHeaders.length;++i)
+		{
+			switch(i)
+			{
+				case TYPE_NAME:
+					tableModel.addRow(new Object[]{tableHeaders[i], this.name});
+					break;
+				case TYPE_PATH:
+					tableModel.addRow(new Object[]{tableHeaders[i], this.path});
+					break;
+				case TYPE_USE_ENTIRE_DATASET:
+					tableModel.addRow(new Object[]{tableHeaders[i], this.useEntireDataSet});
+					break;
+				case TYPE_START_INDEX:
+					tableModel.addRow(new Object[]{tableHeaders[i], this.startIndex});
+					break;
+				case TYPE_END_INDEX:
+					tableModel.addRow(new Object[]{tableHeaders[i], this.endIndex});
+					break;
+				case TYPE_NUM_TRANSACTION_TYPE:
+					tableModel.addRow(new Object[]{tableHeaders[i], this.transactionTypes.size()});
+					break;
+				default:
+					break;
+			}
+		}
+		int count = 1;
+		for (DBSeerTransactionType txType : transactionTypes)
+		{
+			tableModel.addRow(new Object[]{"Name of Transaction Type " + (count++), txType.getName()});
+		}
+		count = 1;
+		for (DBSeerTransactionType txType : transactionTypes)
+		{
+			tableModel.addRow(new Object[]{"Use Transaction Type " + (count++), (Boolean)txType.isEnabled()});
+		}
+	}
+
+	public void updateTableOld()
 	{
 		TableCellEditor editor = table.getCellEditor();
 		if ( editor != null ) editor.stopCellEditing(); // stop editing
@@ -1291,54 +1205,15 @@ public class DBSeerDataSet implements TableModelListener
 						case TYPE_PATH:
 							tableModel.setValueAt(this.path, i, 1);
 							break;
-//						case TYPE_TRANSACTION_FILE:
-//							tableModel.setValueAt(this.transactionFilePath, i, 1);
-//							break;
-//						case TYPE_STATEMENT_FILE:
-//							tableModel.setValueAt(this.statementFilePath, i, 1);
-//							break;
-//						case TYPE_QUERY_FILE:
-//							tableModel.setValueAt(this.queryFilePath, i, 1);
-//							break;
-//						case TYPE_AVERAGE_LATENCY:
-//							tableModel.setValueAt(this.averageLatencyPath, i, 1);
-//							break;
 						case TYPE_END_INDEX:
 							tableModel.setValueAt(String.valueOf(this.endIndex), i, 1);
 							break;
-//						case TYPE_HEADER:
-//							tableModel.setValueAt(this.headerPath, i, 1);
-//							break;
-//						case TYPE_IO_CONFIG:
-//							tableModel.setValueAt(this.IOConfiguration, i, 1);
-//							break;
-//						case TYPE_LOCK_CONFIG:
-//							tableModel.setValueAt(this.lockConfiguration, i, 1);
-//							break;
-//						case TYPE_MAX_THROUGHPUT_INDEX:
-//							tableModel.setValueAt(String.valueOf(this.maxThroughputIndex), i, 1);
-//							break;
-//						case TYPE_MONITORING_DATA:
-//							tableModel.setValueAt(this.monitoringDataPath, i, 1);
-//							break;
-//						case TYPE_NUM_TRANSACTION_TYPE:
-//							tableModel.setValueAt(String.valueOf(this.numTransactionTypes), i, 1);
-//							break;
-//						case TYPE_PERCENTILE_LATENCY:
-//							tableModel.setValueAt(this.percentileLatencyPath, i, 1);
-//							break;
-//						case TYPE_STATEMENT_STAT:
-//							tableModel.setValueAt(this.statementStatPath, i, 1);
-//							break;
 						case TYPE_USE_ENTIRE_DATASET:
 							tableModel.setValueAt(this.useEntireDataSet.booleanValue(), i, 1);
 							break;
 						case TYPE_START_INDEX:
 							tableModel.setValueAt(String.valueOf(this.startIndex), i, 1);
 							break;
-//						case TYPE_TRANSACTION_COUNT:
-//							tableModel.setValueAt(this.transCountPath, i, 1);
-//							break;
 						case TYPE_NUM_TRANSACTION_TYPE:
 							tableModel.setValueAt(String.valueOf(this.numTransactionTypes), i, 1);
 							break;
@@ -1351,16 +1226,18 @@ public class DBSeerDataSet implements TableModelListener
 
 			if (i > TYPE_NUM_TRANSACTION_TYPE)
 			{
-				if (i - TYPE_NUM_TRANSACTION_TYPE <= transactionTypeNames.size())
+				if (i - TYPE_NUM_TRANSACTION_TYPE <= transactionTypes.size())
 				{
-					tableModel.setValueAt(this.transactionTypeNames.get(i - TYPE_NUM_TRANSACTION_TYPE - 1), i, 1);
+					DBSeerTransactionType txType = transactionTypes.get(i - TYPE_NUM_TRANSACTION_TYPE - 1);
+					tableModel.setValueAt(txType.getName(), i, 1);
 				}
 			}
 			if (i > TYPE_NUM_TRANSACTION_TYPE + numTransactionTypes)
 			{
 				if (i - TYPE_NUM_TRANSACTION_TYPE - numTransactionTypes <= numTransactionTypes)
 				{
-					if (this.validTransactions.contains(i - TYPE_NUM_TRANSACTION_TYPE - numTransactionTypes))
+					DBSeerTransactionType txType = transactionTypes.get(i - TYPE_NUM_TRANSACTION_TYPE - numTransactionTypes - 1);
+					if (txType.isEnabled())
 					{
 						tableModel.setValueAt(true, i, 1);
 					}
@@ -1460,19 +1337,6 @@ public class DBSeerDataSet implements TableModelListener
 		this.dataSetLoaded = false;
 	}
 
-	//	public synchronized int getNumTransactionTypes()
-//	{
-//		return numTransactionTypes;
-//	}
-//
-//	public synchronized void setNumTransactionTypes(int numTransactionTypes)
-//	{
-//		this.numTransactionTypes = numTransactionTypes;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-
 	public synchronized int getStartIndex()
 	{
 		return startIndex;
@@ -1501,114 +1365,6 @@ public class DBSeerDataSet implements TableModelListener
 		this.dataSetLoaded = false;
 	}
 
-//	public synchronized int getMaxThroughputIndex()
-//	{
-//		return maxThroughputIndex;
-//	}
-//
-//	public synchronized void setMaxThroughputIndex(int maxThroughputIndex)
-//	{
-//		this.maxThroughputIndex = maxThroughputIndex;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-//
-//	public synchronized String getIOConfiguration()
-//	{
-//		return IOConfiguration;
-//	}
-//
-//	public synchronized void setIOConfiguration(String IOConfiguration)
-//	{
-//		this.IOConfiguration = IOConfiguration;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-
-//	public synchronized String getLockConfiguration()
-//	{
-//		return lockConfiguration;
-//	}
-//
-//	public synchronized void setLockConfiguration(String lockConfiguration)
-//	{
-//		this.lockConfiguration = lockConfiguration;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-	
-//	public synchronized String getMonitoringDataPath()
-//	{
-//		return monitoringDataPath;
-//	}
-//
-//	public synchronized void setMonitoringDataPath(String monitoringDataPath)
-//	{
-////		setFromTable();
-//		this.monitoringDataPath = monitoringDataPath;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-//
-//	public synchronized String getTransCountPath()
-//	{
-//		return transCountPath;
-//	}
-//
-//	public synchronized void setTransCountPath(String transCountPath)
-//	{
-////		setFromTable();
-//		this.transCountPath = transCountPath;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-//
-//	public synchronized String getAverageLatencyPath()
-//	{
-//		return averageLatencyPath;
-//	}
-//
-//	public synchronized void setAverageLatencyPath(String averageLatencyPath)
-//	{
-////		setFromTable();
-//		this.averageLatencyPath = averageLatencyPath;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-//
-//	public synchronized String getPercentileLatencyPath()
-//	{
-//		return percentileLatencyPath;
-//	}
-//
-//	public synchronized void setPercentileLatencyPath(String percentileLatencyPath)
-//	{
-////		setFromTable();
-//		this.percentileLatencyPath = percentileLatencyPath;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-//
-//	public synchronized String getHeaderPath()
-//	{
-//		return headerPath;
-//	}
-//
-//	public synchronized void setHeaderPath(String headerPath)
-//	{
-////		setFromTable();
-//		this.headerPath = headerPath;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
 
 	public synchronized boolean isDataSetLoaded()
 	{
@@ -1625,33 +1381,6 @@ public class DBSeerDataSet implements TableModelListener
 		return uniqueVariableName;
 	}
 
-//	public synchronized String getPageInfoPath()
-//	{
-//		return pageInfoPath;
-//	}
-//
-//	public synchronized void setPageInfoPath(String pageInfoPath)
-//	{
-////		setFromTable();
-//		this.pageInfoPath = pageInfoPath;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
-//
-//	public synchronized String getStatementStatPath()
-//	{
-//		return statementStatPath;
-//	}
-//
-//	public synchronized void setStatementStatPath(String statementStatPath)
-//	{
-////		setFromTable();
-//		this.statementStatPath = statementStatPath;
-//		updateTable();
-//		tableModel.fireTableDataChanged();
-//		this.dataSetLoaded = false;
-//	}
 
 	public synchronized Boolean getUseEntireDataSet()
 	{
@@ -1684,19 +1413,19 @@ public class DBSeerDataSet implements TableModelListener
 	public synchronized List<String> getTransactionTypeNames()
 	{
 		ArrayList<String> validTransactionNames = new ArrayList<String>();
-		for (int i = 0; i < transactionTypeNames.size(); ++i)
+		for (DBSeerTransactionType type : transactionTypes)
 		{
-			if (validTransactions.contains(i+1))
+			if (type.isEnabled())
 			{
-				validTransactionNames.add(transactionTypeNames.get(i));
+				validTransactionNames.add(type.getName());
 			}
 		}
 		return validTransactionNames;
 	}
 
-	public synchronized List<String> getAllTransactionTypeNames()
+	public synchronized List<DBSeerTransactionType> getTransactionTypes()
 	{
-		return transactionTypeNames;
+		return this.transactionTypes;
 	}
 
 	public synchronized List<DBSeerTransactionSampleList> getTransactionSampleLists()
@@ -1758,36 +1487,37 @@ public class DBSeerDataSet implements TableModelListener
 
 	public void setTransactionTypeName(int i, String name)
 	{
-		transactionTypeNames.set(i,  name);
+		transactionTypes.get(i).setName(name);
 		updateTable();
 	}
 
 	public void clearTransactionTypes()
 	{
-		transactionTypeNames.clear();
-		validTransactions.clear();
+		transactionTypes.clear();
 		numTransactionTypes = 0;
 		updateTable();
 	}
 
 	public void addTransactionType(String name)
 	{
-		transactionTypeNames.add(name);
-		validTransactions.add(transactionTypeNames.size());
+		DBSeerTransactionType newType = new DBSeerTransactionType(name, true);
+		transactionTypes.add(newType);
 		++numTransactionTypes;
 		updateTable();
 	}
 
 	public void addTransactionRows()
 	{
-		for (int i = 0; i < numTransactionTypes; ++i)
+		for (int i = 0; i < transactionTypes.size(); ++i)
 		{
-			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), "Type " + (i+1)});
+			DBSeerTransactionType txType = transactionTypes.get(i);
+			tableModel.addRow(new Object[]{"Name of Transaction Type " + (i+1), txType.getName()});
 		}
 
-		for (int i = 0; i < numTransactionTypes; ++i)
+		for (int i = 0; i < transactionTypes.size(); ++i)
 		{
-			if (validTransactions.contains(i+1))
+			DBSeerTransactionType txType = transactionTypes.get(i);
+			if (txType.isEnabled())
 			{
 				tableModel.addRow(new Object[]{"Use Transaction Type " + (i + 1), Boolean.TRUE});
 			}
@@ -1800,12 +1530,12 @@ public class DBSeerDataSet implements TableModelListener
 
 	public void enableTransaction(int i)
 	{
-		validTransactions.add(i+1);
+		transactionTypes.get(i).setEnabled(true);
 	}
 
 	public void disableTransaction(int i)
 	{
-		validTransactions.remove(i+1);
+		transactionTypes.get(i).setEnabled(false);
 	}
 
 	public boolean isCurrent()
@@ -1816,11 +1546,6 @@ public class DBSeerDataSet implements TableModelListener
 	public void setCurrent(boolean current)
 	{
 		isCurrent = current;
-	}
-
-	public boolean isTransactionEnabled(int i)
-	{
-		return validTransactions.contains(i+1);
 	}
 
 	public long getStartTime()

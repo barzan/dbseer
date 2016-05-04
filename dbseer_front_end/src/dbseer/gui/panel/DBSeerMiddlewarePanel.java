@@ -68,16 +68,11 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 	public JButton startMonitoringButton;
 	public JButton stopMonitoringButton;
 
-//	private String liveDatasetPath;
 	private String currentDatasetPath;
 	private MiddlewareClientRunner runner;
 	private LiveLogProcessor liveLogProcessor;
-//	private TransactionLogProcessor transactionLogProcessor;
-//	private SystemLogProcessor systemLogProcessor;
 
-	private ArrayList<DBSeerDataSet> currentDatasets = new ArrayList<DBSeerDataSet>();
-
-
+	private boolean connectSuccess;
 	private boolean isLoggedIn = false;
 
 	public DBSeerMiddlewarePanel()
@@ -216,6 +211,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 				startMonitoringButton.setEnabled(false);
 				stopMonitoringButton.setEnabled(false);
 
+				connectSuccess = true;
 				runner = new MiddlewareClientRunner(id, password, ip, port, currentDatasetPath, this);
 				runner.run();
 
@@ -224,7 +220,11 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 				{
 					Thread.sleep(250);
 					sleepCount += 250;
-					if (sleepCount > 5000)
+					if (!connectSuccess)
+					{
+						return;
+					}
+					if (sleepCount > 10000)
 					{
 						JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
 								String.format("Failed to receive live logs."),
@@ -235,7 +235,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 					}
 				}
 
-				currentDatasets.clear();
+				DBSeerGUI.liveDatasets.clear();
 
 				String[] servers = liveLogProcessor.getServers();
 				for (String s : servers)
@@ -246,7 +246,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 					openDir.openWithoutDialog(new File(newDatasetDirectory + File.separator + s));
 					DBSeerGUI.datasets.addElement(newDataset);
 					newDataset.setCurrent(true);
-					currentDatasets.add(newDataset);
+					DBSeerGUI.liveDatasets.add(newDataset);
 				}
 				if (servers.length > 1)
 				{
@@ -256,7 +256,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 					openDir.openWithoutDialog(newDatasetDirectory);
 					DBSeerGUI.datasets.addElement(newDataset);
 					newDataset.setCurrent(true);
-					currentDatasets.add(newDataset);
+					DBSeerGUI.liveDatasets.add(newDataset);
 				}
 
 				// save last middleware connection
@@ -282,7 +282,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 						liveLogProcessor.stop();
 					}
 
-					for (DBSeerDataSet dataset : currentDatasets)
+					for (DBSeerDataSet dataset : DBSeerGUI.liveDatasets)
 					{
 						dataset.setCurrent(false);
 					}
@@ -294,7 +294,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 								String.format("Not enough transactions for clustering. You need at least %d transactions. Datasets are removed.", DBSeerGUI.settings.dbscanInitPts),
 								"Message", JOptionPane.PLAIN_MESSAGE);
 
-						for (DBSeerDataSet dataset : currentDatasets)
+						for (DBSeerDataSet dataset : DBSeerGUI.liveDatasets)
 						{
 							DBSeerGUI.datasets.removeElement(dataset);
 						}
@@ -309,13 +309,13 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 									String.format("Live monitoring has not written any transactions yet. Datasets are removed."),
 									"Message", JOptionPane.PLAIN_MESSAGE);
 
-							for (DBSeerDataSet dataset : currentDatasets)
+							for (DBSeerDataSet dataset : DBSeerGUI.liveDatasets)
 							{
 								DBSeerGUI.datasets.removeElement(dataset);
 							}
 						}
 					}
-					currentDatasets.clear();
+					DBSeerGUI.liveDatasets.clear();
 
 					if (liveLogProcessor != null)
 					{
@@ -711,6 +711,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 		}
 		else if (event.event == MiddlewareClientEvent.IS_NOT_MONITORING)
 		{
+			connectSuccess = false;
 			startMonitoringButton.setEnabled(true);
 			stopMonitoringButton.setEnabled(false);
 			DBSeerGUI.liveMonitorPanel.reset();
@@ -736,6 +737,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 		}
 		else if (event.event == MiddlewareClientEvent.ERROR)
 		{
+			connectSuccess = false;
 			if (event.e != null)
 			{
 				DBSeerExceptionHandler.handleException(event.e);

@@ -240,6 +240,11 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 				transactionViewSampleButtons.add(viewSampleButton);
 //				transactionEnableDisableButtons.add(enableDisableButton);
 
+				for (DBSeerDataSet dataset : DBSeerGUI.liveDatasets)
+				{
+					dataset.addTransactionType("Type " + numTransactionType);
+				}
+
 //			TimeSeriesCollection newThroughputCollection = new TimeSeriesCollection(new TimeSeries(newName, Millisecond.class));
 //			TimeSeriesCollection collection = (TimeSeriesCollection) throughputChartPanel.getChart().getXYPlot().getDataset();
 				throughputCollection.addSeries(new TimeSeries(newName, Millisecond.class));
@@ -326,14 +331,14 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 
 	public synchronized void updateTransactionNames()
 	{
-		if (DBSeerGUI.liveDataset.getAllTransactionTypeNames().size() == 0)
+		if (DBSeerGUI.liveDataset.getTransactionTypes().size() == 0)
 		{
 			return;
 		}
 
 		for (int i = 0; i < transactionRenameButtons.size(); ++i)
 		{
-			String newName = DBSeerGUI.liveDataset.getAllTransactionTypeNames().get(i);
+			String newName = DBSeerGUI.liveDataset.getTransactionTypes().get(i).getName();
 
 			newName = newName.trim();
 			transactionLabels.get(i).setText(newName);
@@ -382,9 +387,14 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 					throughputCollection.getSeries(i).setKey(newName);
 					latencyCollection.getSeries(i).setKey(newName);
 
-					if (DBSeerGUI.currentDataset != null)
+//					if (DBSeerGUI.currentDataset != null)
+//					{
+//						DBSeerGUI.currentDataset.setTransactionTypeName(i, newName);
+//					}
+
+					for (DBSeerDataSet dataset : DBSeerGUI.liveDatasets)
 					{
-						DBSeerGUI.currentDataset.setTransactionTypeName(i, newName);
+						dataset.setTransactionTypeName(i, newName);
 					}
 
 					return;
