@@ -16,6 +16,7 @@
 
 package dbseer.gui.actions;
 
+import dbseer.gui.DBSeerGUI;
 import dbseer.gui.frame.DBSeerEditCausalModelFrame;
 
 import javax.swing.*;
@@ -41,6 +42,7 @@ public class EditCausalModelAction extends AbstractAction
 			{
 				DBSeerEditCausalModelFrame editFrame = new DBSeerEditCausalModelFrame();
 				editFrame.pack();
+				editFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 				editFrame.setVisible(true);
 			}
 		});

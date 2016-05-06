@@ -414,6 +414,7 @@ public class DBSeerLiveMonitorPanel extends JPanel implements ActionListener
 					{
 						DBSeerShowTransactionExampleFrame sampleFrame = new DBSeerShowTransactionExampleFrame(type);
 						sampleFrame.pack();
+						sampleFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						sampleFrame.setVisible(true);
 					}
 				});

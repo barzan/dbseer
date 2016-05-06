@@ -16,6 +16,7 @@
 
 package dbseer.gui.actions;
 
+import dbseer.gui.DBSeerGUI;
 import dbseer.gui.frame.DBSeerShowQueryFrame;
 import dbseer.gui.frame.DBSeerShowTransactionExampleFrame;
 import dbseer.gui.user.DBSeerDataSet;
@@ -84,6 +85,7 @@ public class ShowQueryAction extends AbstractAction
 					{
 						DBSeerShowTransactionExampleFrame sampleFrame = new DBSeerShowTransactionExampleFrame(series);
 						sampleFrame.pack();
+						sampleFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						sampleFrame.setVisible(true);
 					}
 				}
@@ -93,6 +95,7 @@ public class ShowQueryAction extends AbstractAction
 					if (queryFrame.isQueryAvailable())
 					{
 						queryFrame.pack();
+						queryFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						queryFrame.setVisible(true);
 					}
 					else

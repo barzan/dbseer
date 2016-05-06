@@ -165,6 +165,7 @@ public class DBSeerExplainControlPanel extends JPanel implements MouseListener
 						DBSeerCausalModelFrame frame = new DBSeerCausalModelFrame(causalModel);
 						frame.setPreferredSize(new Dimension(1280, 800));
 						frame.pack();
+						frame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						frame.setVisible(true);
 					}
 				});

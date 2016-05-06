@@ -191,6 +191,7 @@ public class DBSeerDatasetListPanel extends JPanel implements ActionListener, Mo
 					{
 						DBSeerDataSetFrame profileFrame = new DBSeerDataSetFrame("Edit dataset", profile, list, true, currentPanel);
 						profileFrame.pack();
+						profileFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						profileFrame.setVisible(true);
 					}
 				}

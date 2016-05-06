@@ -16,6 +16,7 @@
 
 package dbseer.gui.actions;
 
+import dbseer.gui.DBSeerGUI;
 import dbseer.gui.frame.DBSeerPlotPresetFrame;
 
 import javax.swing.*;
@@ -32,6 +33,7 @@ public class OpenPlotFrameAction extends AbstractAction
 	public void actionPerformed(ActionEvent actionEvent)
 	{
 		plotFrame.pack();
+		plotFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 		plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		plotFrame.setVisible(true);
 	}

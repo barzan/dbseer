@@ -283,6 +283,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 									if (plotFrame.isInitSuccess())
 									{
 										plotFrame.pack();
+										plotFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 										plotFrame.setVisible(true);
 										plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 									}
@@ -294,6 +295,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 											plotCustomPanel.getYAxis(), profile);
 									plotFrame.setPreferredSize(new Dimension(1024, 768));
 									plotFrame.pack();
+									plotFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 									plotFrame.setVisible(true);
 									plotFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 								}
