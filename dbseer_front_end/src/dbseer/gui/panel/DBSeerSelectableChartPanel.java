@@ -309,6 +309,7 @@ public class DBSeerSelectableChartPanel extends ChartPanel implements ChartMouse
 						DBSeerPlotExplainFrame newFrame = new DBSeerPlotExplainFrame((JFreeChart)chartToExplain.clone());
 //						newFrame.setPreferredSize(new Dimension(1280,800));
 						newFrame.pack();
+						newFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						newFrame.setVisible(true);
 					}
 					catch(CloneNotSupportedException e)

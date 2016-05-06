@@ -88,6 +88,7 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener, Mou
 					DBSeerConfigFrame configFrame = new DBSeerConfigFrame("Add configuration", newConfig, list, false, currentPanel);
 					configFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 					configFrame.pack();
+					configFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 					configFrame.setVisible(true);
 				}
 			});
@@ -104,6 +105,7 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener, Mou
 					{
 						DBSeerConfigFrame configFrame = new DBSeerConfigFrame("Edit configuration", config, list, true, currentPanel);
 						configFrame.pack();
+						configFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						configFrame.setVisible(true);
 					}
 				}
@@ -166,6 +168,7 @@ public class DBSeerConfigListPanel extends JPanel implements ActionListener, Mou
 					{
 						DBSeerConfigFrame configFrame = new DBSeerConfigFrame("Edit configuration", config, list, true, currentPanel);
 						configFrame.pack();
+						configFrame.setLocationRelativeTo(DBSeerGUI.mainFrame);
 						configFrame.setVisible(true);
 					}
 				}

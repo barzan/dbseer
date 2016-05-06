@@ -512,6 +512,7 @@ public class DBSeerGUI
 				mainFrame = new DBSeerMainFrame(title);
 				SwingUtilities.updateComponentTreeUI(mainFrame);
 				mainFrame.pack();
+				mainFrame.setLocationRelativeTo(null);
 				mainFrame.setVisible(true);
 			}
 		});
