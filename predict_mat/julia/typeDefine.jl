@@ -80,6 +80,7 @@ type PredictionConfig
 	networkSendKBUngrouped
 	networkRecvKBUngrouped
 	logWriteMBUngrouped # LogIOw
+
 end
 PredictionConfig()=PredictionConfig(0,0,0,0,{},false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 

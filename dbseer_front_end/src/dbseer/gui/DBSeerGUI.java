@@ -260,8 +260,8 @@ public class DBSeerGUI
 	};
 
 	public static final String[] availablePredictions = {
-//			"Disk Flush Rate by TPS",
-//			"Disk Flush Rate by Individual Transactions", // disabled for now
+			"Disk Flush Rate by TPS",
+			"Disk Flush Rate by Individual Transactions",
 			"Max Throughput",
 			"CPU by TPS",
 			"CPU by Individual Transactions",
@@ -280,8 +280,8 @@ public class DBSeerGUI
 	};
 
 	public static final String[] actualPredictionFunctions = {
-//			"FlushRatePredictionByTPS",
-//			"FlushRatePredictionByCounts", // disabled for now
+			"FlushRatePredictionByTPS",
+			"FlushRatePredictionByCounts",
 			"MaxThroughputPrediction",
 			"TransactionCountsToCpuByTPS",
 			"TransactionCountsToCpuByCounts",

@@ -26,6 +26,9 @@ include("localmax.jl");
 include("findMaxThroughput.jl");
 include("bottleneckAnalysisMaxThroughput.jl");
 include("bottleneckAnalysisResource.jl");
+include("flushRatePredictionByTPS.jl")
+include("flushRatePredictionByCounts.jl")
+include("whatIfAnalysisFlushRate.jl")
 
 
 

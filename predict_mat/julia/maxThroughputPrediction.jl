@@ -103,25 +103,25 @@ function maxThroughputPrediction(this::PredictionCenter)
 			tempLen -= 1
 		end
 
-		tempLen=length(myCpuC)
-		myCpuCLThroughput=[]
-		while tempLen>=1
-			if myCpuC[tempLen]>44 && myCpuC[tempLen]<45
-				myCpuCLThroughput = tempLen
-				break
-			end
-			tempLen -= 1
-		end
+		# tempLen=length(myCpuC)
+		# myCpuCLThroughput=[]
+		# while tempLen>=1
+		# 	if myCpuC[tempLen]>44 && myCpuC[tempLen]<45
+		# 		myCpuCLThroughput = tempLen
+		# 		break
+		# 	end
+		# 	tempLen -= 1
+		# end
 
-		tempLen=length(myCpuC)
-		myCpuCUThroughput=[]
-		while tempLen>=1
-			if myCpuC[tempLen]>59 && myCpuC[tempLen]<50
-				myCpuCUThroughput = tempLen
-				break
-			end
-			tempLen -= 1
-		end
+		# tempLen=length(myCpuC)
+		# myCpuCUThroughput=[]
+		# while tempLen>=1
+		# 	if myCpuC[tempLen]>59 && myCpuC[tempLen]<50
+		# 		myCpuCUThroughput = tempLen
+		# 		break
+		# 	end
+		# 	tempLen -= 1
+		# end
 
 		#%Our IO-based throughput
 		cfFlushRateApprox_conf = typeOfFlushRate(this.ioConf,"TPCC");
@@ -233,6 +233,7 @@ function maxThroughputPrediction(this::PredictionCenter)
 			push!(meanAbsError,mae(concurrencyThroughput, actualThr));
 			push!(meanRelError,mre(concurrencyThroughput, actualThr));
 		end
+		errorHeader = legends[2:length(legends)]
 
                 title = "Max Throughput Prediction";
                 Ylabel = "TPS";
@@ -338,25 +339,25 @@ function maxThroughputPrediction(this::PredictionCenter)
 			tempLen -= 1
 		end
 
-		tempLen=length(myCpuC)
-		myCpuCLThroughput=[]
-		while tempLen>=1
-			if myCpuC[tempLen]>44 && myCpuC[tempLen]<45
-				myCpuCLThroughput = tempLen
-				break
-			end
-			tempLen -= 1
-		end
+		# tempLen=length(myCpuC)
+		# myCpuCLThroughput=[]
+		# while tempLen>=1
+		# 	if myCpuC[tempLen]>44 && myCpuC[tempLen]<45
+		# 		myCpuCLThroughput = tempLen
+		# 		break
+		# 	end
+		# 	tempLen -= 1
+		# end
 
-		tempLen=length(myCpuC)
-		myCpuCUThroughput=[]
-		while tempLen>=1
-			if myCpuC[tempLen]>59 && myCpuC[tempLen]<50
-				myCpuCUThroughput = tempLen
-				break
-			end
-			tempLen -= 1
-		end
+		# tempLen=length(myCpuC)
+		# myCpuCUThroughput=[]
+		# while tempLen>=1
+		# 	if myCpuC[tempLen]>59 && myCpuC[tempLen]<50
+		# 		myCpuCUThroughput = tempLen
+		# 		break
+		# 	end
+		# 	tempLen -= 1
+		# end
 
 		#Our IO-based throughput
 		#% cfFlushRateApprox_conf = struct('io_conf', this.testConfig.io_conf, 'workloadName', this.workloadName);

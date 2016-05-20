@@ -59,8 +59,8 @@
 
   <!-- JDK definitions -->
 
-  <property name="jdk.bin.1.6" value="${env.JAVA_HOME}/bin"/>
-  <path id="jdk.classpath.1.6">
+  <property name="jdk.bin.1.7" value="${env.JAVA_HOME}/bin"/>
+  <path id="jdk.classpath.1.7">
     <fileset dir="${env.JAVA_HOME}">
       <include name="lib/deploy.jar"/>
       <include name="lib/dt.jar"/>
@@ -83,8 +83,8 @@
   </path>
 
   <property name="project.jdk.home" value="${env.JAVA_HOME}"/>
-  <property name="project.jdk.bin" value="${jdk.bin.1.6}"/>
-  <property name="project.jdk.classpath" value="jdk.classpath.1.6"/>
+  <property name="project.jdk.bin" value="${jdk.bin.1.7}"/>
+  <property name="project.jdk.classpath" value="jdk.classpath.1.7"/>
 
 
   <!-- Project Libraries -->
@@ -161,7 +161,7 @@
   <property name="module.jdk.bin.dbseer_front_end" value="${project.jdk.bin}"/>
   <property name="module.jdk.classpath.dbseer_front_end" value="${project.jdk.classpath}"/>
 
-  <property name="compiler.args.dbseer_front_end" value="-encoding UTF-8 -source 1.6 ${compiler.args}"/>
+  <property name="compiler.args.dbseer_front_end" value="-encoding UTF-8 -source 1.7 ${compiler.args}"/>
 
   <property name="dbseer_front_end.output.dir" value="${module.dbseer_front_end.basedir}/out/production/dbseer_front_end"/>
   <property name="dbseer_front_end.testoutput.dir" value="${module.dbseer_front_end.basedir}/out/test/dbseer_front_end"/>

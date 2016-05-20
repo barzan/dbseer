@@ -4,8 +4,8 @@ function cfFlushRateApprox(conf, transCounts)
 	initTime = 0;
 	io_conf = conf.io_conf;
 	max_log_capacity = io_conf[1];
-	maxPagesPerSecs = io_conf[1];
-	scaling = io_conf[1];
+	maxPagesPerSecs = io_conf[2];
+	scaling = io_conf[3];
 
 	minIO = 50;
 	IOcorrection = 0;
@@ -115,6 +115,7 @@ function cfFlushRateApprox(conf, transCounts)
 	bigIdx = zeros(size(transCounts,1),1)
 	tempHashOfUniqueTransCounts = zeros(size(uniqueTransCounts,1),1)
 	tempHashOfTransCounts = zeros(size(transCounts,1),1)
+
 	for i = 1:size(uniqueTransCounts,1)
 		tempHashOfUniqueTransCounts[i] = hash(uniqueTransCounts[i,:])
 	end 
@@ -256,7 +257,6 @@ function cfFlushRateApprox(conf, transCounts)
 
 	initTime = initTime + toc()
 	println(string("cfFlushRateApprox  time=",initTime));
-
 
 	return flushRates
 end # of function

@@ -170,6 +170,45 @@ public class PredictionCenter
 //				int exitVal = p.waitFor();
 //				runner.eval("read_mat_bottleneck_res;");
 //			}
+			else if (this.prediction == "FlushRatePredictionByTPS")
+			{
+				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
+				cmd = cmd + "include(\"julia_init.jl\");";
+				cmd = cmd + "include(\"load_mat_data.jl\");";
+				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=flushRatePredictionByTPS(pc);";
+				cmd = cmd + "include(\"write_data.jl\");";
+				runner.eval("pc.initialize");
+				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
+				Process p = Runtime.getRuntime().exec(cmd);
+				int exitVal = p.waitFor();
+				runner.eval("read_mat_flush;");
+			}
+			else if (this.prediction == "FlushRatePredictionByCounts")
+			{
+				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
+				cmd = cmd + "include(\"julia_init.jl\");";
+				cmd = cmd + "include(\"load_mat_data.jl\");";
+				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=flushRatePredictionByCounts(pc);";
+				cmd = cmd + "include(\"write_data.jl\");";
+				runner.eval("pc.initialize");
+				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
+				Process p = Runtime.getRuntime().exec(cmd);
+				int exitVal = p.waitFor();
+				runner.eval("read_mat_flush;");
+			}
+			else if (this.prediction == "WhatIfAnalysisFlushRate")
+			{
+				String cmd = "julia -e cd(\"" + dbseerPath + "/predict_mat/julia\");";
+				cmd = cmd + "include(\"julia_init.jl\");";
+				cmd = cmd + "include(\"load_mat_data.jl\");";
+				cmd = cmd + "title,legends,Xdata,Ydata,Xlabel,Ylabel,meanAbsError,meanRelError,errorHeader,extra=whatIfAnalysisFlushRate(pc);";
+				cmd = cmd + "include(\"write_data.jl\");";
+				runner.eval("pc.initialize");
+				runner.eval("save_mat_data('" + dbseerPath + "',pc);");
+				Process p = Runtime.getRuntime().exec(cmd);
+				int exitVal = p.waitFor();
+				runner.eval("read_mat_flush;");
+			}
 			else
 			{
 				runner.eval("[title legends Xdata Ydata Xlabel Ylabel meanAbsError meanRelError errorHeader extra] = pc.performPrediction;");
