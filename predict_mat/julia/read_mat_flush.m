@@ -43,7 +43,11 @@ for i=1:lenOfMeanRelError
 end
 clear lenOfMeanRelError;
 
-
+if lenOfErrorHeader == 0
+	errorHeader = cell(0,0);
+else
+	errorHeader = legends(2:5);
+end
 clear lenOfErrorHeader;
 
 if lenOfExtra == 0

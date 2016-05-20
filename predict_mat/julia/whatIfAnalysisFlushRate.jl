@@ -48,7 +48,7 @@ function whatIfAnalysisFlushRate(this::PredictionCenter)
     Xdata = {temp[:,1]''};
     Ydata = {[temp[:,2] temp[:,3] temp[:,4] temp[:,5]]};
     legends = ["LR", "LR+classification", "Our model", "Tree regression"];
-    
+    #errorHeader = legends[2:5]
 
     title = "What-if Analysis: Disk Flush Rate";
     Ylabel = "Average # of page flush per seconds";

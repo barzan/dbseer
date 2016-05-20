@@ -49,7 +49,7 @@ function flushRatePredictionByCounts(this::PredictionCenter)
             push!(meanAbsError, mae(temp[:,i], temp[:,2]));
             push!(meanRelError, mre(temp[:,i], temp[:,2]));
         end
-
+	errorHeader = legends[2:5]
         title = string("Flush rate prediction with # test points = ", size(this.testConfig.TPS,1));
         Ylabel = "Average # of page flush per seconds";
         Xlabel = "TPS";
@@ -81,7 +81,7 @@ function flushRatePredictionByCounts(this::PredictionCenter)
         Xdata = {temp[:,1]''};
         Ydata = {[temp[:,2] temp[:,3] temp[:,4] temp[:,5]]};
         legends = ["LR", "LR+classification", "Our model", "Tree regression"];
-
+	
         title = string("Flush rate prediction with transaction mixture = ", this.testMixture, ", Min TPS = ", this.testMinTPS, ", Max TPS = ", this.testMaxTPS);
         Ylabel = "Average # of page flush per seconds";
         Xlabel = string("# of transaction ", this.trainConfig.transactionType[this.whichTransactionToPlot]);

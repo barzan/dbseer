@@ -233,6 +233,7 @@ function maxThroughputPrediction(this::PredictionCenter)
 			push!(meanAbsError,mae(concurrencyThroughput, actualThr));
 			push!(meanRelError,mre(concurrencyThroughput, actualThr));
 		end
+		errorHeader = legends[2:length(legends)]
 
                 title = "Max Throughput Prediction";
                 Ylabel = "TPS";

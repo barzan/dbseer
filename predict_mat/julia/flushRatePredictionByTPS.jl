@@ -47,7 +47,7 @@ function flushRatePredictionByTPS(this::PredictionCenter)
         Xdata = {temp[:,1]''};
         Ydata = {[temp[:,2] temp[:,3] temp[:,4] temp[:,5] temp[:,6]]};
         legends = {"Actual", "LR", "LR+classification", "Our model", "Tree regression"};
-
+	errorHeader = legends[2:5]
         for i=3:6
             push!(meanAbsError, mae(temp[:,i], temp[:,2]));
             push!(meanRelError, mre(temp[:,i], temp[:,2]));
