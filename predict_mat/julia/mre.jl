@@ -14,8 +14,8 @@ function mre(predictions, actualdata)
 		if i > size(actualdata,2)
 			continue
 		end
-		act = actualdata[i];
-		pre = predictions[i];
+		act = actualdata[:,i];
+		pre = predictions[:,i];
 		nonz = find(act);
 
 		#%My own definition
