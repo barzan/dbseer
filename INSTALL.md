@@ -17,7 +17,7 @@ Note: You can run DBSeer from a Docker image, which is a lightweight VM with eve
 You need the following packages on the client that runs DBSeer's GUI:
 
 * MATLAB (R2007b or higher) or Octave (4.0.0 or higher)
-* Julia (0.3.10 or higher)
+* Julia (0.3.10 or higher, with the packages MAT, Regression, and DecisionTree installed)
 * Java 1.7+
 
 The middleware requires the following packages:
