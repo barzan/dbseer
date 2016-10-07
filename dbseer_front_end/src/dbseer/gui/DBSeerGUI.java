@@ -319,6 +319,7 @@ public class DBSeerGUI
 				{
 					try {
 						splash = new DBSeerSplash();
+						splash.setText("Loading user settings...");
 					} catch (InvocationTargetException e) {
 						e.printStackTrace();
 					} catch (InterruptedException e) {
@@ -483,8 +484,6 @@ public class DBSeerGUI
 
 				// Removing reference to statistical package in the title.
 				title = "DBSeer Console";
-
-				splash.setText("Loading user settings...");
 
 				XStreamHelper xmlHelper = new XStreamHelper();
 				try
