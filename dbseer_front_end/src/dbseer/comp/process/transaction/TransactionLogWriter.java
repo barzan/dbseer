@@ -122,6 +122,22 @@ public class TransactionLogWriter
 		this.isWritingStarted = false;
 	}
 
+	public void setTimestampForEmptyTx(long timestamp)
+	{
+		if (monitor != null)
+		{
+			monitor.setCurrentTimestamp(timestamp);
+			monitor.setNumTransactionTypes(maxType + 1);
+
+			monitor.setGlobalTransactionCount(0);
+			for (int i = 0; i < maxType+1; ++i)
+			{
+				monitor.setCurrentTPS(i, 0);
+				monitor.setCurrentAverageLatency(i, 0.0);
+			}
+		}
+	}
+
 	// write tps, latency, percentile latency logs for DBSeer use.
 	public void writeLog(long timestamp, Collection<Transaction> transactions) throws Exception
 	{

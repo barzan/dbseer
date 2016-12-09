@@ -21,10 +21,8 @@ import dbseer.comp.process.transaction.TransactionLogProcessor;
 import dbseer.comp.process.transaction.TransactionLogWriter;
 import dbseer.gui.DBSeerExceptionHandler;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.sql.Timestamp;
+import java.util.*;
 
 /**
  * Created by Dong Young Yoon on 1/4/16.
@@ -33,6 +31,10 @@ public class LiveTransactionLogWriter implements Runnable
 {
 	private TransactionLogProcessor processor;
 	private TransactionLogWriter writer;
+	private long lastTimestamp;
+	private int noTxCount;
+	private int timeSinceNoTx = 1;
+	private static final int MAX_NO_TX = 2;
 
 	public LiveTransactionLogWriter(TransactionLogProcessor processor, TransactionLogWriter writer)
 	{
@@ -50,6 +52,8 @@ public class LiveTransactionLogWriter implements Runnable
 				Set<Long> timestamps = processor.getTimestamps();
 				if (timestamps.size() > 1)
 				{
+					noTxCount = 0;
+					timeSinceNoTx = 1;
 					List<Long> sortedTime = new ArrayList<Long>(timestamps);
 					Collections.sort(sortedTime);
 					for (int i = 0; i < sortedTime.size() - 1; ++i)
@@ -57,12 +61,20 @@ public class LiveTransactionLogWriter implements Runnable
 						Long time = sortedTime.get(i);
 						List<Transaction> transactions = processor.getTransactions(time);
 
-						writer.writeLog(time.longValue(), transactions);
+						lastTimestamp = time.longValue();
+						writer.writeLog(lastTimestamp, transactions);
 					}
 				}
 				else
 				{
-					Thread.sleep(200);
+					++noTxCount;
+					Thread.sleep(1000);
+				}
+
+				if (noTxCount > MAX_NO_TX && lastTimestamp != 0)
+				{
+					writer.setTimestampForEmptyTx(lastTimestamp+timeSinceNoTx);
+					++timeSinceNoTx;
 				}
 			}
 			catch (Exception e)

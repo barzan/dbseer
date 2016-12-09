@@ -117,7 +117,7 @@ public class DBSeerExceptionHandler
 			{
 				JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, e.getMessage(), title,
 						JOptionPane.ERROR_MESSAGE);
-				e.printStackTrace();
+//				e.printStackTrace();
 			}
 		}
 		catch (Exception e1)

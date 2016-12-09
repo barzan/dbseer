@@ -72,8 +72,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 	private MiddlewareClientRunner runner;
 	private LiveLogProcessor liveLogProcessor;
 
-	private boolean connectSuccess;
-	private boolean isLoggedIn = false;
+	private boolean connectSuccess = false;
 
 	public DBSeerMiddlewarePanel()
 	{
@@ -156,7 +155,6 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 		passwordField.setEnabled(false);
 		portField.setEnabled(false);
 		logInOutButton.setText("Logout");
-		isLoggedIn = true;
 	}
 
 	public void setLogout()
@@ -166,7 +164,6 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 		passwordField.setEnabled(true);
 		portField.setEnabled(true);
 		logInOutButton.setText("Login");
-		isLoggedIn = false;
 	}
 
 	@Override
@@ -222,6 +219,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 					sleepCount += 250;
 					if (!connectSuccess)
 					{
+						resetMonitoring();
 						return;
 					}
 					if (sleepCount > 10000)
@@ -230,7 +228,8 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 								String.format("Failed to receive live logs."),
 								"Message", JOptionPane.PLAIN_MESSAGE);
 						runner.stop();
-						liveLogProcessor = null;
+
+						resetMonitoring();
 						return;
 					}
 				}
@@ -323,11 +322,10 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 						liveLogProcessor = null;
 					}
 
-					DBSeerGUI.liveMonitorPanel.reset();
+					// save new dataset
+					SaveSettingsAction.action();
 
-					startMonitoringButton.setEnabled(true);
-					stopMonitoringButton.setEnabled(false);
-					DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
+					resetMonitoring();
 				}
 //				if (DBSeerGUI.dbscan == null ||
 //						(DBSeerGUI.dbscan != null && !DBSeerGUI.dbscan.isInitialized()))
@@ -701,8 +699,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 				DBSeerExceptionHandler.handleException(e);
 				try
 				{
-					liveLogProcessor.stop();
-					liveLogProcessor.reset();
+					resetMonitoring();
 				}
 				catch (Exception e1)
 				{
@@ -712,24 +709,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 		}
 		else if (event.event == MiddlewareClientEvent.IS_NOT_MONITORING)
 		{
-			connectSuccess = false;
-			startMonitoringButton.setEnabled(true);
-			stopMonitoringButton.setEnabled(false);
-			DBSeerGUI.liveMonitorPanel.reset();
-			DBSeerGUI.liveMonitorInfo.reset();
-			DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
-			try
-			{
-				if (liveLogProcessor != null)
-				{
-					liveLogProcessor.stop();
-					liveLogProcessor.reset();
-				}
-			}
-			catch (Exception e)
-			{
-				DBSeerExceptionHandler.handleException(e);
-			}
+			resetMonitoring();
 
 			if (!event.serverStr.isEmpty())
 			{
@@ -747,23 +727,31 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 			{
 				DBSeerExceptionHandler.showDialog("Something went wrong with the middleware. :(");
 			}
-			startMonitoringButton.setEnabled(true);
-			stopMonitoringButton.setEnabled(false);
-			DBSeerGUI.liveMonitorPanel.reset();
-			DBSeerGUI.liveMonitorInfo.reset();
-			DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
-			try
+			resetMonitoring();
+		}
+	}
+
+	private void resetMonitoring()
+	{
+		connectSuccess = false;
+		startMonitoringButton.setEnabled(true);
+		stopMonitoringButton.setEnabled(false);
+		DBSeerGUI.liveMonitorPanel.reset();
+		DBSeerGUI.liveMonitorInfo.reset();
+		DBSeerGUI.middlewareStatus.setText("Middleware: Not Connected");
+		try
+		{
+			if (liveLogProcessor != null)
 			{
-				if (liveLogProcessor != null)
-				{
-					liveLogProcessor.stop();
-					liveLogProcessor.reset();
-				}
-			}
-			catch (Exception e)
-			{
-				DBSeerExceptionHandler.handleException(e);
+				liveLogProcessor.stop();
+				liveLogProcessor.reset();
+				liveLogProcessor = null;
 			}
 		}
+		catch (Exception e)
+		{
+			DBSeerExceptionHandler.handleException(e);
+		}
+
 	}
 }

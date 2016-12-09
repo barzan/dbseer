@@ -49,6 +49,22 @@ public class SaveSettingsAction extends AbstractAction
 			JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, e.getMessage(), "Error while saving settings.", JOptionPane.ERROR_MESSAGE);
 		}
 
-		JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Setting successfully saved.");
+		JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Settings successfully saved.");
+	}
+
+	public static void action()
+	{
+		DBSeerGUI.userSettings.setConfigs(DBSeerGUI.configs);
+		DBSeerGUI.userSettings.setDatasets(DBSeerGUI.datasets);
+
+		XStreamHelper xmlHelper = new XStreamHelper();
+		try
+		{
+			xmlHelper.toXML(DBSeerGUI.userSettings, DBSeerGUI.settingsPath);
+		}
+		catch (FileNotFoundException e)
+		{
+			JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, e.getMessage(), "Error while saving settings.", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 }

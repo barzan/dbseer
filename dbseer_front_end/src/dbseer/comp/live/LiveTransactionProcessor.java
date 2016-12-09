@@ -27,13 +27,16 @@ import dbseer.gui.DBSeerGUI;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 import java.io.*;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Set;
 
 /**
  * Created by dyoon on 10/1/15.
  */
+@Deprecated
 public class LiveTransactionProcessor implements Runnable
 {
 	private TransactionMap map;
@@ -152,6 +155,7 @@ public class LiveTransactionProcessor implements Runnable
 					maxClusterEndTime = StreamClustering.getDBSCAN().getMaxEndTime();
 				}
 				StreamClustering.LOCK.unlock();
+				boolean txLogFound = false;
 				while (time < maxTime && time < maxClusterEndTime)
 				{
 					currentCount = 0;
@@ -172,6 +176,7 @@ public class LiveTransactionProcessor implements Runnable
 					}
 
 
+					txLogFound = true;
 					boolean monitorLogFound = true;
 					String monitorLog;
 					while ((monitorLog = map.getSysLog(time)) == null)
@@ -327,30 +332,31 @@ public class LiveTransactionProcessor implements Runnable
 					avgLatencyWriter.flush();
 
 
-//				System.out.print((maxClusterId + 1) + ": ");
-//				for (int i = 0; i <= maxClusterId; ++i)
-//				{
-//					System.out.print(count[i] + ", ");
-//					count[i] = 0;
-//				}
-//				System.out.println();
-//				ArrayList<Cluster> clusters = (ArrayList<Cluster>)StreamClustering.getDBSCAN().getCurrentClusters();
-//				for (int i = 0; i < clusters.size(); ++i)
-//				{
-//					Cluster c1 = clusters.get(i);
-//					for (int j = 0; j < clusters.size(); ++j)
-//					{
-//						Cluster c2 = clusters.get(j);
-//						System.out.print(c1.getClusterDistance(c2) + " ");
-//					}
-//					System.out.println();
-//				}
-//				System.out.println("----");
 					// is it correct to set it here?
 					DBSeerGUI.isLiveDataReady = true;
 
 					++time;
 				}
+				if (!txLogFound)
+				{
+					// get current timestamp
+					Timestamp now = new Timestamp(Calendar.getInstance().getTime().getTime());
+					time = now.getTime() / 1000;
+					monitor.setCurrentTimestamp(time);
+					int numTrans = StreamClustering.getDBSCAN().getAllClusters().size();
+					synchronized (LiveMonitorInfo.LOCK)
+					{
+						monitor.setCurrentTimestamp(time);
+						monitor.setNumTransactionTypes(numTrans);
+						monitor.setGlobalTransactionCount(0);
+						for (int i = 0; i < numTrans; ++i)
+						{
+							monitor.setCurrentTPS(i, 0);
+							monitor.setCurrentAverageLatency(i, 0.0);
+						}
+					}
+				}
+
 
 				if (terminate)
 				{
