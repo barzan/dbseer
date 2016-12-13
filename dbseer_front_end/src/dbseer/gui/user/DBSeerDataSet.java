@@ -593,6 +593,10 @@ public class DBSeerDataSet implements TableModelListener
 
 		// read current directory first.
 		DBSeerDataSetPath newPath = getDBSeerDatasetPath(this.path);
+		if (newPath == null)
+		{
+			return false;
+		}
 		if (!newPath.hasEmptyPath())
 		{
 			datasetPathList.add(newPath);
@@ -635,6 +639,11 @@ public class DBSeerDataSet implements TableModelListener
 		newPath.setName(datasetDir.getName());
 
 		boolean allFlag = false;
+
+		if (files == null)
+		{
+			return null;
+		}
 
 		for (File file : files)
 		{

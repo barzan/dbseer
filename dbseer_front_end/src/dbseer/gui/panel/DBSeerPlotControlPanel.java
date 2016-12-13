@@ -241,7 +241,7 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 						if (!profile.loadDataset(profile.isCurrent(), datasetInfoPanel.getPlotStartIndex(), datasetInfoPanel.getPlotEndIndex()))
 						{
 							isLoadSuccess = false;
-							JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Dataset has some data missing or is not ready yet.", "Message", JOptionPane.INFORMATION_MESSAGE);
+							JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Dataset does not exist or is not ready.", "Message", JOptionPane.INFORMATION_MESSAGE);
 						}
 						if (isLoadSuccess)
 						{
@@ -315,7 +315,16 @@ public class DBSeerPlotControlPanel extends JPanel implements ActionListener
 			if (datasetInfoPanel != null && profileComboBox != null && profileComboBox.getSelectedIndex() != -1)
 			{
 				DBSeerGUI.status.setText("Reading dataset information...");
-				datasetInfoPanel.setTime(profile.getStartTime(), profile.getEndTime());
+				long startTime = profile.getStartTime();
+				long endTime = profile.getEndTime();
+				if (startTime == -1 || endTime == -1)
+				{
+					JOptionPane.showMessageDialog(DBSeerGUI.mainFrame, "Dataset does not exist.", "Message", JOptionPane.INFORMATION_MESSAGE);
+				}
+				else
+				{
+					datasetInfoPanel.setTime(profile.getStartTime(), profile.getEndTime());
+				}
 				DBSeerGUI.status.setText("");
 			}
 		}
