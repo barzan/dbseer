@@ -112,6 +112,7 @@ mvUngrouped.dbmsPhysicalReadsMB = [];
 mvUngrouped.dbmsPageSize = [];
 mvUngrouped.dbmsBufferPoolSize = [];
 mvUngrouped.dbmsLogFileSize = [];
+mvUngrouped.dbmsLogBufferSize = [];
 
 mvGrouped.numOfTransType = [];
 mvGrouped.cpu_usr = [];
@@ -201,6 +202,7 @@ mvGrouped.dbmsPhysicalReadsMB = [];
 mvGrouped.dbmsPageSize = [];
 mvGrouped.dbmsBufferPoolSize = [];
 mvGrouped.dbmsLogFileSize = [];
+mvGrouped.dbmsLogBufferSize = [];
 
 %%% END initialize
 
@@ -406,14 +408,17 @@ for i=1:num_dataset
     mvUngrouped.dbmsReads = horzcat(mvUngrouped.dbmsReads, dM(:, header.columns.Innodb_buffer_pool_reads));
     mvUngrouped.dbmsPhysicalReadsMB = horzcat(mvUngrouped.dbmsPhysicalReadsMB, dM(:,[header.columns.Innodb_data_read])./1024./1024);
 
-    if isfield(header.columns, 'Innodb_page_size')
-      mvUngrouped.dbmsPageSize = horzcat(mvUngrouped.dbmsPageSize, max(monitor(:, header.columns.Innodb_page_size)));
+    if isfield(header.columns, 'innodb_buffer_pool_size')
+      mvUngrouped.dbmsBufferPoolSize = horzcat(mvUngrouped.dbmsBufferPoolSize, max(monitor(:, header.columns.innodb_buffer_pool_size)));
     end
-    if isfield(header.columns, 'Innodb_buffer_pool_size')
-      mvUngrouped.dbmsBufferPoolSize = horzcat(mvUngrouped.dbmsBufferPoolSize, max(monitor(:, header.columns.Innodb_buffer_pool_size)));
+    if isfield(header.columns, 'innodb_page_size')
+      mvUngrouped.dbmsPageSize = horzcat(mvUngrouped.dbmsPageSize, max(monitor(:, header.columns.innodb_page_size)));
     end
-    if isfield(header.columns, 'Innodb_log_file_size')
-      mvUngrouped.dbmsLogFileSize = horzcat(mvUngrouped.dbmsLogFileSize, max(monitor(:, header.columns.Innodb_log_file_size)));
+    if isfield(header.columns, 'innodb_log_file_size')
+      mvUngrouped.dbmsLogFileSize = horzcat(mvUngrouped.dbmsLogFileSize, max(monitor(:, header.columns.innodb_log_file_size)));
+    end
+    if isfield(header.columns, 'innodb_log_buffer_size')
+      mvUngrouped.dbmsLogBufferSize = horzcat(mvUngrouped.dbmsLogBufferSize, max(monitor(:, header.columns.innodb_log_buffer_size)));
     end
 
   elseif strcmpi(header.dbms, 'psql')
@@ -566,14 +571,17 @@ for i=1:num_dataset
     mvGrouped.dbmsReads = horzcat(mvGrouped.dbmsReads, dM_grouped(:, header.columns.Innodb_buffer_pool_reads));
     mvGrouped.dbmsPhysicalReadsMB = horzcat(mvGrouped.dbmsPhysicalReadsMB, dM_grouped(:,[header.columns.Innodb_data_read])./1024./1024);
 
-    if isfield(header.columns, 'Innodb_page_size')
-      mvGrouped.dbmsPageSize = horzcat(mvGrouped.dbmsPageSize, max(monitor_grouped(:, header.columns.Innodb_page_size)));
+    if isfield(header.columns, 'innodb_buffer_pool_size')
+      mvGrouped.dbmsBufferPoolSize = horzcat(mvGrouped.dbmsBufferPoolSize, max(monitor_grouped(:, header.columns.innodb_buffer_pool_size)));
     end
-    if isfield(header.columns, 'Innodb_buffer_pool_size')
-      mvGrouped.dbmsBufferPoolSize = horzcat(mvGrouped.dbmsBufferPoolSize, max(monitor_grouped(:, header.columns.Innodb_buffer_pool_size)));
+    if isfield(header.columns, 'innodb_page_size')
+      mvGrouped.dbmsPageSize = horzcat(mvGrouped.dbmsPageSize, max(monitor(:, header.columns.innodb_page_size)));
     end
-    if isfield(header.columns, 'Innodb_log_file_size')
-      mvGrouped.dbmsLogFileSize = horzcat(mvGrouped.dbmsLogFileSize, max(monitor_grouped(:, header.columns.Innodb_log_file_size)));
+    if isfield(header.columns, 'innodb_log_file_size')
+      mvGrouped.dbmsLogFileSize = horzcat(mvGrouped.dbmsLogFileSize, max(monitor(:, header.columns.innodb_log_file_size)));
+    end
+    if isfield(header.columns, 'innodb_log_buffer_size')
+      mvGrouped.dbmsLogBufferSize = horzcat(mvGrouped.dbmsLogBufferSize, max(monitor(:, header.columns.innodb_log_buffer_size)));
     end
 
   elseif strcmpi(header.dbms, 'psql')
@@ -669,14 +677,14 @@ end % END for
     %mvGrouped.dbmsDirtyPages = dM_grouped(:, header.columns.Innodb_buffer_pool_pages_dirty);
     %mvGrouped.dbmsDataPages = monitor_grouped(:, header.columns.Innodb_buffer_pool_pages_data);
     %mvGrouped.dbmsFreePages = monitor_grouped(:, header.columns.Innodb_buffer_pool_pages_free);
-    %mvGrouped.dbmsTotalPages = monitor_grouped(:, header.columns.Innodb_buffer_pool_pages_total); 
-    %mvGrouped.dbmsThreadsRunning = monitor_grouped(:, header.columns.Threads_running); 
+    %mvGrouped.dbmsTotalPages = monitor_grouped(:, header.columns.Innodb_buffer_pool_pages_total);
+    %mvGrouped.dbmsThreadsRunning = monitor_grouped(:, header.columns.Threads_running);
     %mvGrouped.dbmsTotalWritesMB=dM_grouped(:,header.columns.Innodb_data_written)./1024./1024; %MB
     %mvGrouped.dbmsLogWritesMB=dM_grouped(:,header.columns.Innodb_os_log_written)./1024./1024; %MB
     %mvGrouped.dbmsNumberOfPhysicalLogWrites=dM_grouped(:,header.columns.Innodb_log_writes);
     %mvGrouped.dbmsNumberOfDataReads=dM_grouped(:,header.columns.Innodb_data_reads);
     %mvGrouped.dbmsNumberOfDataWrites=dM_grouped(:,header.columns.Innodb_data_writes);
-    
+
     %mvGrouped.dbmsNumberOfLogWriteRequests=dM_grouped(:,header.columns.Innodb_log_write_requests);
     %mvGrouped.dbmsNumberOfFysncLogWrites=dM_grouped(:,header.columns.Innodb_os_log_fsyncs);
     %mvGrouped.dbmsNumberOfPendingLogWrites=dM_grouped(:,header.columns.Innodb_os_log_pending_writes);
@@ -689,14 +697,14 @@ end % END for
     %mvGrouped.dbmsNumberOfNextKeyBasedReadRequests=dM_grouped(:,header.columns.Handler_read_next);
     %mvGrouped.dbmsNumberOfPrevKeyBasedReadRequests=dM_grouped(:,header.columns.Handler_read_prev);
     %mvGrouped.dbmsNumberOfRowReadRequests=dM_grouped(:,header.columns.Handler_read_rnd);
-    
+
     %mvGrouped.dbmsPageWritesMB=dM_grouped(:,header.columns.Innodb_pages_written).*2.*16./1024; % to account for double write buffering
     %mvGrouped.dbmsDoublePageWritesMB=dM_grouped(:,header.columns.Innodb_dblwr_pages_written).*2.*16./1024; % to account for double write buffering
     %mvGrouped.dbmsDoubleWritesOperations=dM_grouped(:,header.columns.Innodb_dblwr_writes);
 
     %mvGrouped.dbmsNumberOfPendingWrites=dM_grouped(:,header.columns.Innodb_data_pending_writes);
     %mvGrouped.dbmsNumberOfPendingReads=dM_grouped(:,header.columns.Innodb_data_pending_reads);
-    
+
     %mvGrouped.dbmsBufferPoolWrites = dM_grouped(:,header.columns.Innodb_buffer_pool_write_requests);
     %mvGrouped.dbmsRandomReadAheads = dM_grouped(:,header.columns.Innodb_buffer_pool_read_ahead_rnd);
     %mvGrouped.dbmsSequentialReadAheads = dM_grouped(:,header.columns.Innodb_buffer_pool_read_ahead_seq);
@@ -708,7 +716,7 @@ end % END for
     %mvGrouped.dbmsCommittedCommands=dM_grouped(:,header.columns.Com_commit);
     %mvGrouped.dbmsRolledbackCommands=dM_grouped(:,header.columns.Com_rollback);
     %mvGrouped.dbmsRollbackHandler=dM_grouped(:,header.columns.Handler_rollback);
-    
+
     %% latency stats
     %% mvGrouped.measuredCPU=monitor_grouped(:,header.columns.mysqld_cpu)+monitor_grouped(:,header.columns.mysqld_children_cpu);
     %% mvGrouped.measuredWritesMB=monitor_grouped(:,header.columns.mysqld_bytes_written) / 1024 / 1024;
@@ -755,4 +763,3 @@ elapsed = toc(overallTime);
 fprintf(1,'load_modeling_variables time = %f\n', elapsed);
 
 end
-

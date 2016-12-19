@@ -16,6 +16,7 @@
 
 package dbseer.gui.frame;
 
+import dbseer.gui.DBSeerExceptionHandler;
 import dbseer.gui.panel.DBSeerConfigListPanel;
 import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
@@ -38,6 +39,7 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 	private boolean isEditMode = false;
 
 	private JScrollPane tableScrollPane;
+	private JButton learnButton;
 	private JButton addConfigButton;
 	private JButton editConfigButton;
 	private JButton cancelButton;
@@ -155,6 +157,7 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 		profileListPanel.add(addProfileToConfigButton, "cell 0 0, bottom, growx");
 		profileListPanel.add(removeProfileFromConfigButton, "cell 0 1, top, growx");
 
+		learnButton = new JButton("Learn Parameters From Dataset");
 		addConfigButton = new JButton("Add Config");
 		editConfigButton = new JButton("Save");
 		cancelButton = new JButton("Cancel");
@@ -163,21 +166,23 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 		this.add(profileListPanel, "cell 2 0, grow");
 //		this.add(textScrollPane, "cell 0 3 2 1, grow");
 
+		this.add(learnButton, "cell 2 3, grow, split 3");
 		if (isEditMode)
 		{
-			this.add(editConfigButton, "cell 2 3, grow, split 2");
+			this.add(editConfigButton, "grow");
 //			groupingTypeBox.setSelectedIndex(config.getGroupingType());
 //			groupingTargetBox.setSelectedIndex(config.getGroupingTarget());
 		}
 		else
 		{
-			this.add(addConfigButton, "cell 2 3, grow, split 2");
+			this.add(addConfigButton, "grow");
 		}
 		this.add(cancelButton, "grow");
 
 		// add action listeners to components in this frame.
 //		groupingTypeBox.addActionListener(this);
 //		groupingTargetBox.addActionListener(this);
+		learnButton.addActionListener(this);
 		addConfigButton.addActionListener(this);
 		editConfigButton.addActionListener(this);
 		cancelButton.addActionListener(this);
@@ -204,6 +209,45 @@ public class DBSeerConfigFrame extends JFrame implements ActionListener
 			{
 				groupsTextArea.setEnabled(false);
 			}
+		}
+		else if (actionEvent.getSource() == learnButton)
+		{
+//			final DBSeerConfiguration theConfig = config;
+
+			DBSeerGUI.status.setText(String.format("Learning parameters for the config '%s' from its dataset. This may take a few minutes...", config.getName()));
+			DBSeerGUI.mainFrame.getPerformancePredictionPanel().getPerformAnalysisButton().setEnabled(false);
+			learnButton.setEnabled(false);
+			addConfigButton.setEnabled(false);
+			editConfigButton.setEnabled(false);
+			cancelButton.setEnabled(false);
+
+			SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>()
+			{
+				@Override
+				protected Void doInBackground() throws Exception
+				{
+					try
+					{
+						config.learnParams();
+					}
+					catch (Exception e)
+					{
+						DBSeerExceptionHandler.handleException(e);
+					}
+					return null;
+				}
+				@Override
+				protected void done()
+				{
+					DBSeerGUI.status.setText(String.format("Done learning parameters for the config '%s'.", config.getName()));
+					DBSeerGUI.mainFrame.getPerformancePredictionPanel().getPerformAnalysisButton().setEnabled(true);
+					learnButton.setEnabled(true);
+					addConfigButton.setEnabled(true);
+					editConfigButton.setEnabled(true);
+					cancelButton.setEnabled(true);
+				}
+			};
+			worker.execute();
 		}
 		else if (actionEvent.getSource() == addConfigButton)
 		{

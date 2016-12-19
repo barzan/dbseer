@@ -25,21 +25,21 @@ for col=1:size(lowConf,2)
     while abs(upConf(col)-lowConf(col)) > minStep(col) && steps <= maxSteps(col)
         steps = steps+1;
         totalSteps = totalSteps+1;
-        
+
         lowErr = mean(abs(lowVal-trainY));
-        if isnan(lowErr) 
+        if isnan(lowErr)
             lowConf(col) = (lowConf(col) + upConf(col))/2;
             lowVal = func(lowConf, trainX);
             continue;
-        end 
-        
+        end
+
         upErr = mean(abs(upVal-trainY));
-        if isnan(upErr) 
+        if isnan(upErr)
             upConf(col) = (lowConf(col) + upConf(col))/2;
             upVal = func(upConf, trainX);
             continue;
-        end 
-        
+        end
+
         if lowErr>upErr
             lowConf(col) = (lowConf(col) + upConf(col))/2;
             lowVal = func(lowConf, trainX);
@@ -48,19 +48,18 @@ for col=1:size(lowConf,2)
             upVal = func(upConf, trainX);
         end
         fprintf(1, 'steps=%d, low=%s, up=%s, lowErr=%.2f, upErr=%.2f\n', ...
-            steps, valueToString(lowConf), valueToString(upConf), lowErr, upErr);
+            steps, num2str(lowConf), num2str(upConf), lowErr, upErr);
     end
-    
+
     if (steps > maxSteps(col))
         display(['Reached the maximum number of iterations: ' num2str(steps)]);
     else
         display(['Converged after ' num2str(steps) ' iterations for this column']);
     end
-    
+
     conf = (upConf + lowConf)/2;
 end
 
 display(['Overall number of steps: ' num2str(totalSteps) ' iterations']);
 
 end
-

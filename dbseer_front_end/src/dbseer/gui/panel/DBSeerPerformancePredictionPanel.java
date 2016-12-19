@@ -504,6 +504,11 @@ public class DBSeerPerformancePredictionPanel extends JPanel implements ActionLi
 		}
 	}
 
+	public JButton getPerformAnalysisButton()
+	{
+		return performAnalysisButton;
+	}
+
 	private SwingWorker<Void, Void> performAnalysis(PredictionCenter center, final int analyisType, int chartType)
 	{
 		trainConfigComboBox.setEnabled(false);

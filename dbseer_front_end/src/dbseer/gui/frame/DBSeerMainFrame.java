@@ -199,6 +199,11 @@ public class DBSeerMainFrame extends JFrame
 		return mainTabbedPane;
 	}
 
+	public DBSeerPerformancePredictionPanel getPerformancePredictionPanel()
+	{
+		return performancePredictionPanel;
+	}
+
 	public void resetLiveMonitoring()
 	{
 		final DBSeerMainFrame frame = this;

@@ -20,24 +20,24 @@ classdef PredictionConfig < handle
         transactionType
         groupingStrategy
     end
-  
+
     properties (SetAccess='private', GetAccess='public')
         datasetList = {};
         initialized = false;
     end
-    
+
     properties (SetAccess='private', GetAccess='public')
         mv % this can be grouped or ungrouped depending on group parameters.
         mvUngrouped % this is always ungrouped.
         configSummary
-        
+
         transactionCount % C
         totalTransactionCount
         averageCpuUsage % P
         diskWrite % IO
         totalTransactionLatency
         transactionLatency % L
-		transactionLatencyPercentile
+        transactionLatencyPercentile
         lockWaitTime % W, NumOfWaitDueToLocks
         currentLockWait % LocksBeingWaitedFor
         TPS % TPS
@@ -45,19 +45,19 @@ classdef PredictionConfig < handle
         rowsChanged % RowsChanged
         pagesFlushed % PagesFlushed
         transactionMixture % Mixture
-        logicalReads 
+        logicalReads
         physicalReads
         physicalReadsMB
         networkSendKB
         networkRecvKB
         logWriteMB % LogIOw
-        
+
         transactionCountUngrouped % C
         totalTransactionCountUngrouped
         averageCpuUsageUngrouped % P
         diskWriteUngrouped % IO
         transactionLatencyUngrouped % L
-		transactionLatencyPercentileUngrouped
+    		transactionLatencyPercentileUngrouped
         lockWaitTimeUngrouped % W, NumOfWaitDueToLocks
         currentLockWaitUngrouped % LocksBeingWaitedFor
         TPSUngrouped % TPS
@@ -65,15 +65,27 @@ classdef PredictionConfig < handle
         rowsChangedUngrouped % RowsChanged
         pagesFlushedUngrouped % PagesFlushed
         transactionMixtureUngrouped % Mixture
-        logicalReadsUngrouped 
+        logicalReadsUngrouped
         physicalReadsUngrouped
         physicalReadsMBUngrouped
         networkSendKBUngrouped
         networkRecvKBUngrouped
         logWriteMBUngrouped % LogIOw
     end
-    
+
     methods
+        function [max_log_capacity max_flush_rate scale_factor] = learnIOParams(this)
+          max_log_capacity = mean(this.mv.dbmsLogFileSize,2) / mean(this.mv.dbmsPageSize);
+          max_flush_rate = max(mean(this.mv.osNumberOfSectorWrites,2)) * 1024 * 1024 * 20 / mean(this.mv.dbmsPageSize); % increase it by 10 times for arbitrarily high max flush rate estimate.
+          scale_factor = 1;
+        end
+        function [lock_params] = learnLockParams(this)
+            f = @(conf2, data)(getfield(useLockModel([0.125 0.0001 conf2], data, 'TPCC'), 'TimeSpentWaiting'));
+            trainC = this.totalTransactionCount;
+            my_train_lock = mean(this.mv.dbmsLockWaitTime,2);
+            domain_cost = barzanCurveFit(f, trainC, my_train_lock, [0.1 0.0000000001], [1000000 10], [50 0.01], [3 3]);
+            lock_params = [0.125 0.0001 domain_cost];
+        end
         function result = isInitialized(this)
             result = this.initialized;
         end
@@ -118,7 +130,7 @@ classdef PredictionConfig < handle
                 else
                     [mv_i mv_ungrouped_i] = load_mv2(conf.header, conf.monitor, conf.averageLatency, conf.percentileLatency, conf.transactionCount, conf.diffedMonitor, [], conf.tranTypes);
                 end
-    
+
                 if i==1
                     this.mv = mv_i;
                     this.mvUngrouped = mv_ungrouped_i;
@@ -132,7 +144,7 @@ classdef PredictionConfig < handle
                     this.mv = merge_structs(this.mv, mv_i);
                     this.mvUngrouped = merge_structs(this.mvUngrouped, mv_ungrouped_i);
                 end
-    
+
                 % tps = sum(this.mv.clientIndividualSubmittedTrans(:,this.transactionType), 2);
                 tps = sum(this.mv.clientIndividualSubmittedTrans, 2);
                 this.configSummary = [this.configSummary num2str(min(tps)) '-' num2str(max(tps))];
@@ -141,7 +153,7 @@ classdef PredictionConfig < handle
                 end
             end
         end
-        
+
         function initialize(this)
             this.mergeDataset;
             mv = this.mv;
@@ -224,17 +236,17 @@ classdef PredictionConfig < handle
             this.logicalReads = mv.dbmsReadRequests;
             this.physicalReads = mv.dbmsReads;
             if isfield(mv, 'dbmsNumberOfDataReads')
-                this.physicalReadsMB = mv.dbmsNumberOfDataReads / 1024 / 1024; 
+                this.physicalReadsMB = mv.dbmsNumberOfDataReads / 1024 / 1024;
             else
                 this.physicalReadsMB = [];
             end
             this.networkSendKB = mv.osNetworkSendKB;
             this.networkRecvKB = mv.osNetworkRecvKB;
             this.logWriteMB = mv.dbmsLogWritesMB;
-            
+
             %% Do it again for ungrouped.
             mvUngrouped = this.mvUngrouped;
-            
+
             this.transactionCountUngrouped = {};
             this.TPSUngrouped = [];
             this.TPSRatioUngrouped = {};
@@ -284,14 +296,14 @@ classdef PredictionConfig < handle
             this.logicalReadsUngrouped = mvUngrouped.dbmsReadRequests;
             this.physicalReadsUngrouped = mvUngrouped.dbmsReads;
             if isfield(mvUngrouped, 'dbmsNumberOfDataReads')
-                this.physicalReadsMBUngrouped = mvUngrouped.dbmsNumberOfDataReads / 1024 / 1024; 
+                this.physicalReadsMBUngrouped = mvUngrouped.dbmsNumberOfDataReads / 1024 / 1024;
             else
                 this.physicalReadsMBUngrouped = [];
             end
             this.networkSendKBUngrouped = mvUngrouped.osNetworkSendKB;
             this.networkRecvKBUngrouped = mvUngrouped.osNetworkRecvKB;
             this.logWriteMBUngrouped = mvUngrouped.dbmsLogWritesMB;
-            
+
             this.initialized = true;
         end
     end

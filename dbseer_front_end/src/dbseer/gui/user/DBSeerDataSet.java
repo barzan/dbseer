@@ -446,7 +446,12 @@ public class DBSeerDataSet implements TableModelListener
 		this.endIndexBackup = endIndex;
 		this.numTransactionTypesBackup = numTransactionTypes;
 
+		if (this.transactionTypeNamesBackup == null)
+		{
+			this.transactionTypeNamesBackup = new ArrayList<>();
+		}
 		this.transactionTypeNamesBackup.clear();
+		this.transactionTypesBackup.clear();
 		for (DBSeerTransactionType type : this.transactionTypes)
 		{
 			this.transactionTypesBackup.add(type);

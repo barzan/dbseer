@@ -30,8 +30,11 @@ import matlabcontrol.MatlabProxy;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -100,6 +103,11 @@ public class DBSeerConfiguration
 	private double lockInterLockInterval = 0;
 	private double lockDomainMultiplier = 0;
 	private double lockCostMultiplier = 0;
+
+	private static final String MAX_LOG_CAPACITY_VAR = "dbseer_max_log_capacity";
+	private static final String MAX_FLUSH_RATE_VAR = "dbseer_max_flush_rate";
+	private static final String SCALE_FACTOR_VAR = "dbseer_scale_factor";
+	private static final String LOCK_CONF_VAR = "dbseer_lock_conf";
 
 //	private int groupingType = GROUP_NONE; // combo box
 //	private int groupingTarget = GROUP_TARGET_INDIVIDUAL_TRANS_COUNT; // combo box
@@ -271,6 +279,39 @@ public class DBSeerConfiguration
 			runner.eval(this.uniqueVariableName + ".setTransactionType(" + transactionType + ");");
 			runner.eval(this.uniqueVariableName + ".initialize;");
 		}
+		return true;
+	}
+
+	public boolean learnParams() throws Exception
+	{
+		if (!this.initialize())
+		{
+			return false;
+		}
+		StatisticalPackageRunner runner = DBSeerGUI.runner;
+
+		// learn IO params
+		runner.eval(String.format("[%s %s %s] = %s.learnIOParams;", MAX_LOG_CAPACITY_VAR, MAX_FLUSH_RATE_VAR, SCALE_FACTOR_VAR, this.uniqueVariableName));
+
+		double[] max_capacity = runner.getVariableDouble(MAX_LOG_CAPACITY_VAR);
+		double[] max_flush_rate = runner.getVariableDouble(MAX_FLUSH_RATE_VAR);
+		double[] scale_factor = runner.getVariableDouble(SCALE_FACTOR_VAR);
+
+		this.ioMaxLogCapacity = max_capacity[0];
+		this.ioMaxFlushRate = max_flush_rate[0];
+		this.ioScaleFactor = scale_factor[0];
+
+		// learn LOCK params
+		runner.eval(String.format("[%s] = %s.learnLockParams;", LOCK_CONF_VAR, this.uniqueVariableName));
+		double[] lock_params = runner.getVariableDouble(LOCK_CONF_VAR);
+
+		this.lockBeginCost = lock_params[0];
+		this.lockInterLockInterval = lock_params[1];
+		this.lockDomainMultiplier = lock_params[2];
+		this.lockCostMultiplier = lock_params[3];
+
+		this.updateTable();
+
 		return true;
 	}
 
@@ -501,6 +542,8 @@ public class DBSeerConfiguration
 
 	private void updateTable()
 	{
+		DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+		df.setMaximumFractionDigits(340);
 		for (int i = 0; i < tableModel.getRowCount(); ++i)
 		{
 			for (int j = 0; j < tableHeaders.length; ++j)
@@ -513,25 +556,25 @@ public class DBSeerConfiguration
 							tableModel.setValueAt(this.name, i, 1);
 							break;
 						case TYPE_IO_MAX_LOG_CAPACITY:
-							tableModel.setValueAt(String.valueOf(this.ioMaxLogCapacity), i, 1);
+							tableModel.setValueAt(df.format(this.ioMaxLogCapacity), i, 1);
 							break;
 						case TYPE_IO_MAX_FLUSH_RATE:
-							tableModel.setValueAt(String.valueOf(this.ioMaxFlushRate), i, 1);
+							tableModel.setValueAt(df.format(this.ioMaxFlushRate), i, 1);
 							break;
 						case TYPE_IO_SCALE_FACTOR:
-							tableModel.setValueAt(String.valueOf(this.ioScaleFactor), i, 1);
+							tableModel.setValueAt(df.format(this.ioScaleFactor), i, 1);
 							break;
 						case TYPE_LOCK_BEGIN_COST:
-							tableModel.setValueAt(String.valueOf(this.lockBeginCost), i, 1);
+							tableModel.setValueAt(df.format(this.lockBeginCost), i, 1);
 							break;
 						case TYPE_LOCK_INTERLOCK_INTERVAL:
-							tableModel.setValueAt(String.valueOf(this.lockInterLockInterval), i, 1);
+							tableModel.setValueAt(df.format(this.lockInterLockInterval), i, 1);
 							break;
 						case TYPE_LOCK_DOMAIN_MULTIPLIER:
-							tableModel.setValueAt(String.valueOf(this.lockDomainMultiplier), i, 1);
+							tableModel.setValueAt(df.format(this.lockDomainMultiplier), i, 1);
 							break;
 						case TYPE_LOCK_COST_MULTIPLIER:
-							tableModel.setValueAt(String.valueOf(this.lockCostMultiplier), i, 1);
+							tableModel.setValueAt(df.format(this.lockCostMultiplier), i, 1);
 							break;
 						default:
 							break;
