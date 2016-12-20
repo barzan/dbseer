@@ -17,6 +17,7 @@ classdef Plotter < handle
         mv
         Xdata
         Xlabel
+        numServer
     end
 
     methods
@@ -25,6 +26,7 @@ classdef Plotter < handle
             self.Xdata = 1:1:min(value.numberOfObservations);
             self.Xdata = self.Xdata';
             self.Xlabel = 'Time (seconds)';
+            self.numServer = size(value.numOfTransType,2);
         end
 
         function [Xdata Ydata] = plotCustom(this, xField, yField)
@@ -171,17 +173,31 @@ classdef Plotter < handle
 			Ydata = {};
             legends = {};
             count = 1;
+            tps_sum = [];
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv, i);
                 for j=1:mv.numOfTransType(i)
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = mv.clientIndividualSubmittedTrans(:,count);
+                    if i == 1
+                      tps_sum(:,j) = mv.clientIndividualSubmittedTrans(:,count);
+                    else
+                      tps_sum(:,j) = tps_sum(:,j) + mv.clientIndividualSubmittedTrans(:,count);
+                    end
                     legends{end+1} = horzcat(server_name, ' # of Type ', num2str(j), ' Transactions');
                     count = count + 1;
                 end
             end
-			Xdata{end+1} = this.Xdata;
-			Ydata{end+1} = mv.clientTotalSubmittedTrans;
+            if this.numServer > 1
+              for i=1:size(tps_sum,2)
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = tps_sum(:,i);
+                legends{end+1} = horzcat('(all) # of Type ', num2str(i), ' Transactions');
+              end
+            end
+
+            Xdata{end+1} = this.Xdata;
+            Ydata{end+1} = mv.clientTotalSubmittedTrans;
             legends{end+1} = 'Total client submitted transactions';
             if isfield(mv, 'dbmsRollbackHandler')
                 Xdata{end+1} = this.Xdata;
@@ -208,17 +224,31 @@ classdef Plotter < handle
             Ydata = {};
             legends = {};
             timestamp = this.Xdata;
+            sum_cs = {};
+            sum_tr = {};
 
             for i=1:size(mv.numOfTransType, 2)
                 server_name = this.getServerName(mv , i);
                 Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.osNumberOfContextSwitches(:,i) ./ 1500;
+                sum_cs{end+1} = mv.osNumberOfContextSwitches(:,i) ./ 1500;
                 legends{end+1} = horzcat(server_name, ' Context Switches (x1500)');
                 if isfield(mv, 'dbmsThreadsRunning')
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = mv.dbmsThreadsRunning(:,i);
+                    sum_tr{end+1} = mv.dbmsThreadsRunning(:,i);
                     legends{end+1} =  horzcat(server_name, ' Threads running');
                 end
+            end
+
+            if this.numServer > 1
+              server_name = '(all)';
+              Xdata{end+1} = this.Xdata;
+              Ydata{end+1} = sum(cat(3,sum_cs{:}),3);
+              legends{end+1} = horzcat(server_name, ' Context Switches (x1500)');
+              Xdata{end+1} = this.Xdata;
+              Ydata{end+1} = sum(cat(3,sum_tr{:}),3);
+              legends{end+1} =  horzcat(server_name, ' Threads running');
             end
 
             Xlabel = this.Xlabel;
@@ -231,31 +261,54 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            summary = {};
+            sum_legend = {};
 
             for i=1:size(mv.numOfTransType, 2)
+              count = 1;
                 server_name = this.getServerName(mv , i);
                 if isfield(mv, 'dbmsTotalWritesMB')
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = mv.dbmsTotalWritesMB(:,i);
+                    summary{i,count} = Ydata{end};
+                    count=count+1;
                     legends{end+1} = horzcat(server_name, ' DB Total Writes (MB)');
+                    sum_legend{end+1} = horzcat('(all)', ' DB Total Writes (MB)');
                 end
                 Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.dbmsLogWritesMB(:,i);
+                summary{i,count} = Ydata{end}; count = count + 1;
                 legends{end+1} = horzcat(server_name, ' DB Log Writes (MB)');
+                sum_legend{end+1} = horzcat('(all)', ' DB Log Writes (MB)');
                 Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.dbmsPageWritesMB(:,i);
+                summary{i,count} = Ydata{end};  count = count + 1;
                 legends{end+1} = horzcat(server_name, ' DB Page Writes (MB) (pages=16K)');
+                sum_legend{end+1} = horzcat('(all)', ' DB Page Writes (MB) (pages=16K)');
                 if isfield(mv, 'dbmsDoublePageWritesMB')
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = mv.dbmsDoublePageWritesMB(:,i);
+                    summary{i,count} = Ydata{end}; count = count + 1;
                     legends{end+1} = horzcat(server_name, ' DB Double Page Writes (MB) (half of dirty pages)');
+                    sum_legend{end+1} = horzcat('(all)', ' DB Double Page Writes (MB) (half of dirty pages)');
                 end
                 Xdata{end+1} = this.Xdata;
                 Xdata{end+1} = this.Xdata;
                 Ydata{end+1} = mv.osNumberOfSectorWrites(:,i);
+                summary{i,count} = Ydata{end}; count = count + 1;
                 Ydata{end+1} = mv.osNumberOfWritesCompleted(:,i);
+                summary{i,count} = Ydata{end}; count = count + 1;
                 legends{end+1} = horzcat(server_name, ' OS No. Sector Writes (actual IO)');
+                sum_legend{end+1} = horzcat('(all)', ' OS No. Sector Writes (actual IO)');
                 legends{end+1} = horzcat(server_name, ' OS No. Writes Completed');
+                sum_legend{end+1} = horzcat('(all)', ' OS No. Writes Completed');
+            end
+            if this.numServer > 1
+              for i=1:size(summary,2)
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:,i}), 3);
+                legends{end+1} = sum_legend{i};
+              end
             end
             Xlabel = this.Xlabel;
             Ylabel = 'Written Data (MB/sec)';
@@ -268,12 +321,14 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            summary = {};
 
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv , i);
                 Xdata{end+1} = this.Xdata;
                 if isfield(mv, 'dbmsDoublePageWritesMB')
                     Ydata{end+1} = [mv.dbmsTotalWritesMB(:,i) mv.dbmsLogWritesMB(:,i) mv.dbmsPageWritesMB(:,i) mv.dbmsDoublePageWritesMB(:,i) mv.osNumberOfSectorWrites(:,i)];
+                    summary{end+1} = Ydata{end};
                     % Ydata = {[mv.dbmsTotalWritesMB mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.dbmsDoublePageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB]};
                     legends{end+1} = horzcat(server_name, ' DB Total Writes');
                     legends{end+1} = horzcat(server_name, ' DB Log Writes');
@@ -283,12 +338,30 @@ classdef Plotter < handle
                     % legends = {'DB Total Writes','DB Log Writes','DB Page Writes', 'DB Double Page Writes','OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
                 else
                     Ydata{end+1} = [mv.dbmsLogWritesMB(:,i) mv.dbmsPageWritesMB(:,i) mv.osNumberOfSectorWrites(:,i)];
+                    summary{end+1} = Ydata{end};
                     % Ydata = {[mv.dbmsLogWritesMB mv.dbmsPageWritesMB mv.osNumberOfSectorWrites mv.measuredWritesMB mv.measuredReadsMB]};
                     legends{end+1} = horzcat(server_name, ' DB Log Writes');
                     legends{end+1} = horzcat(server_name, ' DB Page Writes');
                     legends{end+1} = horzcat(server_name, ' OS No. Sector Writes');
                     %legends = {'DB Log Writes','DB Page Writes', 'OS No. Sector Writes'};
                     % legends = {'DB Log Writes','DB Page Writes', 'OS No. Sector Writes', 'Measured Writes', 'Measured Reads'};
+                end
+            end
+
+            if this.numServer > 1
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:}), 3);
+                server_name = '(all)';
+                if isfield(mv, 'dbmsDoublePageWritesMB')
+                  legends{end+1} = horzcat(server_name, ' DB Total Writes');
+                  legends{end+1} = horzcat(server_name, ' DB Log Writes');
+                  legends{end+1} = horzcat(server_name, ' DB Page Writes');
+                  legends{end+1} = horzcat(server_name, ' DB Double Page Writes');
+                  legends{end+1} = horzcat(server_name, ' OS No. Sector Writes');
+                else
+                  legends{end+1} = horzcat(server_name, ' DB Log Writes');
+                  legends{end+1} = horzcat(server_name, ' DB Page Writes');
+                  legends{end+1} = horzcat(server_name, ' OS No. Sector Writes');
                 end
             end
 
@@ -303,12 +376,14 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            summary = {};
 
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv, i);
                 if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = [mv.dbmsNumberOfPhysicalLogWrites(:,i) mv.dbmsNumberOfDataWrites(:,i) mv.dbmsDoubleWritesOperations(:,i) mv.dbmsNumberOfLogWriteRequests(:,i) mv.dbmsBufferPoolWrites(:,i) mv.dbmsNumberOfFysncLogWrites(:,i) mv.osAsynchronousIO(:,i) mv.dbmsNumberOfPendingWrites(:,i) mv.dbmsNumberOfPendingLogWrites(:,i) mv.dbmsNumberOfPendingLogFsyncs(:,i)];
+                    summary{end+1} = Ydata{end};
                     %legends = {'DB No. Physical Log Writes','DB No. Data Writes','DB Double Writes Operations','DB No. Log Write Requests','DB Buffer Pool Writes','DB No. Fysnc Log Writes','osAsynchronousIO', 'dbmsNumberOfPendingWrites','dbmsNumberOfPendingLogWrites','dbmsNumberOfPendingLogFsyncs'};
                     legends{end+1} = horzcat(server_name, ' DB No. Physical Log Writes');
                     legends{end+1} = horzcat(server_name, ' DB No. Data Writes');
@@ -323,6 +398,24 @@ classdef Plotter < handle
                 end
             end
 
+            if this.numServer > 1
+              if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:}), 3);
+                server_name = '(all)';
+                legends{end+1} = horzcat(server_name, ' DB No. Physical Log Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Data Writes');
+                legends{end+1} = horzcat(server_name, ' DB Double Writes Operations');
+                legends{end+1} = horzcat(server_name, ' DB No. Log Write Requests');
+                legends{end+1} = horzcat(server_name, ' DB Buffer Pool Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Fysnc Log Writes');
+                legends{end+1} = horzcat(server_name, ' OS Asynchronous IOs');
+                legends{end+1} = horzcat(server_name, ' DB No. Pending Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Pending Log Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Pending Log Fsyncs');
+              end
+            end
+
             Xlabel = this.Xlabel;
             Ylabel = 'Number of';
             title = 'Write Requests (#)';
@@ -334,6 +427,7 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            summary = {};
 
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv, i);
@@ -342,6 +436,7 @@ classdef Plotter < handle
 
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = [mv.dbmsNumberOfPhysicalLogWrites(:,i) mv.dbmsNumberOfDataWrites(:,i) mv.dbmsDoubleWritesOperations(:,i) mv.dbmsNumberOfLogWriteRequests(:,i) mv.dbmsBufferPoolWrites(:,i) mv.dbmsNumberOfFysncLogWrites(:,i)];
+                    summary{end+1} = Ydata{end};
                     %legends = {'DB No. Physical Log Writes','DB No. Data Writes','DB Double Writes Operations','DB No. Log Write Requests','DB Buffer Pool Writes','DB No. Fysnc Log Writes'};
                     legends{end+1} = horzcat(server_name, ' DB No. Physical Log Writes');
                     legends{end+1} = horzcat(server_name, ' DB No. Data Writes');
@@ -350,6 +445,20 @@ classdef Plotter < handle
                     legends{end+1} = horzcat(server_name, ' DB Buffer Pool Writes');
                     legends{end+1} = horzcat(server_name, ' DB No. Fysnc Log Writes');
                 end
+            end
+            if this.numServer > 1
+              if isfield(mv, 'dbmsNumberOfPhysicalLogWrites') && isfield(mv, 'dbmsNumberOfDataWrites') && isfield(mv, 'dbmsDoubleWritesOperations') && isfield(mv, 'dbmsNumberOfLogWriteRequests')...
+                && isfield(mv, 'dbmsBufferPoolWrites') && isfield(mv, 'dbmsNumberOfFysncLogWrites')
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:}), 3);
+                server_name = '(all)';
+                legends{end+1} = horzcat(server_name, ' DB No. Physical Log Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Data Writes');
+                legends{end+1} = horzcat(server_name, ' DB Double Writes Operations');
+                legends{end+1} = horzcat(server_name, ' DB No. Log Write Requests');
+                legends{end+1} = horzcat(server_name, ' DB Buffer Pool Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Fysnc Log Writes');
+              end
             end
             title = 'Write Requests (#)';
             Xlabel = this.Xlabel;
@@ -362,20 +471,48 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            summary = {};
+            count = 1;
 
             for i=1:size(mv.numOfTransType,2)
-                server_name = this.getServerName(mv, i);
-                if exist('mv.dbmsPhysicalReadsMB', 'var')
-                    Xdata{end+1} = this.Xdata;
-                    Ydata{end+1} = mv.dbmsPhysicalReadsMB(:,i);
-                    legends{end+1} = horzcat(server_name, ' InnoDB Data Read');
-                end
+              count = 1;
+              server_name = this.getServerName(mv, i);
+              if exist('mv.dbmsPhysicalReadsMB', 'var')
+                  Xdata{end+1} = this.Xdata;
+                  Ydata{end+1} = mv.dbmsPhysicalReadsMB(:,i);
+                  summary{i,count} = Ydata{end}; count = count + 1;
+                  legends{end+1} = horzcat(server_name, ' InnoDB Data Read');
+              end
+              Xdata{end+1} = this.Xdata;
+              Xdata{end+1} = this.Xdata;
+              Ydata{end+1} = mv.osNumberOfSectorReads(:,i);
+              summary{i,count} = Ydata{end}; count = count + 1;
+              Ydata{end+1} = mv.osNumberOfReadsIssued(:,i);
+              summary{i,count} = Ydata{end}; count = count + 1;
+              legends{end+1} = horzcat(server_name, ' Disk Read');
+              legends{end+1} = horzcat(server_name, ' IO Read');
+            end
+            if this.numServer > 1
+              if count > 3
                 Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:,1}), 3);
                 Xdata{end+1} = this.Xdata;
-                Ydata{end+1} = mv.osNumberOfSectorReads(:,i);
-                Ydata{end+1} = mv.osNumberOfReadsIssued(:,i);
+                Ydata{end+1} = sum(cat(3, summary{:,2}), 3);
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:,3}), 3);
+                server_name = '(all)';
+                legends{end+1} = horzcat(server_name, ' InnoDB Data Read');
                 legends{end+1} = horzcat(server_name, ' Disk Read');
                 legends{end+1} = horzcat(server_name, ' IO Read');
+              else
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:,1}), 3);
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:,2}), 3);
+                server_name = '(all)';
+                legends{end+1} = horzcat(server_name, ' Disk Read');
+                legends{end+1} = horzcat(server_name, ' IO Read');
+              end
             end
             Xlabel = this.Xlabel;
             Ylabel = 'Read data (MB/sec)';
@@ -388,17 +525,29 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            summary = {};
 
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv, i);
                 if isfield(mv, 'dbmsNumberOfDataReads')
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = [mv.dbmsNumberOfDataReads(:,i) mv.dbmsNumberOfLogicalReadsFromDisk(:,i) mv.dbmsNumberOfPendingReads(:,i)];
+                    summary{end+1} = Ydata{end};
                     legends{end+1} = horzcat(server_name, ' DB No. Data Reads');
                     legends{end+1} = horzcat(server_name, ' DB No. Logical Reads From Disk');
                     legends{end+1} = horzcat(server_name, ' DB No. Pending Reads');
                     %legends = {'DB No. Data Reads','DB No. Logical Reads From Disk','DB No. Pending Reads'};
                 end
+            end
+            if this.numServer > 1
+              if isfield(mv, 'dbmsNumberOfDataReads')
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:}), 3);
+                server_name = '(all)';
+                legends{end+1} = horzcat(server_name, ' DB No. Data Reads');
+                legends{end+1} = horzcat(server_name, ' DB No. Logical Reads From Disk');
+                legends{end+1} = horzcat(server_name, ' DB No. Pending Reads');
+              end
             end
             Xlabel = this.Xlabel;
             Ylabel = 'Number of';
@@ -453,6 +602,7 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            sum = [];
 
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv, i);
@@ -462,7 +612,23 @@ classdef Plotter < handle
                     %legends = {'Rows deleted','Rows updated','Rows inserted','HandlerWrite'};
                     legends{end+1} = horzcat(server_name, ' Rows changed');
                     legends{end+1} = horzcat(server_name, ' No. Row Insert Requests');
+
+                    if i==1
+                      sum(:,1) = mv.dbmsChangedRows(:,i);
+                      sum(:,2) = mv.dbmsNumberOfRowInsertRequests(:,i);
+                    else
+                      sum(:,1) = sum(:,1) + mv.dbmsChangedRows(:,i);
+                      sum(:,2) = sum(:,2) + mv.dbmsNumberOfRowInsertRequests(:,i);
+                    end
                 end
+            end
+            if this.numServer > 1
+              if isfield(mv, 'dbmsChangedRows')
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = [sum(:,1) sum(:,2)];
+                legends{end+1} = horzcat('(all)', ' Rows changed');
+                legends{end+1} = horzcat('(all)', ' No. Row Insert Requests');
+              end
             end
             Xlabel = this.Xlabel;
             Ylabel = '# Rows Changed/Insert Requests';
@@ -475,6 +641,7 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            sum = [];
 
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv, i);
@@ -497,6 +664,29 @@ classdef Plotter < handle
                 temp = sortrows(temp, 1);
                 Xdata{end+1} = temp(:,1);
                 Ydata{end+1} = temp(:,2:end);
+                if (i==1)
+                  sum = temp;
+                else
+                  sum = sum + temp;
+                end
+            end
+            if size(mv.numOfTransType,2) > 1
+              server_name = '(all)';
+              if isfield(mv, 'dbmsChangedRows')
+                legends{end+1} = horzcat(server_name, ' DB Total Writes');
+                legends{end+1} = horzcat(server_name, ' DB Log Writes');
+                legends{end+1} = horzcat(server_name, ' DB Page Writes');
+                legends{end+1} = horzcat(server_name, ' OS No. Sector Writes');
+              elseif isfield(mv, 'dbmsTotalWritesMB')
+                legends{end+1} = horzcat(server_name, ' DB Log Writes');
+                legends{end+1} = horzcat(server_name, ' DB Page Writes');
+                legends{end+1} = horzcat(server_name, ' OS No. Sector Writes');
+              else
+                legends{end+1} = horzcat(server_name, ' DB Page Writes');
+                legends{end+1} = horzcat(server_name, ' OS No. Sector Writes');
+              end
+              Xdata{end+1} = sum(:,1);
+              Ydata{end+1} = sum(:,2:end);
             end
             title = 'Rows changed vs. written data (MB)';
             Xlabel = '# Rows Changed';
@@ -510,6 +700,7 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            summary = {};
 
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv, i);
@@ -517,6 +708,7 @@ classdef Plotter < handle
                     Xdata{end+1} = mv.dbmsChangedRows;
                     %Ydata = {[mv.dbmsNumberOfPhysicalLogWrites mv.dbmsNumberOfDataWrites mv.dbmsDoubleWritesOperations mv.dbmsNumberOfLogWriteRequests mv.dbmsBufferPoolWrites mv.dbmsNumberOfFysncLogWrites mv.osAsynchronousIO mv.dbmsNumberOfPendingWrites mv.dbmsNumberOfPendingLogWrites mv.dbmsNumberOfPendingLogFsyncs]};
                     Ydata{end+1} = [mv.dbmsNumberOfPhysicalLogWrites(:,i) mv.dbmsNumberOfDataWrites(:,i) mv.dbmsDoubleWritesOperations(:,i) mv.dbmsNumberOfLogWriteRequests(:,i) mv.dbmsBufferPoolWrites(:,i) mv.dbmsNumberOfFysncLogWrites(:,i) mv.dbmsNumberOfPendingWrites(:,i) mv.dbmsNumberOfPendingLogWrites(:,i) mv.dbmsNumberOfPendingLogFsyncs(:,i)];
+                    summary{end+1} = Ydata{end};
                 end
                 %legends = {'InnodbLogWrites', 'InnodbDataWrites', 'InnodbDblwrWrites', 'InnodbLogWriteRequests', 'InnodbBufferPoolWriteRequests', 'InnodbOsLogFsyncs', 'asyncAio', 'InnodbDataPendingWrites','InnodbOsLogPendingWrites','InnodbOsLogPendingFsyncs'};
                 %legends = {'InnodbLogWrites', 'InnodbDataWrites', 'InnodbDblwrWrites', 'InnodbLogWriteRequests', 'InnodbBufferPoolWriteRequests', 'InnodbOsLogFsyncs', 'asyncAio', 'InnodbDataPendingWrites','InnodbOsLogPendingWrites','InnodbOsLogPendingFsyncs'};
@@ -529,6 +721,22 @@ classdef Plotter < handle
                 legends{end+1} = horzcat(server_name, ' DB No. Pending Writes');
                 legends{end+1} = horzcat(server_name, ' DB No. Pending Log Writes');
                 legends{end+1} = horzcat(server_name, ' DB No. Pending Log Fsyncs');
+            end
+            if this.numServer > 1
+              if isfield(mv, 'dbmsNumberOfPhysicalLogWrites')
+                Xdata{end+1} = mv.dbmsChangedRows;
+                Ydata{end+1} = sum(cat(3, summary{:}), 3);
+                server_name = '(all)';
+                legends{end+1} = horzcat(server_name, ' DB No. Physical Log Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Data Writes');
+                legends{end+1} = horzcat(server_name, ' DB Double Writes Operations');
+                legends{end+1} = horzcat(server_name, ' DB No. Log Write Requests');
+                legends{end+1} = horzcat(server_name, ' DB Buffer Pool Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Fysnc Log Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Pending Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Pending Log Writes');
+                legends{end+1} = horzcat(server_name, ' DB No. Pending Log Fsyncs');
+              end
             end
             Xlabel = '# Rows Changed';
             Ylabel = 'Number of Writes';
@@ -605,18 +813,30 @@ classdef Plotter < handle
             Xdata = {};
             Ydata = {};
             legends = {};
+            summary = {};
 
             for i=1:size(mv.numOfTransType,2)
                 server_name = this.getServerName(mv, i);
                 if isfield(mv, 'dbmsCurrentLockWaits')
                     Xdata{end+1} = this.Xdata;
                     Ydata{end+1} = normMatrix([mv.dbmsCurrentLockWaits(:,i) mv.dbmsLockWaits(:,i) mv.dbmsLockWaitTime(:,i)]);
+                    summary{end+1} = Ydata{end};
                     %Ydata{end+1} = [mv.dbmsCurrentLockWaits(:,i) mv.dbmsLockWaits(:,i) mv.dbmsLockWaitTime(:,i)];
                     %legends = {'#locks being waited for','#waits, due to locks', 'time spent waiting for locks'};
                     legends{end+1} = horzcat(server_name, ' No. locks being waited for');
                     legends{end+1} = horzcat(server_name, ' No. waits, due to locks');
                     legends{end+1} = horzcat(server_name, ' Time spent waiting for locks');
                 end
+            end
+            if this.numServer > 1
+              if isfield(mv, 'dbmsCurrentLockWaits')
+                Xdata{end+1} = this.Xdata;
+                Ydata{end+1} = sum(cat(3, summary{:}), 3);
+                server_name = '(all)';
+                legends{end+1} = horzcat(server_name, ' No. locks being waited for');
+                legends{end+1} = horzcat(server_name, ' No. waits, due to locks');
+                legends{end+1} = horzcat(server_name, ' Time spent waiting for locks');
+              end
             end
             Xlabel = this.Xlabel;
             Ylabel = 'Locks (Normalized)';
@@ -1121,7 +1341,7 @@ classdef Plotter < handle
 			Xdata{end+1} = this.Xdata;
 			Ydata{end+1} = mv.clientTotalSubmittedTrans;
             legends{end+1} = 'Total client submitted transactions';
-            
+
             % TODO: max throughput part is omitted
             Xlabel = this.Xlabel;
             Ylabel = 'Transactions (tps)';

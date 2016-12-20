@@ -30,7 +30,7 @@ public class MatlabRunner extends StatisticalPackageRunner
 
 	private static MatlabProxyFactoryOptions options = new MatlabProxyFactoryOptions.Builder()
 			.setUsePreviouslyControlledSession(true)
-			.setHidden(false).build();
+			.setHidden(true).build();
 
 	private MatlabRunner()
 	{
