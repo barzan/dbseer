@@ -69,7 +69,6 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 	public JButton stopMonitoringButton;
 
 	private String currentDatasetPath;
-	private MiddlewareClientRunner runner;
 	private LiveLogProcessor liveLogProcessor;
 
 	private boolean connectSuccess = false;
@@ -196,9 +195,9 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 					return;
 				}
 
-				if (runner != null)
+				if (DBSeerGUI.middlewareClientRunner != null)
 				{
-					runner.stop();
+					DBSeerGUI.middlewareClientRunner.stop();
 				}
 
 				DBSeerGUI.liveMonitorPanel.reset();
@@ -209,8 +208,8 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 				stopMonitoringButton.setEnabled(false);
 
 				connectSuccess = true;
-				runner = new MiddlewareClientRunner(id, password, ip, port, currentDatasetPath, this);
-				runner.run();
+				DBSeerGUI.middlewareClientRunner = new MiddlewareClientRunner(id, password, ip, port, currentDatasetPath, this);
+				DBSeerGUI.middlewareClientRunner.run();
 
 				int sleepCount = 0;
 				while (liveLogProcessor == null || !liveLogProcessor.isStarted())
@@ -227,7 +226,7 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 						JOptionPane.showMessageDialog(DBSeerGUI.mainFrame,
 								String.format("Failed to receive live logs."),
 								"Message", JOptionPane.PLAIN_MESSAGE);
-						runner.stop();
+						DBSeerGUI.middlewareClientRunner.stop();
 
 						resetMonitoring();
 						return;
@@ -273,9 +272,9 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 
 				if (stopMonitoring == JOptionPane.YES_OPTION)
 				{
-					if (runner != null)
+					if (DBSeerGUI.middlewareClientRunner != null)
 					{
-						runner.stop();
+						DBSeerGUI.middlewareClientRunner.stop();
 					}
 					if (liveLogProcessor != null)
 					{
@@ -714,6 +713,13 @@ public class DBSeerMiddlewarePanel extends JPanel implements ActionListener, Obs
 			if (!event.serverStr.isEmpty())
 			{
 				DBSeerExceptionHandler.showDialog(event.serverStr);
+			}
+		}
+		else if (event.event == MiddlewareClientEvent.TABLE_ROW_COUNT)
+		{
+			if (liveLogProcessor != null)
+			{
+				liveLogProcessor.getTransactionLogWriter().writeTableCount(event.serverName, event.tableName, event.count);
 			}
 		}
 		else if (event.event == MiddlewareClientEvent.ERROR)

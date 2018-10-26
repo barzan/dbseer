@@ -30,6 +30,7 @@ public class TransactionWriter
 	private HashMap<Integer, PrintWriter> prctileLatencyWriter;
 	private HashMap<Integer, ArrayList<Double>> latencyMap;
 	private HashMap<Integer, PrintWriter> transactionSampleWriter;
+	private HashMap<Integer, PrintWriter> transactionSampleTableLatencyWriter;
 	private HashMap<Integer, Integer> transactionSampleCountMap;
 
 	public TransactionWriter(PrintWriter tpsWriter, PrintWriter latencyWriter, HashMap<Integer, PrintWriter> prctileLatencyWriter,
@@ -41,6 +42,7 @@ public class TransactionWriter
 		this.latencyMap = latencyMap;
 		this.transactionSampleWriter = transactionSampleWriter;
 		this.transactionSampleCountMap = new HashMap<Integer, Integer>();
+		this.transactionSampleTableLatencyWriter = new HashMap<>();
 	}
 
 	public PrintWriter getTpsWriter()
@@ -66,6 +68,11 @@ public class TransactionWriter
 	public HashMap<Integer, Integer> getTransactionSampleCountMap()
 	{
 		return transactionSampleCountMap;
+	}
+
+	public HashMap<Integer, PrintWriter> getTransactionSampleTableLatencyWriter()
+	{
+		return transactionSampleTableLatencyWriter;
 	}
 
 	public HashMap<Integer, PrintWriter> getTransactionSampleWriter()

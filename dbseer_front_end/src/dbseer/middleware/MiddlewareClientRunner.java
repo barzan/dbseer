@@ -50,6 +50,11 @@ public class MiddlewareClientRunner
 		this.panel = panel;
 	}
 
+	public MiddlewareClient getClient()
+	{
+		return client;
+	}
+
 	public void run() throws Exception
 	{
 		client = new MiddlewareClient(host, id, password, port, dir);

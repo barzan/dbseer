@@ -20,8 +20,11 @@ import dbseer.comp.clustering.Cluster;
 import dbseer.comp.clustering.StreamClustering;
 import dbseer.gui.DBSeerConstants;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by dyoon on 2014. 7. 5..
@@ -33,9 +36,11 @@ public class Transaction
 	public static final int CLASSIFIED = 2;
 	
 	public static final double DIFF_SCALE = 10000.0;
+	private static int idCount = 0;
 
 	private int id;
 	private int classification;
+	private int type;
 	private Cluster cluster;
 
 	private String serverName;
@@ -48,6 +53,7 @@ public class Transaction
 	private int maxIdx;
 	private String user;
 	private List<Statement> statements;
+	private Map<Integer, Statement> statementMap;
 	private long[] numRowsRead;
 //	private long[] numRowsWritten;
 	private long[] numRowsInserted;
@@ -79,6 +85,7 @@ public class Transaction
 		cluster = null;
 		classification = Transaction.UNCLASSIFIED;
 		statements = new ArrayList<Statement>();
+		statementMap = new HashMap<>();
 		visited = false;
 		assignedToCluster = false;
 
@@ -89,7 +96,19 @@ public class Transaction
 		maxStatementOffset = Long.MIN_VALUE;
 		lastStatementId = 0;
 		maxIdx = 0;
+		id = idCount++;
 	}
+
+	public int getType()
+	{
+		return type;
+	}
+
+	public void setType(int type)
+	{
+		this.type = type;
+	}
+
 
 	public void printAll()
 	{
@@ -144,8 +163,14 @@ public class Transaction
 		return stmt;
 	}
 
+	public Map<Integer, Statement> getStatementMap()
+	{
+		return statementMap;
+	}
+
 	public void addStatement(Statement stmt)
 	{
+		stmt.setTxId(this.id);
 		long offset = stmt.getFileOffset();
 		if (offset > maxStatementOffset)
 		{
@@ -156,6 +181,7 @@ public class Transaction
 			minStatementOffset = offset;
 		}
 		statements.add(stmt);
+		statementMap.put(stmt.getId(), stmt);
 	}
 
 	public void updateQueryMinMaxOffset()

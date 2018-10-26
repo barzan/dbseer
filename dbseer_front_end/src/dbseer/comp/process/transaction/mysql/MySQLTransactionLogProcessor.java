@@ -75,9 +75,11 @@ public class MySQLTransactionLogProcessor extends TransactionLogProcessor
 		tx.setLatency(Long.parseLong(columns[3]));
 		tx.setNumTable(DBSeerConstants.MAX_NUM_TABLE);
 
-		String queryString = columns[4];
+		String queryString = columns[5];
 		String[] queries = queryString.split(queryDelimiter);
+		String[] latencies = columns[4].split(queryDelimiter);
 
+		int count = 0;
 		for (String query : queries)
 		{
 			// parse query statement.
@@ -89,6 +91,7 @@ public class MySQLTransactionLogProcessor extends TransactionLogProcessor
 
 			tx.addStatement(statement);
 			statement.setTransaction(tx);
+			statement.setLatency(Double.parseDouble(latencies[count++]));
 		}
 
 		ArrayList<Transaction> txList = transactions.get(timestamp);

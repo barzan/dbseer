@@ -18,6 +18,7 @@ package dbseer.comp.process.transaction;
 
 import com.google.common.primitives.Doubles;
 import dbseer.comp.clustering.IncrementalDBSCAN;
+import dbseer.comp.data.Statement;
 import dbseer.comp.process.live.LiveLogProcessor;
 import dbseer.comp.process.live.LiveMonitorInfo;
 import dbseer.comp.data.Transaction;
@@ -29,9 +30,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -51,6 +50,7 @@ public class TransactionLogWriter
 //	private HashMap<Integer, ArrayList<Double>> latencyMap;
 
 	private HashMap<String, TransactionWriter> writers;
+	private HashMap<String, PrintWriter> tableRowCountwriters;
 
 	private boolean isDBSCANInitialized;
 	private boolean isWritingStarted;
@@ -87,6 +87,7 @@ public class TransactionLogWriter
 		this.initialTransactions = new ArrayList<Transaction>();
 		this.monitor = monitor;
 		this.writers = new HashMap<String, TransactionWriter>();
+		this.tableRowCountwriters = new HashMap<>();
 		this.serverIndex = new HashMap<String, Integer>();
 		this.liveLogProcessor = liveLogProcessor;
 	}
@@ -105,15 +106,18 @@ public class TransactionLogWriter
 
 			File tpsFile = new File(this.dir + File.separator + server + File.separator + "trans_count");
 			File latencyFile = new File(this.dir + File.separator + server + File.separator + "avg_latency");
+			File tableRowCountFile = new File(this.dir + File.separator + server + File.separator + "table_row_count");
 
 			PrintWriter tpsWriter = new PrintWriter(new FileWriter(tpsFile, false));
 			PrintWriter latencyWriter = new PrintWriter(new FileWriter(latencyFile, false));
+			PrintWriter tableRowCountWriter = new PrintWriter(new FileWriter(tableRowCountFile, false));
 			HashMap<Integer, PrintWriter> prctileLatencyWriter = new HashMap<Integer, PrintWriter>();
 			HashMap<Integer, ArrayList<Double>> latencyMap = new HashMap<Integer, ArrayList<Double>>();
 			HashMap<Integer, PrintWriter> transactionSampleWriter = new HashMap<Integer, PrintWriter>();
 
 			TransactionWriter writer = new TransactionWriter(tpsWriter, latencyWriter, prctileLatencyWriter, transactionSampleWriter, latencyMap);
 			writers.put(server, writer);
+			tableRowCountwriters.put(server, tableRowCountWriter);
 			serverIndex.put(server, index++);
 		}
 		this.numServer = servers.length;
@@ -135,6 +139,23 @@ public class TransactionLogWriter
 				monitor.setCurrentTPS(i, 0);
 				monitor.setCurrentAverageLatency(i, 0.0);
 			}
+		}
+	}
+
+	public void writeTableCount(String serverName, String tableName, long rowCount)
+	{
+		PrintWriter writer = tableRowCountwriters.get(serverName);
+		try
+		{
+			if (writer != null)
+			{
+				writer.printf("%s,%d\n", tableName, rowCount);
+				writer.flush();
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -198,6 +219,7 @@ public class TransactionLogWriter
 			// if not outlier;
 			if (type >= 0)
 			{
+				t.setType(type);
 				String server = t.getServerName();
 				int index = serverIndex.get(server);
 				latencySum[index][type] += t.getLatency();
@@ -222,19 +244,37 @@ public class TransactionLogWriter
 				else
 				{
 					int countVal = sampleCount.intValue();
+
+					// write transaction samples
 					if (countVal < DBSeerConstants.MAX_TRANSACTION_SAMPLE)
 					{
 						HashMap<Integer, PrintWriter> sampleWriters = writers.get(server).getTransactionSampleWriter();
 						PrintWriter sampleWriter = sampleWriters.get(type);
+
 						if (sampleWriter == null)
 						{
 							sampleWriter = new PrintWriter(new FileOutputStream(
-									String.format("%s%d", this.dir + File.separator + server + File.separator + "tx_sample_", type), false));
+									String.format("%s%03d", this.dir + File.separator + server + File.separator + "tx_sample_", type), false));
 							sampleWriters.put(type, sampleWriter);
 						}
 						sampleWriter.print(t.getEntireStatement());
 						sampleWriter.println("---");
 						sampleWriter.flush();
+
+						// write FROM table list and latency for each sample tx
+						HashMap<Integer, PrintWriter> tableLatencyWriters = writers.get(server).getTransactionSampleTableLatencyWriter();
+						PrintWriter tableLatencyWriter = tableLatencyWriters.get(type);
+
+						if (tableLatencyWriter == null)
+						{
+							tableLatencyWriter = new PrintWriter(new FileOutputStream(
+									String.format("%s%03d", this.dir + File.separator + server + File.separator + "latency_sample_", type), false));
+							tableLatencyWriters.put(type, tableLatencyWriter);
+							DBSeerGUI.middlewareClientRunner.getClient().registerLogWriter(server + type, tableLatencyWriter);
+						}
+//						writeLatencySample(tableLatencyWriter, t);
+						requestStatistics(t);
+
 						countVal++;
 						countMap.put(type, countVal);
 					}
@@ -342,6 +382,33 @@ public class TransactionLogWriter
 			latencyWriter.flush();
 			isWritingStarted = true;
 		}
+	}
+
+	// request stats from EXPLAIN
+	private void requestStatistics(Transaction t)
+	{
+		List<Statement> statements = t.getStatements();
+		for (Statement s : statements)
+		{
+			DBSeerGUI.middlewareClientRunner.getClient().requestStatistics(t.getServerName(), t.getId(), t.getType(), s.getId(), s.getLatency(), s.getMode(), s.getTables(), s.getContent());
+		}
+	}
+
+	private void writeLatencySample(PrintWriter writer, Transaction t)
+	{
+		List<Statement> statements = t.getStatements();
+		for (Statement s : statements)
+		{
+			Set<String> tables = s.getTables();
+			int numTable = tables.size();
+			writer.printf("%d,", numTable);
+			for (String table : tables)
+			{
+				writer.printf("%s,", table);
+			}
+			writer.printf("%d\n", s.getLatency());
+		}
+		writer.flush();
 	}
 
 	public boolean isWritingStarted()

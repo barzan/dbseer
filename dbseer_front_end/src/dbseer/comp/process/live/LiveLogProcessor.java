@@ -146,6 +146,11 @@ public class LiveLogProcessor
 		transactionLogWriter.initialize();
 	}
 
+	public TransactionLogWriter getTransactionLogWriter()
+	{
+		return transactionLogWriter;
+	}
+
 	public boolean isTxWritingStarted()
 	{
 		return transactionLogWriter.isWritingStarted();

@@ -21,6 +21,7 @@ import dbseer.comp.data.Statement;
 import dbseer.comp.data.Transaction;
 import dbseer.comp.process.base.LogProcessor;
 import dbseer.gui.DBSeerConstants;
+import dbseer.gui.DBSeerGUI;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +33,7 @@ public abstract class TransactionLogProcessor implements LogProcessor
 {
 	protected Set<String> tableNameSet;
 	protected SQLStatementParser parser;
+	protected TransactionLogWriter logWriter;
 
 	public TransactionLogProcessor()
 	{
@@ -42,6 +44,11 @@ public abstract class TransactionLogProcessor implements LogProcessor
 	public abstract List<Transaction> getTransactions(long timestamp);
 
 	public abstract Set<Long> getTimestamps();
+
+	public void setLogWriter(TransactionLogWriter logWriter)
+	{
+		this.logWriter = logWriter;
+	}
 
 	protected Statement parseStatement(Transaction transaction, String statement)
 	{
@@ -69,9 +76,17 @@ public abstract class TransactionLogProcessor implements LogProcessor
 
 		for (String table : parser.getTables())
 		{
-			tableNameSet.add(table);
+			if (!tableNameSet.contains(table))
+			{
+				tableNameSet.add(table);
+				if (DBSeerGUI.middlewareClientRunner != null)
+				{
+					DBSeerGUI.middlewareClientRunner.getClient().requestTableCount(transaction.getServerName(), table);
+				}
+			}
 			Transaction.numTable = tableNameSet.size();
 			stmt.addTable(table);
+			stmt.setMode(mode);
 
 			int idx = Arrays.asList(tableNameSet.toArray()).indexOf(table);
 			switch (mode)

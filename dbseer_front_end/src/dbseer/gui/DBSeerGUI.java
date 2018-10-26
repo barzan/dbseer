@@ -20,6 +20,7 @@ import com.esotericsoftware.minlog.Log;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.io.StreamException;
 import dbseer.comp.clustering.IncrementalDBSCAN;
+import dbseer.comp.data.Transaction;
 import dbseer.comp.process.live.LiveMonitorInfo;
 import dbseer.gui.frame.DBSeerMainFrame;
 import dbseer.gui.panel.DBSeerLiveMonitorPanel;
@@ -28,6 +29,7 @@ import dbseer.gui.user.DBSeerConfiguration;
 import dbseer.gui.user.DBSeerDataSet;
 import dbseer.gui.user.DBSeerUserSettings;
 import dbseer.gui.xml.XStreamHelper;
+import dbseer.middleware.MiddlewareClientRunner;
 import dbseer.old.middleware.MiddlewareSocket;
 import dbseer.stat.MatlabRunner;
 import dbseer.stat.OctaveRunner;
@@ -40,6 +42,8 @@ import javax.swing.*;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -92,6 +96,10 @@ public class DBSeerGUI
 	public static ArrayList<DBSeerDataSet> liveDatasets = new ArrayList<>();
 
 	public static DBSeerConfiguration liveConfig = null;
+
+	public static MiddlewareClientRunner middlewareClientRunner = null;
+
+	public static Map<Integer, Transaction> sampleTransactionMap = new HashMap<>();
 
 	public static boolean isProxyRenewing = false;
 

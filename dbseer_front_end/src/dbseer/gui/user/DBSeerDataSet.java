@@ -782,6 +782,7 @@ public class DBSeerDataSet implements TableModelListener
 					String datasetPathName = "dataset_" + (datasetCount++);
 					runner.eval(datasetPathName + " = DataSetPath;");
 					runner.eval(datasetPathName + ".name = '" + datasetPath.getName() + "';");
+					runner.eval(datasetPathName + ".path = '" + datasetPath.getRoot() + "';");
 					runner.eval(datasetPathName + ".header_path = '" + datasetPath.getHeader() + "';");
 					runner.eval(datasetPathName + ".avg_latency_path = '" + datasetPath.getAvgLatency() + "';");
 					runner.eval(datasetPathName + ".monitor_path = '" + datasetPath.getMonitor() + "';");
@@ -907,6 +908,7 @@ public class DBSeerDataSet implements TableModelListener
 				String datasetPathName = "dataset_" + (datasetCount++);
 				runner.eval(datasetPathName + " = DataSetPath;");
 				runner.eval(datasetPathName + ".name = '" + datasetPath.getName() + "';");
+				runner.eval(datasetPathName + ".path = '" + datasetPath.getRoot() + "';");
 				runner.eval(datasetPathName + ".header_path = '" + datasetPath.getHeader() + "';");
 				runner.eval(datasetPathName + ".avg_latency_path = '" + datasetPath.getAvgLatency() + "';");
 				runner.eval(datasetPathName + ".monitor_path = '" + datasetPath.getMonitor() + "';");

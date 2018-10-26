@@ -30,7 +30,7 @@ public class Statement
 	private int txId;
 	private long startTime;
 	private long endTime;
-	private long latency;
+	private double latency;
 	private int mode;
 	private Set<String> tables;
 	private String content;
@@ -38,9 +38,11 @@ public class Statement
 
 	private long queryOffset;
 	private Transaction transaction = null;
+	private static int idCount = 0;
 
 	public Statement()
 	{
+		id = this.idCount++;
 		mode = DBSeerConstants.STATEMENT_NONE;
 		tables = new HashSet<String>();
 	}
@@ -85,12 +87,12 @@ public class Statement
 		this.endTime = endTime;
 	}
 
-	public long getLatency()
+	public double getLatency()
 	{
 		return latency;
 	}
 
-	public void setLatency(long latency)
+	public void setLatency(double latency)
 	{
 		this.latency = latency;
 	}

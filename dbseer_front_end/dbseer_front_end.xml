@@ -161,7 +161,7 @@
   <property name="module.jdk.bin.dbseer_front_end" value="${project.jdk.bin}"/>
   <property name="module.jdk.classpath.dbseer_front_end" value="${project.jdk.classpath}"/>
 
-  <property name="compiler.args.dbseer_front_end" value="-encoding UTF-8 -source 1.6 ${compiler.args}"/>
+  <property name="compiler.args.dbseer_front_end" value="-encoding UTF-8 ${compiler.args}"/>
 
   <property name="dbseer_front_end.output.dir" value="${module.dbseer_front_end.basedir}/out/production/dbseer_front_end"/>
   <property name="dbseer_front_end.testoutput.dir" value="${module.dbseer_front_end.basedir}/out/test/dbseer_front_end"/>
