@@ -387,11 +387,11 @@ public class TransactionLogWriter
 	// request stats from EXPLAIN
 	private void requestStatistics(Transaction t)
 	{
-		List<Statement> statements = t.getStatements();
-		for (Statement s : statements)
-		{
-			DBSeerGUI.middlewareClientRunner.getClient().requestStatistics(t.getServerName(), t.getId(), t.getType(), s.getId(), s.getLatency(), s.getMode(), s.getTables(), s.getContent());
-		}
+//		List<Statement> statements = t.getStatements();
+//		for (Statement s : statements)
+//		{
+//			DBSeerGUI.middlewareClientRunner.getClient().requestStatistics(t.getServerName(), t.getId(), t.getType(), s.getId(), s.getLatency(), s.getMode(), s.getTables(), s.getContent());
+//		}
 	}
 
 	private void writeLatencySample(PrintWriter writer, Transaction t)
