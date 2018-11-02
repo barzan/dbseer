@@ -16,6 +16,7 @@ classdef DataSetPath < handle
 
     properties
         name
+        path
         header_path
         monitor_path
         trans_count_path
@@ -43,6 +44,11 @@ classdef DataSetPath < handle
         % property accessors set statReady to false
         function set.header_path(this, value)
             this.header_path = value;
+            this.statReady = false;
+        end
+
+        function set.path(this, value)
+            this.path = value;
             this.statReady = false;
         end
 

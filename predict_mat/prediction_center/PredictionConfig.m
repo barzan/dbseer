@@ -76,15 +76,21 @@ classdef PredictionConfig < handle
     methods
         function [max_log_capacity max_flush_rate scale_factor] = learnIOParams(this)
           max_log_capacity = mean(this.mv.dbmsLogFileSize,2) / mean(this.mv.dbmsPageSize);
-          max_flush_rate = max(mean(this.mv.osNumberOfSectorWrites,2)) * 1024 * 1024 * 20 / mean(this.mv.dbmsPageSize); % increase it by 10 times for arbitrarily high max flush rate estimate.
+          max_flush_rate = max(mean(this.mv.osNumberOfSectorWrites,2)) * 1024 * 1024 * 20 / mean(this.mv.dbmsPageSize); % increase it by 20 times for arbitrarily high max flush rate estimate.
           scale_factor = 1;
         end
         function [lock_params] = learnLockParams(this)
-            f = @(conf2, data)(getfield(useLockModel([0.125 0.0001 conf2], data, 'TPCC'), 'TimeSpentWaiting'));
             trainC = this.totalTransactionCount;
             my_train_lock = mean(this.mv.dbmsLockWaitTime,2);
-            domain_cost = barzanCurveFit(f, trainC, my_train_lock, [0.1 0.0000000001], [1000000 10], [50 0.01], [3 3]);
-            lock_params = [0.125 0.0001 domain_cost];
+            lock_params = [];
+            if (size(trainC,2)~=5)
+              f = @(conf2, data)(getfield(useLockModel([conf2], data, 'LOCK1'), 'TimeSpentWaiting'));
+              lock_params = barzanCurveFit(f, trainC, my_train_lock, [0.1 0.0000000001], [1000000 10], [50 0.01], [3 3]);
+            else
+              % f = @(conf2, data)(getfield(useLockModel([0.125 0.0001 conf2], data, 'TPCC'), 'TimeSpentWaiting'));
+              % domain_cost = barzanCurveFit(f, trainC, my_train_lock, [0.1 0.0000000001], [1000000 10], [50 0.01], [3 3]);
+              lock_params = [0.125 0.0001 0 0];
+            end
         end
         function result = isInitialized(this)
             result = this.initialized;

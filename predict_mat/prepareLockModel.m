@@ -39,7 +39,7 @@ if initialize==1 || ~isequal(conf, oldConfig) || ~strcmp(workloadName, oldWorklo
         J = 1; % # of transaction classes, e.g. in TPC-C, J=5
         f = [1.0]; % frequency matrix for each class
         K = [2]; % the number of locks requested in each transaction class
-        regions = 1; % number of database regions, perhaps should be equal to the number of tables?! 
+        regions = 1; % number of database regions, perhaps should be equal to the number of tables?!
         D = [1024]; % number of data items in the i'th DB region
         maxK = max(K);
         S = zeros(J,maxK); % S_jn is the processing of the n'th step of a transaction of class C_j
@@ -68,7 +68,7 @@ if initialize==1 || ~isequal(conf, oldConfig) || ~strcmp(workloadName, oldWorklo
         S(1,1:136) = [interLockInterval 727780 609558 564452 604045 666491 574574 736047 568746 730061 563094 722544 563341 715844 565713 734241 562731 ...
             727079 570391 727549 562944 723694 569319 720982 571238 729174 repmat(interLockInterval, 1, 99) 2305666 repmat(interLockInterval, 1, 9) 5241200];
         S(2,1:8) = 0.1*[589150 623830 590536 644205 946331 647169 797044 3018040] ...
-                  +0.9*[586701 618534 588888 643966 950617 0 700665 3515563];    
+                  +0.9*[586701 618534 588888 643966 950617 0 700665 3515563];
         S(3,1:6) = [952166 77273 repmat(interLockInterval, 1, 3) 7834434];
         S(4,1:10) = [640781 626863 621894 617058 617356 615745 613847 614119 615625 3111715];
         S(5,1:153) = [591071 repmat(interLockInterval, 1, 151) 8500096];
@@ -76,7 +76,7 @@ if initialize==1 || ~isequal(conf, oldConfig) || ~strcmp(workloadName, oldWorklo
         S0 = beginCost + (S0-beginCost) * costMultiplier;
         S = (S/nano) * costMultiplier;
 
-        readRows = zeros(J, regions); %b_ji= the probability that 
+        readRows = zeros(J, regions); %b_ji= the probability that
         updatedRows = zeros(J, regions);
 
         g = zeros([J maxK regions], 'double');
@@ -112,33 +112,33 @@ if initialize==1 || ~isequal(conf, oldConfig) || ~strcmp(workloadName, oldWorklo
             updatedRows(2,district) = 1;
             readRows(2,customer) = 2;
             updatedRows(2,customer) = 1;
-            readRows(2,history) = 1; % insert    
+            readRows(2,history) = 1; % insert
         g(3,1,customer) = 1.0;
         g(3,2,oorder) = 1.0;
         g(3,3:6,order_line) = 1.0;
             readRows(3,customer) = 1;
             readRows(3,oorder) = 1;
             readRows(3,order_line) = 4;
-            
+
 % For transaction type 4:
 % with probability (659+665) / (659+665+10774) = 0.11:
-%    w_new_order_1 -> r_oorder_1 ->  w_oorder_1 -> w_order_line_5 ->  r_order_line_5 -> w_customer_1 -> 
+%    w_new_order_1 -> r_oorder_1 ->  w_oorder_1 -> w_order_line_5 ->  r_order_line_5 -> w_customer_1 ->
 % with prob 1:
-%    r_new_order_10 
-tempA = 0.11;      
+%    r_new_order_10
+tempA = 0.11;
 pBranch = 1-(1-tempA)^0.1;
         g(4,1:10,new_order) = 1.0 - 3*pBranch;
-            readRows(4,new_order) = 10; % I have to yse number of rows as a probability instead of a simple count! this way I can also account for other types of transaction 4    
-            updatedRows(4, new_order) = tempA/(1.0 - 3*pBranch); % to make sure in the end we update the new_order w prob 0.11 too!            
+            readRows(4,new_order) = 10; % I have to yse number of rows as a probability instead of a simple count! this way I can also account for other types of transaction 4
+            updatedRows(4, new_order) = tempA/(1.0 - 3*pBranch); % to make sure in the end we update the new_order w prob 0.11 too!
         g(4,1:10,oorder) = pBranch; % this way the overall prob that tran type 4 accesses oorder adds up to tempA !
             readRows(4,oorder) = 1;
             updatedRows(4,oorder) = 1;
         g(4,1:10,order_line) = pBranch;
-            updatedRows(4,order_line) = 5; 
+            updatedRows(4,order_line) = 5;
             readRows(4,order_line) = 5;
         g(4,1:10,customer) = pBranch;
             updatedRows(4,customer) = 1;
-            
+
             %w_new_order_1 w_oorder_1 w_order_line_5 w_customer_1
 
         g(5,1,district) = 1.0;
@@ -146,7 +146,9 @@ pBranch = 1-(1-tempA)^0.1;
         g(5,153,stock) = 1.0;
             readRows(5,district) = 1;
             readRows(5,order_line) = 151;
-            readRows(5,stock) = 1;    
+            readRows(5,stock) = 1;
+
+            S0 = beginCost + (dot([2096  0.1*6403+0.9*3608 1753 1543 4170], f) / nano) * costMultiplier;
 
     else
         error(['Unknown workloadName: ' workloadName]);
@@ -159,8 +161,6 @@ end % end of initialization
 f = counts;
 tps = sum(f,2);
 f = f / tps;
-
-S0 = beginCost + (dot([2096  0.1*6403+0.9*3608 1753 1543 4170], f) / nano) * costMultiplier;
 
 b = zeros(1, regions);
 for i=1:regions
@@ -177,10 +177,9 @@ D = D * DomainMultiplier;
    J_ = J;
    f_ = f;
    K_ = K;
-   regions_ = regions; 
+   regions_ = regions;
    D_ = D;
    S0_ = S0;
    S_ = S;
    g_ = g;
 end
-

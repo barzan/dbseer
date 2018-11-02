@@ -2496,12 +2496,15 @@ classdef PredictionCenter < handle
             end
 
             % Our IO-based throughput
-            cfFlushRateApprox_conf = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
-            myFlushRateThroughput = findClosestValue(@cfFlushRateApprox, (1:6000)'*this.testMixture, maxFlushRate, cfFlushRateApprox_conf);
+            % cfFlushRateApprox_conf = struct('io_conf', this.ioConf, 'workloadName', 'TPCC');
+            % myFlushRateThroughput = findClosestValue(@cfFlushRateApprox, (1:6000)'*this.testMixture, maxFlushRate, cfFlushRateApprox_conf);
+            myFlushRateThroughput = 0;
 
             % Lock-based throughput
+            % getConcurrencyLebel_conf = struct('lock_conf', this.lockConf, 'workloadName', 'TPCC');
+            % concurrencyThroughput = findClosestValue(@getConcurrencyLevel, (1:10000)'*this.testMixture, 160, getConcurrencyLebel_conf);
             getConcurrencyLebel_conf = struct('lock_conf', this.lockConf, 'workloadName', 'TPCC');
-            concurrencyThroughput = findClosestValue(@getConcurrencyLevel, (1:10000)'*this.testMixture, 160, getConcurrencyLebel_conf);
+            concurrencyThroughput = findClosestValue(@getConcurrencyLevelNew, (1:10000)'*this.testMixture, 10e+200, this.trainConfig.datasetList{1}.datasets{1})
 
             Xdata = {};
             Ydata = {};
