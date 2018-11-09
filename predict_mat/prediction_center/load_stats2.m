@@ -45,6 +45,8 @@ for i=1:num_dataset
       if endIdx > size(LatencyAvg, 1)
         endIdx = size(LatencyAvg, 1);
       end
+    elseif skipFromEnd > size(LatencyAvg, 1)
+        endIdx = size(LatencyAvg, 1);
     else
       endIdx = skipFromEnd;
     end
