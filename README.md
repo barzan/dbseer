@@ -25,6 +25,18 @@ MATLAB helpers required by the public release are vendored in [`common_mat`](com
 }
 ```
 
+The public system/demo release is also described by:
+
+```bibtex
+@article{yoon2015dbseer,
+  title   = {DBSeer: Pain-free Database Administration through Workload Intelligence},
+  author  = {Yoon, Dong Young and Mozafari, Barzan and Brown, Douglas P.},
+  journal = {Proceedings of the VLDB Endowment},
+  year    = {2015},
+  doi     = {10.14778/2824032.2824130}
+}
+```
+
 ## License
 
 DBSeer is released under the [Apache License 2.0](LICENSE). Third-party components retain their own notices and licenses.
