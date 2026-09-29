@@ -6,6 +6,6 @@ function produceWekaFile( header, matrix, filename )
 %   Detailed explanation goes here
 
 system(horzcat('echo -e ',header,' > ./', filename));
-dlmwrite(horzcat('./', filename), matrix, 'delimiter',',','-append','precision',10);    
+dlmwrite(horzcat('./', filename), matrix, 'delimiter',',','-append','precision',10);
 
 end

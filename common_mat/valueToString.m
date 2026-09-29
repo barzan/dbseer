@@ -46,8 +46,8 @@ function vstr = valueToString( v )
                 vstr = [vstr ', '];
             end
         end
-        vstr = [vstr '}'];        
+        vstr = [vstr '}'];
     else
         error(['Add support for this type of object before passing it to valueToString:' class(v)]);
-    end 
+    end
 end
